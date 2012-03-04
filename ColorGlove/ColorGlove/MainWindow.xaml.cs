@@ -153,8 +153,10 @@ namespace ColorGlove
             
             // Pipeline model
             //show_color(1);
-            paint_white(1);
-            show_near_mapped(1);
+            //display_all_depth(1);
+            masked_depth(1);
+            //paint_white(1);
+            //show_near_mapped(1);
         }
 
         void show_color(int display)
@@ -181,6 +183,51 @@ namespace ColorGlove
             }
 
         }
+
+
+        void display_all_depth(int display)
+        {
+            // with thresholding, uninteresting region will be white.
+            for (int i = 0; i < _depthPixels.Length; i++)
+            {
+                //Console.WriteLine(_depthPixels[i]);
+                int max = 32767;
+
+                //Debug.WriteLine(depthVal);
+                _bitmapBits[display][4 * i] =
+                _bitmapBits[display][4 * i + 1] =
+                _bitmapBits[display][4 * i + 2] =
+                _bitmapBits[display][4 * i + 3] = (byte)(255 * (max - _depthPixels[i]) / max);    
+            }
+
+        }
+
+
+        void masked_depth(int display)
+        {
+            // with thresholding, uninteresting region will be white.
+            for (int i = 0; i < _depthPixels.Length; i++)
+            {
+                //Console.WriteLine(_depthPixels[i]);
+                int max = 32767;
+                int x_0 = 220, x_1 = 410, y_0 = 93, y_1 = 362;
+
+                int y = i/640;
+                int x = i % 640;
+
+                if (x > x_0 && x < x_1 && y > y_0 && y < y_1)
+                    _bitmapBits[display][4 * i] =
+                    _bitmapBits[display][4 * i + 1] =
+                    _bitmapBits[display][4 * i + 2] =
+                    _bitmapBits[display][4 * i + 3] = (byte)(255 * (max - _depthPixels[i]) / max);
+                else
+                    _bitmapBits[display][4 * i] =
+                    _bitmapBits[display][4 * i + 1] =
+                    _bitmapBits[display][4 * i + 2] =
+                    _bitmapBits[display][4 * i + 3] = (byte)255;
+            }
+        }
+
 
         void display_only_mapped(int display)
         {
@@ -318,6 +365,7 @@ namespace ColorGlove
             if (nearest_cache.ContainsKey(point)) return nearest_cache[point];
 
             // Glove colors
+            /*
             byte[,] colors = new byte[,] {
                 {30, 30, 30},    // Black
                 {90, 30, 60},    // Pink
@@ -336,9 +384,10 @@ namespace ColorGlove
             { 255, 255, 0 },                // Yellow
             { 205, 102, 0 }                 // Orange
             };
+            */
 
-            // More realistic colors sampled from the camera
-            /*
+            // Paper block colors
+            
             byte[,] colors = new byte[,] {
               {140, 140, 140},   // White  
               {30, 30, 85},      // Blue
@@ -351,7 +400,7 @@ namespace ColorGlove
               {0, 0, 255},      // Blue
               {0, 255, 0},      // Green
               {255, 0, 0}     // Red
-            };*/
+            };
 
 
             //double [] distances = new double [colors.GetLength(0)];
@@ -383,7 +432,7 @@ namespace ColorGlove
         {
             Point click_position = e.GetPosition(image1);
             int baseIndex = ((int)click_position.Y * 640 + (int)click_position.X) * 4;
-            Console.WriteLine("RGB: (" + _colorPixels[baseIndex + 2] + ", " + _colorPixels[baseIndex + 1] + ", " + _colorPixels[baseIndex] + ")");
+            Console.WriteLine("(x,y): (" + click_position.X + ", " + click_position.Y + ") RGB: (" + _colorPixels[baseIndex + 2] + ", " + _colorPixels[baseIndex + 1] + ", " + _colorPixels[baseIndex] + ")");
         }
 
         private void image2_click(object sender, MouseButtonEventArgs e)
