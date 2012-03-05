@@ -49,9 +49,26 @@ namespace ColorGlove
             Near = 1,
         };
 
-        private RGBModeFormat RGBModeValue = RGBModeFormat.YuvResolution640x480Fps15;
-        //private RGBModeFormat RGBModeValue = RGBModeFormat.RgbResolution640x480Fps30;
+        //private RGBModeFormat RGBModeValue = RGBModeFormat.YuvResolution640x480Fps15;
+        private RGBModeFormat RGBModeValue = RGBModeFormat.RgbResolution640x480Fps30;
         private RangeModeFormat RangeModeValue = RangeModeFormat.Near;
+        
+        // For the color mapping
+        byte[,] colors = new byte[,] {
+              {140, 140, 140},   // White  
+              {30, 30, 85},      // Blue
+              {55, 90, 70},      // Green
+              {115, 30, 100}     // Pink
+            };
+
+        byte[,] replacement = new byte[,] {
+              {255, 255, 255},   // White  
+              {0, 0, 255},      // Blue
+              {0, 255, 0},      // Green
+              {255, 0, 0}     // Red
+            };
+
+        
         #endregion
 
         #region Kinect setup functions
@@ -154,9 +171,9 @@ namespace ColorGlove
             // Pipeline model
             //show_color(1);
             //display_all_depth(1);
-            masked_depth(1);
-            //paint_white(1);
-            //show_near_mapped(1);
+            //masked_depth(1);
+            paint_white(_bitmapBits[1]);
+            show_near_mapped(_bitmapBits[1]);
         }
 
         void show_color(int display)
@@ -227,8 +244,7 @@ namespace ColorGlove
                     _bitmapBits[display][4 * i + 3] = (byte)255;
             }
         }
-
-
+        
         void display_only_mapped(int display)
         {
             if (RGBModeValue == RGBModeFormat.YuvResolution640x480Fps15)
@@ -326,19 +342,21 @@ namespace ColorGlove
                 }
         }
 
-        void paint_white(int display)
+        void paint_white(byte[] imageBits)
         {
-            _bitmapBits[display] = Enumerable.Repeat((byte)255, _colorPixels.Length).ToArray();
+            for (int i = 0; i < imageBits.Length; i++) imageBits[i] = (byte)255;
         }
         
-        void show_near_mapped(int display)
+        void show_near_mapped(byte[] imageBits)
         {
             ColorImagePoint[] _mapped = new ColorImagePoint[_depthPixels.Length];
             if (RGBModeValue == RGBModeFormat.YuvResolution640x480Fps15)
                 this._sensor.MapDepthFrameToColorFrame(DepthImageFormat.Resolution640x480Fps30, _depthPixels, ColorImageFormat.YuvResolution640x480Fps15, _mapped);
             else if (RGBModeValue == RGBModeFormat.RgbResolution640x480Fps30)
                 this._sensor.MapDepthFrameToColorFrame(DepthImageFormat.Resolution640x480Fps30, _depthPixels, ColorImageFormat.RgbResolution640x480Fps30, _mapped);
-            
+
+            byte[] rgb = new byte[3];
+
             for (int i = 0; i < _depthPixels.Length; i++)
             {
                 int depthVal = _depthPixels[i] >> DepthImageFrame.PlayerIndexBitmaskWidth;
@@ -348,22 +366,31 @@ namespace ColorGlove
                     if ((point.X >= 0 && point.X < 640) && (point.Y >= 0 && point.Y < 480))
                     {
                         int baseIndex = (point.Y * 640 + point.X) * 4;
+                        rgb[0] = _colorPixels[baseIndex + 2];
+                        rgb[1] = _colorPixels[baseIndex + 1];
+                        rgb[2] = _colorPixels[baseIndex];
 
-                        byte[] colorMatch = nearest_color(new byte[] { _colorPixels[baseIndex + 2], _colorPixels[baseIndex + 1], _colorPixels[baseIndex] });
+                        nearest_color(rgb);
                         
-                        _bitmapBits[display][baseIndex] = colorMatch[2];
-                        _bitmapBits[display][baseIndex + 1] = colorMatch[1];
-                        _bitmapBits[display][baseIndex + 2] = colorMatch[0];
+                        imageBits[baseIndex] = rgb[2];
+                        imageBits[baseIndex + 1] = rgb[1];
+                        imageBits[baseIndex + 2] = rgb[0];
                     }
                 }
             }
         }
 
         #region Color matching
-        byte[] nearest_color(byte[] point)
+        void nearest_color(byte[] point)
         {
-            if (nearest_cache.ContainsKey(point)) return nearest_cache[point];
-
+            // In place rewriting of the array
+            if (nearest_cache.ContainsKey(point))
+            {
+                point[0] = nearest_cache[point][0];
+                point[1] = nearest_cache[point][1];
+                point[2] = nearest_cache[point][2];
+                return;
+            }
             // Glove colors
             /*
             byte[,] colors = new byte[,] {
@@ -388,21 +415,6 @@ namespace ColorGlove
 
             // Paper block colors
             
-            byte[,] colors = new byte[,] {
-              {140, 140, 140},   // White  
-              {30, 30, 85},      // Blue
-              {55, 90, 70},      // Green
-              {115, 30, 100}     // Pink
-            };
-
-            byte[,] replacement = new byte[,] {
-              {255, 255, 255},   // White  
-              {0, 0, 255},      // Blue
-              {0, 255, 0},      // Green
-              {255, 0, 0}     // Red
-            };
-
-
             //double [] distances = new double [colors.GetLength(0)];
 
             //int minIdx = 0;
@@ -411,7 +423,7 @@ namespace ColorGlove
 
             for (int idx = 0; idx < colors.GetLength(0); idx++)
             {
-                double distance = euc_distance(point, new byte[3] { colors[idx, 0], colors[idx, 1], colors[idx, 2] });
+                double distance = euc_distance(point, idx);
                 if (distance < minDistance)
                 {
                     minColor = idx;
@@ -419,12 +431,16 @@ namespace ColorGlove
                 }
             }
 
-            return new byte[] { replacement[minColor, 0], replacement[minColor, 1], replacement[minColor, 2] };
+            point[0] = replacement[minColor, 0];
+            point[1] = replacement[minColor, 1];
+            point[2] = replacement[minColor, 2];
         }
 
-        double euc_distance(byte[] point, byte[] color)
+        double euc_distance(byte[] point, int colorIdx)
         {
-            return Math.Sqrt(Math.Pow(point[0] - color[0], 2) + Math.Pow(point[1] - color[1], 2) + Math.Pow(point[2] - color[2], 2));
+            return Math.Sqrt(Math.Pow(point[0] - colors[colorIdx, 0], 2) + 
+                Math.Pow(point[1] - colors[colorIdx, 1], 2) + 
+                Math.Pow(point[2] - colors[colorIdx, 2], 2));
         }
         #endregion
 
