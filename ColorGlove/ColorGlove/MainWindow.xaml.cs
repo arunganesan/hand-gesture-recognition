@@ -35,7 +35,7 @@ namespace ColorGlove
         private ColorImagePoint[] _mappedDepthLocations;
         private byte[] _colorPixels = new byte[0];
         private short[] _depthPixels = new short[0];
-        private Dictionary<byte[], byte[]> nearest_cache = new Dictionary<byte[], byte[]>();
+        private Dictionary<Tuple<byte, byte, byte>, byte[]> nearest_cache = new Dictionary<Tuple<byte, byte, byte>, byte[]>();
         private int upper = 900, lower = 100; // used for thresholding interested object.
         private int threshold = 10000; //?
         private short[] _usedcolorPixels = new short[640 * 480 * 4];
@@ -49,8 +49,8 @@ namespace ColorGlove
             Near = 1,
         };
 
-        //private RGBModeFormat RGBModeValue = RGBModeFormat.YuvResolution640x480Fps15;
-        private RGBModeFormat RGBModeValue = RGBModeFormat.RgbResolution640x480Fps30;
+        private RGBModeFormat RGBModeValue = RGBModeFormat.YuvResolution640x480Fps15;
+        //private RGBModeFormat RGBModeValue = RGBModeFormat.RgbResolution640x480Fps30;
         private RangeModeFormat RangeModeValue = RangeModeFormat.Near;
         
         // For the color mapping
@@ -201,7 +201,6 @@ namespace ColorGlove
 
         }
 
-
         void display_all_depth(int display)
         {
             // with thresholding, uninteresting region will be white.
@@ -218,7 +217,6 @@ namespace ColorGlove
             }
 
         }
-
 
         void masked_depth(int display)
         {
@@ -366,9 +364,9 @@ namespace ColorGlove
                     if ((point.X >= 0 && point.X < 640) && (point.Y >= 0 && point.Y < 480))
                     {
                         int baseIndex = (point.Y * 640 + point.X) * 4;
-                        rgb[0] = _colorPixels[baseIndex + 2];
-                        rgb[1] = _colorPixels[baseIndex + 1];
-                        rgb[2] = _colorPixels[baseIndex];
+                        rgb[0] = (byte)((int)_colorPixels[baseIndex + 2]/10*10);
+                        rgb[1] = (byte)((int)_colorPixels[baseIndex + 1]/10*10);
+                        rgb[2] = (byte)((int)_colorPixels[baseIndex]/10*10);
 
                         nearest_color(rgb);
                         
@@ -384,39 +382,17 @@ namespace ColorGlove
         void nearest_color(byte[] point)
         {
             // In place rewriting of the array
-            if (nearest_cache.ContainsKey(point))
+            //if (nearest_cache.ContainsKey(point))
+            Tuple<byte, byte, byte> t = new Tuple<byte, byte, byte>(point[0], point[1], point[2]);
+            if (nearest_cache.ContainsKey(t))
             {
-                point[0] = nearest_cache[point][0];
-                point[1] = nearest_cache[point][1];
-                point[2] = nearest_cache[point][2];
+                //Console.WriteLine("Actually matching.");
+                point[0] = nearest_cache[t][0];
+                point[1] = nearest_cache[t][1];
+                point[2] = nearest_cache[t][2];
                 return;
             }
-            // Glove colors
-            /*
-            byte[,] colors = new byte[,] {
-                {30, 30, 30},    // Black
-                {90, 30, 60},    // Pink
-                {20, 50, 20},    // Green
-                {100, 110, 110},    // Blue... what...
-                {130, 70, 90},      // Yellow
-                {160, 90, 70}       // Orange
-            };
-
-
-            byte[,] replacement = new byte[,] { 
-            { 0, 0, 0 },
-            { 139, 10, 80 },                // Pink
-            { 0, 255, 0 }, 
-            { 0, 0, 255 },
-            { 255, 255, 0 },                // Yellow
-            { 205, 102, 0 }                 // Orange
-            };
-            */
-
-            // Paper block colors
             
-            //double [] distances = new double [colors.GetLength(0)];
-
             //int minIdx = 0;
             double minDistance = 1000000;
             int minColor = -1;
@@ -430,6 +406,14 @@ namespace ColorGlove
                     minDistance = distance;
                 }
             }
+
+            
+            nearest_cache.Add(new Tuple<byte,byte,byte>(point[0], point[1], point[2]), 
+                new byte[] {replacement[minColor, 0],
+                            replacement[minColor, 1], 
+                            replacement[minColor, 2]});
+            
+            //Console.WriteLine(nearest_cache.Count());
 
             point[0] = replacement[minColor, 0];
             point[1] = replacement[minColor, 1];
