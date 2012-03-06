@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="MainWindow" Height="600" Width="1380">
     <Grid>
-        <Image Height="480" HorizontalAlignment="Left" Margin="40" Name="image1" Stretch="Fill" VerticalAlignment="Top" Width="640" MouseLeftButtonUp="image1_click" />
-        <Image Height="480" HorizontalAlignment="Left" Margin="686,40,0,0" Name="image2" Stretch="Fill" VerticalAlignment="Top" Width="640" MouseLeftButtonUp="image2_click" />
+        <Image Height="480" HorizontalAlignment="Left" Margin="40" Name="image1" Stretch="Fill" VerticalAlignment="Top" Width="640" />
+        <Image Height="480" HorizontalAlignment="Left" Margin="686,40,0,0" Name="image2" Stretch="Fill" VerticalAlignment="Top" Width="640" />
     </Grid>
 </Window>
