@@ -78,8 +78,13 @@ namespace ColorGlove
 
             #region Processor configurations
 
-            processors[0].updatePipeline(Processor.Step.Color);
-            processors[1].updatePipeline(Processor.Step.Crop);
+            processors[0].updatePipeline(Processor.Step.Crop,
+                                         Processor.Step.PaintWhite,
+                                         Processor.Step.MappedDepth);
+
+            processors[1].updatePipeline(Processor.Step.Crop,
+                                         Processor.Step.PaintWhite, 
+                                         Processor.Step.ColorMatch);
             //processors[1].updatePipeline(Processor.Step.ColorMatch);
             //processors[2].updatePipeline(Processor.Step.ColorMatch);
             
@@ -137,7 +142,7 @@ namespace ColorGlove
         private WriteableBitmap bitmap;
         private byte[] bitmapBits;
         private Image image;
-
+        private int lower = 400, upper = 2000;
         public enum Step {PaintWhite, Color, Depth, Crop, MappedDepth, ColorMatch};
         
         private Step [] pipeline = new Step[0];
@@ -145,18 +150,18 @@ namespace ColorGlove
 
         byte[,] colors = new byte[,] {
             {240, 235, 240},
-            {200, 170, 170},
-            {255,0,0},
+            {230, 200, 240},
+            {170,130,130},
             {0,255,0},
             {0,0,255}
         };
 
         byte[,] replacement = new byte[,] {
             {255,0,0},
-            {0,0,0},
-            {0,0,0},
-            {0,0,0},
-            {0,0,0}
+            {0,255,255},
+            {255,255,255},
+            {255,255,255},
+            {255,255,255}
         };
         /*
         byte[,] colors = new byte[,] {
@@ -180,6 +185,7 @@ namespace ColorGlove
             image = new Image();
             image.Width = 640;
             image.Height = 480;
+
 
             this.bitmap = new WriteableBitmap(640, 480, 96, 96, PixelFormats.Bgr32, null);
             this.bitmapBits = new byte[640 * 480 * 4];
@@ -231,11 +237,10 @@ namespace ColorGlove
 
         private void crop_image(short[] depth, byte[] rgb)
         {
-            return; 
-            int x_0 = 220, x_1 = 410, y_0 = 93, y_1 = 362;
-            byte[] bitmapBits = new byte[(x_1 - x_0) * (y_1 - y_0) * 4];
-            this.bitmap = new WriteableBitmap((x_1 - x_0), (y_1 - y_0), 96, 96, PixelFormats.Bgr32, null);
-            image.Source = bitmap;
+            int x_0 = 220, x_1 = 410, y_0 = 150, y_1 = 362;
+            //byte[] bitmapBits = new byte[(x_1 - x_0) * (y_1 - y_0) * 4];
+            //this.bitmap = new WriteableBitmap((x_1 - x_0), (y_1 - y_0), 96, 96, PixelFormats.Bgr32, null);
+            //image.Source = bitmap;
             
 
             for (int i = 0; i < depth.Length; i++)
@@ -248,16 +253,29 @@ namespace ColorGlove
 
 
                 if (x >= x_0 && x < x_1 && y >= y_0 && y < y_1)
-                    bitmapBits[4 * ((y - y_1) * (x_1 - x_0) + (x - x_0))] =
-                    bitmapBits[4 * ((y - y_1) * (x_1 - x_0) + (x - x_0)) + 1] =
-                    bitmapBits[4 * ((y - y_1) * (x_1 - x_0) + (x - x_0)) + 2] =
-                    bitmapBits[4 * ((y - y_1) * (x_1 - x_0) + (x - x_0)) + 3] = (byte)(255 * (max - depth[i]) / max);
+                {
+                    bitmapBits[4 * i] = rgb[4 * i];
+                    bitmapBits[4 * i + 1] = rgb[4 * i + 1];
+                    bitmapBits[4 * i + 2] = rgb[4 * i + 2];
+                    bitmapBits[4 * i + 3] = rgb[4 * i + 3];
+                }
+                else
+                {
+                    bitmapBits[4 * i] =
+                    bitmapBits[4 * i + 1] =
+                    bitmapBits[4 * i + 2] =
+                    bitmapBits[4 * i + 3] = 0;
+                }
+                    //bitmapBits[4 * ((y - y_1) * (x_1 - x_0) + (x - x_0))] =
+                    //bitmapBits[4 * ((y - y_1) * (x_1 - x_0) + (x - x_0)) + 1] =
+                    //bitmapBits[4 * ((y - y_1) * (x_1 - x_0) + (x - x_0)) + 2] =
+                    //bitmapBits[4 * ((y - y_1) * (x_1 - x_0) + (x - x_0)) + 3] = (byte)(255 * (max - depth[i]) / max);
             }
         }
 
         private void paint_white(short[] depth, byte[] rgb)
         {
-            for (int i = 0; i < rgb.Length; i++) bitmapBits[i] = 255;
+            for (int i = 0; i < rgb.Length; i++) if (bitmapBits[i] != 0) bitmapBits[i] = 255;
         }
 
         private void show_mapped_depth(short[] depth, byte[] rgb)
@@ -267,12 +285,13 @@ namespace ColorGlove
             for (int i = 0; i < depth.Length; i++)
             {
                 int depthVal = depth[i] >> DepthImageFrame.PlayerIndexBitmaskWidth;
-                if ((depthVal <= 1500) && (depthVal > 400))
+                if ((depthVal <= upper) && (depthVal > lower))
                 {
                     ColorImagePoint point = mapped[i];
-                    if ((point.X >= 0 && point.X < 640) && (point.Y >= 0 && point.Y < 480))
+
+                    int baseIndex = (point.Y * 640 + point.X) * 4;
+                    if ((point.X >= 0 && point.X < 640) && (point.Y >= 0 && point.Y < 480) && bitmapBits[baseIndex] != 0)
                     {
-                        int baseIndex = (point.Y * 640 + point.X) * 4;
                         bitmapBits[baseIndex] = rgb[baseIndex];
                         bitmapBits[baseIndex + 1] = rgb[baseIndex + 1];
                         bitmapBits[baseIndex + 2] = rgb[baseIndex + 2];
@@ -284,19 +303,19 @@ namespace ColorGlove
         private void show_color_match(short[] depth, byte[] rgb)
         {
             byte[] rgb_tmp = new byte[3];
-            for (int i = 0; i < bitmapBits.Length; i++) bitmapBits[i] = 255;
-
+            
             ColorImagePoint[] mapped = new ColorImagePoint[depth.Length];
             sensor.MapDepthFrameToColorFrame(DepthImageFormat.Resolution640x480Fps30, depth, ColorImageFormat.RgbResolution640x480Fps30, mapped);
             for (int i = 0; i < depth.Length; i++)
             {
                 int depthVal = depth[i] >> DepthImageFrame.PlayerIndexBitmaskWidth;
-                if ((depthVal <= 1500) && (depthVal > 400))
+                if ((depthVal <= upper) && (depthVal > lower))
                 {
                     ColorImagePoint point = mapped[i];
-                    if ((point.X >= 0 && point.X < 640) && (point.Y >= 0 && point.Y < 480))
+                    int baseIndex = (point.Y * 640 + point.X) * 4;
+
+                    if ((point.X >= 0 && point.X < 640) && (point.Y >= 0 && point.Y < 480) && bitmapBits[baseIndex] != 0)
                     {
-                        int baseIndex = (point.Y * 640 + point.X) * 4;
                         rgb_tmp[0] = (byte)((int)rgb[baseIndex + 2] / 10 * 10);
                         rgb_tmp[1] = (byte)((int)rgb[baseIndex + 1] / 10 * 10);
                         rgb_tmp[2] = (byte)((int)rgb[baseIndex] / 10 * 10);
