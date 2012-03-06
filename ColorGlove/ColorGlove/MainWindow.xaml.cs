@@ -37,11 +37,10 @@ namespace ColorGlove
         
         private RangeModeFormat RangeModeValue = RangeModeFormat.Near;
         
-
         public MainWindow()
         {
             InitializeComponent();
-            Manager m = new Manager(this, 2);
+            Manager m = new Manager(this);
             m.start();
         }
     }
@@ -55,7 +54,7 @@ namespace ColorGlove
         private Processor [] processors;
         Thread poller;
 
-        public Manager(MainWindow parent, int numberOfProcessors = 1)
+        public Manager(MainWindow parent)
         {
             // Initialize Kinect
             KinectSensor.KinectSensors.StatusChanged += (object sender, StatusChangedEventArgs e) =>
@@ -68,13 +67,18 @@ namespace ColorGlove
                 if (sensor.Status == KinectStatus.Connected) setSensor(sensor);
         
             // Create and arrange Images
-            processors = new Processor[numberOfProcessors];
-            for (int i = 0; i < numberOfProcessors; i++)
+            processors = new Processor[2];
+            for (int i = 0; i < 2; i++)
             {
                 processors[i] = new Processor();
                 Image image = processors[i].getImage();
                 parent.mainContainer.Children.Add(image);
             }
+
+            #region Processor configurations
+            processors[0].updateFunction("depth");
+            processors[1].updateFunction("rgb");
+            #endregion
 
             poller = new Thread(new ThreadStart(this.poll));
         }
@@ -133,6 +137,7 @@ namespace ColorGlove
         private WriteableBitmap bitmap;
         private byte[] bitmapBits;
         private Image image;
+        private string func = "depth";
 
         public Processor()
         {
@@ -147,11 +152,21 @@ namespace ColorGlove
 
         public Image getImage() { return image; }
 
+        public void updateFunction(string func)
+        {
+            this.func = func;
+        }
+
         public void update(short[] depth, byte[] rgb)
         {
-            for (int i = 0; i < depth.Length; i++)
+            if (func == "depth")
             {
-                bitmapBits[4 * i] = bitmapBits[4 * i + 1] = bitmapBits[4 * i + 2] = (byte)(255 * (short.MaxValue - depth[i]) / short.MaxValue);
+                for (int i = 0; i < depth.Length; i++)
+                {
+                    bitmapBits[4 * i] = bitmapBits[4 * i + 1] = bitmapBits[4 * i + 2] = (byte)(255 * (short.MaxValue - depth[i]) / short.MaxValue);
+                }
+            } else if (func == "rgb") {
+                bitmapBits = rgb;
             }
 
             bitmap.Dispatcher.Invoke(new Action(() =>
