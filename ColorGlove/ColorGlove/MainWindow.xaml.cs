@@ -18,7 +18,7 @@ using System.Drawing.Imaging;
 using Microsoft.Kinect;
 
 /*
- * Built off extremely useful code from: http://social.msdn.microsoft.com/Forums/en-US/kinectsdknuiapi/thread/c39bab30-a704-4de1-948d-307afd128dab
+ * Borrowed some code from: http://social.msdn.microsoft.com/Forums/en-US/kinectsdknuiapi/thread/c39bab30-a704-4de1-948d-307afd128dab
  */
 
 namespace ColorGlove
@@ -67,8 +67,9 @@ namespace ColorGlove
                 if (sensor.Status == KinectStatus.Connected) setSensor(sensor);
         
             // Create and arrange Images
-            processors = new Processor[2];
-            for (int i = 0; i < 2; i++)
+            int total_processors = 2;
+            processors = new Processor[total_processors];
+            for (int i = 0; i < total_processors; i++)
             {
                 processors[i] = new Processor(this.sensor);
                 Image image = processors[i].getImage();
@@ -76,8 +77,11 @@ namespace ColorGlove
             }
 
             #region Processor configurations
+
             processors[0].updatePipeline(Processor.Step.Color);
             processors[1].updatePipeline(Processor.Step.PaintWhite, Processor.Step.MappedDepth);
+            //processors[2].updatePipeline(Processor.Step.ColorMatch);
+            
             #endregion
 
             poller = new Thread(new ThreadStart(this.poll));
@@ -135,7 +139,7 @@ namespace ColorGlove
 
         public enum Step {PaintWhite, Color, Depth, Crop, MappedDepth, ColorMatch};
         
-        private Step [] pipeline;
+        private Step [] pipeline = new Step[0];
         private KinectSensor sensor;
 
         
