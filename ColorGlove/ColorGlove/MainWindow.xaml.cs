@@ -89,14 +89,35 @@ namespace ColorGlove
                 // Commented out for XBox Kinect
                 //if (RangeModeValue == RangeModeFormat.Near)
                 //    _sensor.DepthStream.Range = DepthRange.Near; // set near mode 
-                
-                _sensor.AllFramesReady += _sensor_AllFramesReady; // Register event
+
+
+                // Poll the next frame just to see if it works
+                //_sensor.AllFramesReady += _sensor_AllFramesReady; // Register event
                 _sensor.Start();
+
+                keep_polling();
             }
+
+        }
+
+        public void keep_polling() {
+             using (var frame = _sensor.ColorStream.OpenNextFrame(200))
+                {
+                    if (frame != null)
+                    {
+                        Console.WriteLine("At least we made it this far.");
+                        _colorPixels = new byte[frame.PixelDataLength];
+                        _bitmaps[0] = new WriteableBitmap(640, 480, 96, 96, PixelFormats.Bgr32, null);
+                        _bitmapBits[0] = new byte[640 * 480 * 4];
+                        frame.CopyPixelDataTo(_bitmapBits[0]);
+                        _bitmaps[0].WritePixels(new Int32Rect(0, 0, _bitmaps[0].PixelWidth, _bitmaps[0].PixelHeight), _bitmapBits[0], _bitmaps[0].PixelWidth * sizeof(int), 0);
+                        image1.Source = _bitmaps[0];
+                    }
+                }
         }
 
         public MainWindow()
-        {   
+        {
             InitializeComponent();
 
             KinectSensor.KinectSensors.StatusChanged += (object sender, StatusChangedEventArgs e) =>
