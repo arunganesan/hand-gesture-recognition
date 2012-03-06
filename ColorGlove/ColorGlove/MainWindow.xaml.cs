@@ -166,14 +166,14 @@ namespace ColorGlove
             //display_only_depth(0);
             //display_only_mapped(1);
             //rgb_on_mapped(0);
-            //color_mapped(0);
+            color_mapped(1);
             
             // Pipeline model
             //show_color(1);
             //display_all_depth(1);
+            //paint_white(_bitmapBits[1]);
             //masked_depth(1);
-            paint_white(_bitmapBits[1]);
-            show_near_mapped(_bitmapBits[1]);
+            //show_near_mapped(_bitmapBits[1]);
         }
 
         void show_color(int display)
