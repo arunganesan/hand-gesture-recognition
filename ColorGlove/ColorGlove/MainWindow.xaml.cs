@@ -41,7 +41,7 @@ namespace ColorGlove
         public MainWindow()
         {
             InitializeComponent();
-            Manager m = new Manager(this);
+            Manager m = new Manager(this, 2);
             m.start();
         }
     }
@@ -73,7 +73,7 @@ namespace ColorGlove
             {
                 processors[i] = new Processor();
                 Image image = processors[i].getImage();
-                parent.mainGrid.Children.Add(image);
+                parent.mainContainer.Children.Add(image);
             }
 
             poller = new Thread(new ThreadStart(this.poll));
@@ -119,7 +119,7 @@ namespace ColorGlove
 
                 // Start all processing simultaneously in separate threads
                 // XXX: For now, just send data to first processor
-                processors[0].update(depthPixels, colorPixels);
+                foreach (Processor p in processors) p.update(depthPixels, colorPixels);
 
                 // Don't continue until all threads complete
 
