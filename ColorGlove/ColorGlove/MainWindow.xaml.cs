@@ -76,8 +76,8 @@ namespace ColorGlove
             }
 
             #region Processor configurations
-            processors[0].updateFunction("rgb");
-            processors[1].updateFunction("mapped");
+            processors[0].updatePipeline(Processor.Step.Color);
+            processors[1].updatePipeline(Processor.Step.PaintWhite, Processor.Step.MappedDepth);
             #endregion
 
             poller = new Thread(new ThreadStart(this.poll));
@@ -132,8 +132,12 @@ namespace ColorGlove
         private WriteableBitmap bitmap;
         private byte[] bitmapBits;
         private Image image;
-        private string func = "depth";
+
+        public enum Step {PaintWhite, Color, Depth, Crop, MappedDepth, ColorMatch};
+        
+        private Step [] pipeline;
         private KinectSensor sensor;
+
         
         byte[,] colors = new byte[,] {
               {140, 140, 140},   // White  
@@ -163,74 +167,103 @@ namespace ColorGlove
 
         public Image getImage() { return image; }
 
-        public void updateFunction(string func)
+        public void updatePipeline(params Step[] steps)
         {
-            this.func = func;
+            pipeline = new Step[steps.Length];
+            for (int i = 0; i < steps.Length; i++) pipeline[i] = steps[i];
         }
+
+        private void process(Step step, short[] depth, byte[] rgb)
+        {
+            switch (step)
+            {
+                case Step.Depth: show_depth(depth, rgb);  break;
+                case Step.Color: show_color(depth, rgb); break;
+                case Step.Crop: crop_image(depth, rgb); break;
+                case Step.PaintWhite: paint_white(depth, rgb); break;
+                case Step.MappedDepth: show_mapped_depth(depth, rgb); break;
+                case Step.ColorMatch: show_color_match(depth, rgb); break;
+            }
+        }
+
+        #region Filter functions
+        private void show_depth(short[] depth, byte[] rgb)
+        {
+            for (int i = 0; i < depth.Length; i++)
+            {
+                bitmapBits[4 * i] = bitmapBits[4 * i + 1] = bitmapBits[4 * i + 2] = (byte)(255 * (short.MaxValue - depth[i]) / short.MaxValue);
+            }
+        }
+
+        private void show_color(short[] depth, byte[] rgb)
+        {
+            bitmapBits = rgb;
+        }
+
+        private void crop_image(short[] depth, byte[] rgb)
+        {
+        }
+
+        private void paint_white(short[] depth, byte[] rgb)
+        {
+            for (int i = 0; i < rgb.Length; i++) bitmapBits[i] = 255;
+        }
+
+        private void show_mapped_depth(short[] depth, byte[] rgb)
+        {
+            ColorImagePoint[] mapped = new ColorImagePoint[depth.Length];
+            sensor.MapDepthFrameToColorFrame(DepthImageFormat.Resolution640x480Fps30, depth, ColorImageFormat.RgbResolution640x480Fps30, mapped);
+            for (int i = 0; i < depth.Length; i++)
+            {
+                int depthVal = depth[i] >> DepthImageFrame.PlayerIndexBitmaskWidth;
+                if ((depthVal <= 1500) && (depthVal > 400))
+                {
+                    ColorImagePoint point = mapped[i];
+                    if ((point.X >= 0 && point.X < 640) && (point.Y >= 0 && point.Y < 480))
+                    {
+                        int baseIndex = (point.Y * 640 + point.X) * 4;
+                        bitmapBits[baseIndex] = rgb[baseIndex];
+                        bitmapBits[baseIndex + 1] = rgb[baseIndex + 1];
+                        bitmapBits[baseIndex + 2] = rgb[baseIndex + 2];
+                    }
+                }
+            }
+        }
+
+        private void show_color_match(short[] depth, byte[] rgb)
+        {
+            byte[] rgb_tmp = new byte[3];
+            for (int i = 0; i < bitmapBits.Length; i++) bitmapBits[i] = 255;
+
+            ColorImagePoint[] mapped = new ColorImagePoint[depth.Length];
+            sensor.MapDepthFrameToColorFrame(DepthImageFormat.Resolution640x480Fps30, depth, ColorImageFormat.RgbResolution640x480Fps30, mapped);
+            for (int i = 0; i < depth.Length; i++)
+            {
+                int depthVal = depth[i] >> DepthImageFrame.PlayerIndexBitmaskWidth;
+                if ((depthVal <= 1500) && (depthVal > 400))
+                {
+                    ColorImagePoint point = mapped[i];
+                    if ((point.X >= 0 && point.X < 640) && (point.Y >= 0 && point.Y < 480))
+                    {
+                        int baseIndex = (point.Y * 640 + point.X) * 4;
+                        rgb_tmp[0] = (byte)((int)rgb[baseIndex + 2] / 10 * 10);
+                        rgb_tmp[1] = (byte)((int)rgb[baseIndex + 1] / 10 * 10);
+                        rgb_tmp[2] = (byte)((int)rgb[baseIndex] / 10 * 10);
+
+                        nearest_color(rgb_tmp);
+
+                        bitmapBits[baseIndex] = rgb_tmp[2];
+                        bitmapBits[baseIndex + 1] = rgb_tmp[1];
+                        bitmapBits[baseIndex + 2] = rgb_tmp[0];
+                    }
+                }
+            }
+        }
+        #endregion
 
         public void update(short[] depth, byte[] rgb)
         {
-            if (func == "depth")
-            {
-                for (int i = 0; i < depth.Length; i++)
-                {
-                    bitmapBits[4 * i] = bitmapBits[4 * i + 1] = bitmapBits[4 * i + 2] = (byte)(255 * (short.MaxValue - depth[i]) / short.MaxValue);
-                }
-            } else if (func == "rgb") {
-                bitmapBits = rgb;
-            }
-            else if (func == "mapped")
-            {
-                for (int i = 0; i < bitmapBits.Length; i++) bitmapBits[i] = 255;
-
-                ColorImagePoint[] mapped = new ColorImagePoint[depth.Length];
-                sensor.MapDepthFrameToColorFrame(DepthImageFormat.Resolution640x480Fps30, depth, ColorImageFormat.RgbResolution640x480Fps30, mapped);
-                for (int i = 0; i < depth.Length; i++)
-                {
-                    int depthVal = depth[i] >> DepthImageFrame.PlayerIndexBitmaskWidth;
-                    if ((depthVal <= 1500) && (depthVal > 400))
-                    {
-                        ColorImagePoint point = mapped[i];
-                        if ((point.X >= 0 && point.X < 640) && (point.Y >= 0 && point.Y < 480))
-                        {
-                            int baseIndex = (point.Y * 640 + point.X) * 4;
-                            bitmapBits[baseIndex] = rgb[baseIndex];
-                            bitmapBits[baseIndex + 1] = rgb[baseIndex + 1];
-                            bitmapBits[baseIndex + 2] = rgb[baseIndex + 2];
-                        }
-                    }
-                }
-            }
-            else if (func == "colormapped")
-            {
-
-                byte[] rgb_tmp = new byte[3];
-                for (int i = 0; i < bitmapBits.Length; i++) bitmapBits[i] = 255;
-
-                ColorImagePoint[] mapped = new ColorImagePoint[depth.Length];
-                sensor.MapDepthFrameToColorFrame(DepthImageFormat.Resolution640x480Fps30, depth, ColorImageFormat.RgbResolution640x480Fps30, mapped);
-                for (int i = 0; i < depth.Length; i++)
-                {
-                    int depthVal = depth[i] >> DepthImageFrame.PlayerIndexBitmaskWidth;
-                    if ((depthVal <= 1500) && (depthVal > 400))
-                    {
-                        ColorImagePoint point = mapped[i];
-                        if ((point.X >= 0 && point.X < 640) && (point.Y >= 0 && point.Y < 480))
-                        {
-                            int baseIndex = (point.Y * 640 + point.X) * 4;
-                            rgb_tmp[0] = (byte)((int)rgb[baseIndex + 2] / 10 * 10);
-                            rgb_tmp[1] = (byte)((int)rgb[baseIndex + 1] / 10 * 10);
-                            rgb_tmp[2] = (byte)((int)rgb[baseIndex] / 10 * 10);
-
-                            nearest_color(rgb_tmp);
-
-                            bitmapBits[baseIndex] = rgb_tmp[2];
-                            bitmapBits[baseIndex + 1] = rgb_tmp[1];
-                            bitmapBits[baseIndex + 2] = rgb_tmp[0];
-                        }
-                    }
-                }
-            }
+            foreach (Step step in pipeline) process(step, depth, rgb);
 
             bitmap.Dispatcher.Invoke(new Action(() =>
             {
