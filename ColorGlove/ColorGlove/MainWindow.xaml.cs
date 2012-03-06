@@ -49,8 +49,8 @@ namespace ColorGlove
             Near = 1,
         };
 
-        private RGBModeFormat RGBModeValue = RGBModeFormat.YuvResolution640x480Fps15;
-        //private RGBModeFormat RGBModeValue = RGBModeFormat.RgbResolution640x480Fps30;
+        //private RGBModeFormat RGBModeValue = RGBModeFormat.YuvResolution640x480Fps15;
+        private RGBModeFormat RGBModeValue = RGBModeFormat.RgbResolution640x480Fps30;
         private RangeModeFormat RangeModeValue = RangeModeFormat.Near;
         
         // For the color mapping
@@ -86,7 +86,7 @@ namespace ColorGlove
                 
                 _sensor.DepthStream.Enable(DepthImageFormat.Resolution640x480Fps30);
 
-                // Commented out for XBox Kinecst
+                // Commented out for XBox Kinect
                 //if (RangeModeValue == RangeModeFormat.Near)
                 //    _sensor.DepthStream.Range = DepthRange.Near; // set near mode 
                 
