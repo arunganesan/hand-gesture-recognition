@@ -11,6 +11,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Input;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using System.Threading;
 
 using System.Diagnostics;
 using System.Drawing.Imaging;
@@ -68,7 +69,7 @@ namespace ColorGlove
               {255, 0, 0}     // Red
             };
 
-        
+        Thread poller;
         #endregion
 
         #region Kinect setup functions
@@ -95,25 +96,36 @@ namespace ColorGlove
                 //_sensor.AllFramesReady += _sensor_AllFramesReady; // Register event
                 _sensor.Start();
 
-                keep_polling();
+
+                this._bitmaps[0] = new WriteableBitmap(640, 480, 96, 96, PixelFormats.Bgr32, null);
+                this._bitmapBits[0] = new byte[640 * 480 * 4];
+                image1.Source = _bitmaps[0];
+                poller = new Thread(new ThreadStart(this.keep_polling));
+                poller.Start();
             }
 
         }
 
         public void keep_polling() {
-             using (var frame = _sensor.ColorStream.OpenNextFrame(200))
+
+            while (true)
+            {
+                using (var frame = _sensor.ColorStream.OpenNextFrame(1000))
                 {
                     if (frame != null)
                     {
-                        Console.WriteLine("At least we made it this far.");
-                        _colorPixels = new byte[frame.PixelDataLength];
-                        _bitmaps[0] = new WriteableBitmap(640, 480, 96, 96, PixelFormats.Bgr32, null);
-                        _bitmapBits[0] = new byte[640 * 480 * 4];
                         frame.CopyPixelDataTo(_bitmapBits[0]);
-                        _bitmaps[0].WritePixels(new Int32Rect(0, 0, _bitmaps[0].PixelWidth, _bitmaps[0].PixelHeight), _bitmapBits[0], _bitmaps[0].PixelWidth * sizeof(int), 0);
-                        image1.Source = _bitmaps[0];
+                        _bitmaps[0].Dispatcher.Invoke(new Action(delegate()
+                        {
+                            _bitmaps[0].WritePixels(new Int32Rect(0, 0, _bitmaps[0].PixelWidth, _bitmaps[0].PixelHeight),
+                                _bitmapBits[0], _bitmaps[0].PixelWidth * sizeof(int), 0);
+                        }));
                     }
+
                 }
+
+                //System.Threading.Thread.Sleep(1000);
+            }
         }
 
         public MainWindow()
@@ -129,7 +141,6 @@ namespace ColorGlove
 
             foreach (var sensor in KinectSensor.KinectSensors)
                 if (sensor.Status == KinectStatus.Connected) SetSensor(sensor);
-
         }
 
 
