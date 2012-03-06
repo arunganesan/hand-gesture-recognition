@@ -79,7 +79,8 @@ namespace ColorGlove
             #region Processor configurations
 
             processors[0].updatePipeline(Processor.Step.Color);
-            processors[1].updatePipeline(Processor.Step.PaintWhite, Processor.Step.MappedDepth);
+            processors[1].updatePipeline(Processor.Step.Crop);
+            //processors[1].updatePipeline(Processor.Step.ColorMatch);
             //processors[2].updatePipeline(Processor.Step.ColorMatch);
             
             #endregion
@@ -142,7 +143,22 @@ namespace ColorGlove
         private Step [] pipeline = new Step[0];
         private KinectSensor sensor;
 
-        
+        byte[,] colors = new byte[,] {
+            {240, 235, 240},
+            {200, 170, 170},
+            {255,0,0},
+            {0,255,0},
+            {0,0,255}
+        };
+
+        byte[,] replacement = new byte[,] {
+            {255,0,0},
+            {0,0,0},
+            {0,0,0},
+            {0,0,0},
+            {0,0,0}
+        };
+        /*
         byte[,] colors = new byte[,] {
               {140, 140, 140},   // White  
               {30, 30, 85},      // Blue
@@ -156,6 +172,7 @@ namespace ColorGlove
               {0, 255, 0},      // Green
               {255, 0, 0}     // Red
             };
+        */
 
         public Processor(KinectSensor sensor)
         {
@@ -167,6 +184,14 @@ namespace ColorGlove
             this.bitmap = new WriteableBitmap(640, 480, 96, 96, PixelFormats.Bgr32, null);
             this.bitmapBits = new byte[640 * 480 * 4];
             image.Source = bitmap;
+
+            image.MouseLeftButtonUp += image_click;
+        }
+
+        private void image_click(object sender, MouseButtonEventArgs e) {
+            Point click_position = e.GetPosition(image);
+            int baseIndex = ((int)click_position.Y * 640 + (int)click_position.X) * 4;
+            Console.WriteLine("(x,y): (" + click_position.X + ", " + click_position.Y + ") RGB: (" + bitmapBits[baseIndex + 2] + ", " + bitmapBits[baseIndex + 1] + ", " + bitmapBits[baseIndex] + ")");
         }
 
         public Image getImage() { return image; }
@@ -206,6 +231,28 @@ namespace ColorGlove
 
         private void crop_image(short[] depth, byte[] rgb)
         {
+            return; 
+            int x_0 = 220, x_1 = 410, y_0 = 93, y_1 = 362;
+            byte[] bitmapBits = new byte[(x_1 - x_0) * (y_1 - y_0) * 4];
+            this.bitmap = new WriteableBitmap((x_1 - x_0), (y_1 - y_0), 96, 96, PixelFormats.Bgr32, null);
+            image.Source = bitmap;
+            
+
+            for (int i = 0; i < depth.Length; i++)
+            {
+                //Console.WriteLine(_depthPixels[i]);
+                int max = 32767;
+                
+                int y = i / 640;
+                int x = i % 640;
+
+
+                if (x >= x_0 && x < x_1 && y >= y_0 && y < y_1)
+                    bitmapBits[4 * ((y - y_1) * (x_1 - x_0) + (x - x_0))] =
+                    bitmapBits[4 * ((y - y_1) * (x_1 - x_0) + (x - x_0)) + 1] =
+                    bitmapBits[4 * ((y - y_1) * (x_1 - x_0) + (x - x_0)) + 2] =
+                    bitmapBits[4 * ((y - y_1) * (x_1 - x_0) + (x - x_0)) + 3] = (byte)(255 * (max - depth[i]) / max);
+            }
         }
 
         private void paint_white(short[] depth, byte[] rgb)
