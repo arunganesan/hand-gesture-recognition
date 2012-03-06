@@ -70,14 +70,14 @@ namespace ColorGlove
             processors = new Processor[2];
             for (int i = 0; i < 2; i++)
             {
-                processors[i] = new Processor();
+                processors[i] = new Processor(this.sensor);
                 Image image = processors[i].getImage();
                 parent.mainContainer.Children.Add(image);
             }
 
             #region Processor configurations
-            processors[0].updateFunction("depth");
-            processors[1].updateFunction("rgb");
+            processors[0].updateFunction("rgb");
+            processors[1].updateFunction("mapped");
             #endregion
 
             poller = new Thread(new ThreadStart(this.poll));
@@ -109,8 +109,6 @@ namespace ColorGlove
         }
 
 
-
-
         public void poll()
         {
             while (true)
@@ -124,23 +122,36 @@ namespace ColorGlove
                 // Start all processing simultaneously in separate threads
                 // XXX: For now, just send data to first processor
                 foreach (Processor p in processors) p.update(depthPixels, colorPixels);
-
-                // Don't continue until all threads complete
-
-                //System.Threading.Thread.Sleep(1000);
             }
         }
     }
 
     public class Processor
     {
+        private Dictionary<Tuple<byte, byte, byte>, byte[]> nearest_cache = new Dictionary<Tuple<byte, byte, byte>, byte[]>();
         private WriteableBitmap bitmap;
         private byte[] bitmapBits;
         private Image image;
         private string func = "depth";
+        private KinectSensor sensor;
+        
+        byte[,] colors = new byte[,] {
+              {140, 140, 140},   // White  
+              {30, 30, 85},      // Blue
+              {55, 90, 70},      // Green
+              {115, 30, 100}     // Pink
+            };
 
-        public Processor()
+        byte[,] replacement = new byte[,] {
+              {255, 255, 255},   // White  
+              {0, 0, 255},      // Blue
+              {0, 255, 0},      // Green
+              {255, 0, 0}     // Red
+            };
+
+        public Processor(KinectSensor sensor)
         {
+            this.sensor = sensor; 
             image = new Image();
             image.Width = 640;
             image.Height = 480;
@@ -168,6 +179,58 @@ namespace ColorGlove
             } else if (func == "rgb") {
                 bitmapBits = rgb;
             }
+            else if (func == "mapped")
+            {
+                for (int i = 0; i < bitmapBits.Length; i++) bitmapBits[i] = 255;
+
+                ColorImagePoint[] mapped = new ColorImagePoint[depth.Length];
+                sensor.MapDepthFrameToColorFrame(DepthImageFormat.Resolution640x480Fps30, depth, ColorImageFormat.RgbResolution640x480Fps30, mapped);
+                for (int i = 0; i < depth.Length; i++)
+                {
+                    int depthVal = depth[i] >> DepthImageFrame.PlayerIndexBitmaskWidth;
+                    if ((depthVal <= 1500) && (depthVal > 400))
+                    {
+                        ColorImagePoint point = mapped[i];
+                        if ((point.X >= 0 && point.X < 640) && (point.Y >= 0 && point.Y < 480))
+                        {
+                            int baseIndex = (point.Y * 640 + point.X) * 4;
+                            bitmapBits[baseIndex] = rgb[baseIndex];
+                            bitmapBits[baseIndex + 1] = rgb[baseIndex + 1];
+                            bitmapBits[baseIndex + 2] = rgb[baseIndex + 2];
+                        }
+                    }
+                }
+            }
+            else if (func == "colormapped")
+            {
+
+                byte[] rgb_tmp = new byte[3];
+                for (int i = 0; i < bitmapBits.Length; i++) bitmapBits[i] = 255;
+
+                ColorImagePoint[] mapped = new ColorImagePoint[depth.Length];
+                sensor.MapDepthFrameToColorFrame(DepthImageFormat.Resolution640x480Fps30, depth, ColorImageFormat.RgbResolution640x480Fps30, mapped);
+                for (int i = 0; i < depth.Length; i++)
+                {
+                    int depthVal = depth[i] >> DepthImageFrame.PlayerIndexBitmaskWidth;
+                    if ((depthVal <= 1500) && (depthVal > 400))
+                    {
+                        ColorImagePoint point = mapped[i];
+                        if ((point.X >= 0 && point.X < 640) && (point.Y >= 0 && point.Y < 480))
+                        {
+                            int baseIndex = (point.Y * 640 + point.X) * 4;
+                            rgb_tmp[0] = (byte)((int)rgb[baseIndex + 2] / 10 * 10);
+                            rgb_tmp[1] = (byte)((int)rgb[baseIndex + 1] / 10 * 10);
+                            rgb_tmp[2] = (byte)((int)rgb[baseIndex] / 10 * 10);
+
+                            nearest_color(rgb_tmp);
+
+                            bitmapBits[baseIndex] = rgb_tmp[2];
+                            bitmapBits[baseIndex + 1] = rgb_tmp[1];
+                            bitmapBits[baseIndex + 2] = rgb_tmp[0];
+                        }
+                    }
+                }
+            }
 
             bitmap.Dispatcher.Invoke(new Action(() =>
             {
@@ -175,5 +238,56 @@ namespace ColorGlove
                     bitmapBits, bitmap.PixelWidth * sizeof(int), 0);
             }));
         }
+
+        #region Color matching
+        void nearest_color(byte[] point)
+        {
+            // In place rewriting of the array
+            //if (nearest_cache.ContainsKey(point))
+            Tuple<byte, byte, byte> t = new Tuple<byte, byte, byte>(point[0], point[1], point[2]);
+            if (nearest_cache.ContainsKey(t))
+            {
+                //Console.WriteLine("Actually matching.");
+                point[0] = nearest_cache[t][0];
+                point[1] = nearest_cache[t][1];
+                point[2] = nearest_cache[t][2];
+                return;
+            }
+
+            //int minIdx = 0;
+            double minDistance = 1000000;
+            int minColor = -1;
+
+            for (int idx = 0; idx < colors.GetLength(0); idx++)
+            {
+                double distance = euc_distance(point, idx);
+                if (distance < minDistance)
+                {
+                    minColor = idx;
+                    minDistance = distance;
+                }
+            }
+
+
+            nearest_cache.Add(new Tuple<byte, byte, byte>(point[0], point[1], point[2]),
+                new byte[] {replacement[minColor, 0],
+                            replacement[minColor, 1], 
+                            replacement[minColor, 2]});
+
+            //Console.WriteLine(nearest_cache.Count());
+
+            point[0] = replacement[minColor, 0];
+            point[1] = replacement[minColor, 1];
+            point[2] = replacement[minColor, 2];
+        }
+
+        double euc_distance(byte[] point, int colorIdx)
+        {
+            return Math.Sqrt(Math.Pow(point[0] - colors[colorIdx, 0], 2) +
+                Math.Pow(point[1] - colors[colorIdx, 1], 2) +
+                Math.Pow(point[2] - colors[colorIdx, 2], 2));
+        }
+        #endregion
+
     }
 }
