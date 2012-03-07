@@ -248,19 +248,22 @@ namespace ColorGlove
         private Classifier classifier;
 
         byte[,] colors = new byte[,] {
-            {20,20,20},
-            {40,50,60},
-            //{150, 170, 230},
-            {65, 45, 50},
-            {170,130,130},
-            {20, 50, 100},
-            {220, 210, 230},
-            {78,63,53}
+            {145, 170, 220},
+            {170, 190, 250},
+            {80, 80, 80},
+            {250, 240, 240},
+            {210, 180, 150},
+            {110, 86, 244},
+            {75,58,151},
+            {153, 189, 206}
+            
         };
 
         byte[,] replacement = new byte[,] {
             {255,0,0},
             {255,0,0},
+            {255,255,255},
+            {255,255,255},
             {255,255,255},
             {255,255,255},
             {255,255,255},
@@ -342,8 +345,11 @@ namespace ColorGlove
                 for (int i = 0; i < depth.Length; i++)
                 {
                     ColorImagePoint depth_point = mapped[i];
-                    int idx = (depth_point.Y * 640 + depth_point.X);
-                    mapped_depth[idx] = depth[i] >> DepthImageFrame.PlayerIndexBitmaskWidth;
+                    if (depth_point.X >= 0 && depth_point.X < 640 && depth_point.Y >= 0 && depth_point.Y < 480)
+                    {
+                        int idx = (depth_point.Y * 640 + depth_point.X);
+                        mapped_depth[idx] = depth[i] >> DepthImageFrame.PlayerIndexBitmaskWidth;
+                    }
                     // Just overwrite with the latest value
                 }
 
