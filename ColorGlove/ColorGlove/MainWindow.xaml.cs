@@ -149,8 +149,8 @@ namespace ColorGlove
         private KinectSensor sensor;
 
         byte[,] colors = new byte[,] {
-            {240, 235, 240},
-            {230, 200, 240},
+            {20,20,20},
+            {65, 45, 50},
             {170,130,130},
             {0,255,0},
             {0,0,255}
@@ -158,7 +158,7 @@ namespace ColorGlove
 
         byte[,] replacement = new byte[,] {
             {255,0,0},
-            {0,255,255},
+            {255,255,255},
             {255,255,255},
             {255,255,255},
             {255,255,255}
@@ -237,7 +237,7 @@ namespace ColorGlove
 
         private void crop_image(short[] depth, byte[] rgb)
         {
-            int x_0 = 220, x_1 = 410, y_0 = 150, y_1 = 362;
+            int x_0 = 220, x_1 = 390, y_0 = 150, y_1 = 362;
             //byte[] bitmapBits = new byte[(x_1 - x_0) * (y_1 - y_0) * 4];
             //this.bitmap = new WriteableBitmap((x_1 - x_0), (y_1 - y_0), 96, 96, PixelFormats.Bgr32, null);
             //image.Source = bitmap;
