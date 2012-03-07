@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -39,8 +40,10 @@ namespace ColorGlove
 
         private void Window_KeyDown(object sender, KeyEventArgs e)
         {
-            if (e.Key == Key.Space) 
+            if (e.Key == Key.Space)
                 m.toggleProcessors();
+            else if (e.Key == Key.S)
+                m.saveImages();
         }
     }
 
@@ -77,11 +80,11 @@ namespace ColorGlove
 
             #region Processor configurations
 
-            processors[0].updatePipeline(Processor.Step.Crop,
+            processors[1].updatePipeline(Processor.Step.Crop,
                                          Processor.Step.PaintWhite,
                                          Processor.Step.MappedDepth);
 
-            processors[1].updatePipeline(Processor.Step.Crop,
+            processors[0].updatePipeline(Processor.Step.Crop,
                                          Processor.Step.PaintWhite, 
                                          Processor.Step.ColorMatch);
             //processors[1].updatePipeline(Processor.Step.ColorMatch);
@@ -123,6 +126,14 @@ namespace ColorGlove
             if (poller.ThreadState == System.Threading.ThreadState.Suspended) poller.Resume();
             else poller.Suspend();
             //else poller.Resume();
+        }
+
+        public void saveImages()
+        {
+            poller.Suspend();
+            //foreach (Processor p in processors) p.processAndSave();
+            processors[0].processAndSave();
+            poller.Resume();
         }
 
         public void poll()
@@ -181,7 +192,6 @@ namespace ColorGlove
             // The depth in mm!
             //(double)(depth[(int)(x.Y * width + x.X)] >> DepthImageFrame.PlayerIndexBitmaskWidth);
 
-
             double depth_in_mm = (double)(depth[x_linear] >> DepthImageFrame.PlayerIndexBitmaskWidth);
 
             Tuple<Vector, Vector> feature = features[idx];
@@ -238,16 +248,20 @@ namespace ColorGlove
         private Classifier classifier;
 
         byte[,] colors = new byte[,] {
-            //{20,20,20},
-            {150, 170, 230},
+            {20,20,20},
+            {40,50,60},
+            //{150, 170, 230},
             {65, 45, 50},
             {170,130,130},
+            {20, 50, 100},
             {220, 210, 230},
-            {0,0,255}
+            {78,63,53}
         };
 
         byte[,] replacement = new byte[,] {
             {255,0,0},
+            {255,0,0},
+            {255,255,255},
             {255,255,255},
             {255,255,255},
             {255,255,255},
@@ -295,6 +309,44 @@ namespace ColorGlove
             Console.Write("Features: [ ");
             foreach (double feature in features) Console.Write(feature + " ");
             Console.WriteLine("]");
+        }
+
+        public void processAndSave()
+        {
+            foreach (Step step in pipeline) process(step, depth, rgb);
+            bitmap.Dispatcher.Invoke(new Action(() =>
+                {
+                    bitmap.WritePixels(new Int32Rect(0, 0, bitmap.PixelWidth, bitmap.PixelHeight),
+                        bitmapBits, bitmap.PixelWidth * sizeof(int), 0);
+                }));
+            
+            
+            var directory = "training_samples";
+            TimeSpan t = (DateTime.UtcNow - new DateTime(1970, 1, 1));
+            string filename = t.TotalSeconds.ToString();
+
+            // rgb
+            using (StreamWriter filestream = new StreamWriter(directory + "\\" + filename + "_rgb.txt"))
+            {
+                filestream.Write(rgb[0]);
+                for (int i = 1; i < rgb.Length; i++) filestream.Write(" " + rgb[i]);
+            }
+
+            // depth
+
+            using (StreamWriter filestream = new StreamWriter(directory + "\\" + filename + "_depth.txt"))
+            {
+                filestream.Write(depth[0]);
+                for (int i = 1; i < depth.Length; i++) filestream.Write(" " + depth[i]);
+            }
+            
+
+            // processed
+            using (StreamWriter filestream = new StreamWriter(directory + "\\" + filename + "_processed.txt"))
+            {
+                filestream.Write(bitmapBits[0]);
+                for (int i = 1; i < bitmapBits.Length; i++) filestream.Write(" " + bitmapBits[i]);
+            }
         }
 
         public Image getImage() { return image; }
