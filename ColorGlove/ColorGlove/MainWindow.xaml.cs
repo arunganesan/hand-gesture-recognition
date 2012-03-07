@@ -29,19 +29,18 @@ namespace ColorGlove
     public partial class MainWindow : Window
     {
 
-        private enum RangeModeFormat
-        {
-            Defalut = 0, // If you're using Kinect Xbox you should use Default
-            Near = 1,
-        };
-        
-        private RangeModeFormat RangeModeValue = RangeModeFormat.Near;
-        
+        private Manager m;
         public MainWindow()
         {
             InitializeComponent();
-            Manager m = new Manager(this);
+            m = new Manager(this);
             m.start();
+        }
+
+        private void Window_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Space) 
+                m.toggleProcessors();
         }
     }
 
@@ -118,6 +117,13 @@ namespace ColorGlove
             poller.Start();
         }
 
+        public void toggleProcessors()
+        {
+
+            if (poller.ThreadState == System.Threading.ThreadState.Suspended) poller.Resume();
+            else poller.Suspend();
+            //else poller.Resume();
+        }
 
         public void poll()
         {
@@ -136,23 +142,90 @@ namespace ColorGlove
         }
     }
 
+    public class Classifier
+    {
+        Tuple<Vector, Vector>[] features;
+
+        // "If an offset pixel lies on the background or outside the 
+        // bounds of the image, the depth prove d_I(x') is given a large 
+        // positive constant value"
+        double outOfBounds = 10000;
+
+        int width = 640, height = 480;
+
+        public Classifier()
+        {
+            // Define features
+            features = new Tuple<Vector, Vector>[2] {
+                new Tuple<Vector, Vector>(new Vector(0,0), new Vector(0,-10)), 
+                new Tuple<Vector, Vector>(new Vector(10, 10), new Vector(-10, 10))
+            };
+        }
+
+        // Extract feature
+        public double extract_feature(short[] depth, int idx, Point x) 
+        {
+
+            Debug.Assert(idx <= features.Length, "Trying to access nonexistent feature.");
+            Tuple<Vector, Vector> feature = features[idx];
+            int x_linear = (int)(x.Y * this.width + x.X);
+            
+            Point x_u = x + feature.Item1 / depth[x_linear];
+            double x_u_depth;
+            if (x_u.X < 0 || x_u.X >= width || x_u.Y < 0 || x_u.Y >= height)
+                x_u_depth = outOfBounds;
+            else
+            {
+                int lin = (int)(x_u.Y * width + x_u.X);
+                x_u_depth = depth[lin];
+            }
+            
+
+            Point x_v = x + feature.Item2 / depth[x_linear];
+            double x_v_depth;
+            if (x_v.X < 0 || x_v.X >= width || x_v.Y < 0 || x_v.Y >= height)
+                x_v_depth = outOfBounds;
+            else
+            {
+                int lin = (int)(x_v.Y * width + x_v.X);
+                x_v_depth = depth[lin];
+            }
+
+            return x_u_depth - x_v_depth;
+
+        }
+    }
+
     public class Processor
     {
+        private enum RangeModeFormat
+        {
+            Default = 0, // If you're using Kinect Xbox you should use Default
+            Near = 1,
+        };
+
+        private RangeModeFormat RangeModeValue = RangeModeFormat.Near;
         private Dictionary<Tuple<byte, byte, byte>, byte[]> nearest_cache = new Dictionary<Tuple<byte, byte, byte>, byte[]>();
         private WriteableBitmap bitmap;
         private byte[] bitmapBits;
         private Image image;
         private int lower = 400, upper = 2000;
         public enum Step {PaintWhite, Color, Depth, Crop, MappedDepth, ColorMatch};
-        
+
+        private short[] depth;
+        private byte[] rgb;
+
         private Step [] pipeline = new Step[0];
         private KinectSensor sensor;
 
+        private Classifier classifier;
+
         byte[,] colors = new byte[,] {
-            {20,20,20},
+            //{20,20,20},
+            {150, 170, 230},
             {65, 45, 50},
             {170,130,130},
-            {0,255,0},
+            {220, 210, 230},
             {0,0,255}
         };
 
@@ -186,6 +259,7 @@ namespace ColorGlove
             image.Width = 640;
             image.Height = 480;
 
+            classifier = new Classifier();
 
             this.bitmap = new WriteableBitmap(640, 480, 96, 96, PixelFormats.Bgr32, null);
             this.bitmapBits = new byte[640 * 480 * 4];
@@ -198,6 +272,10 @@ namespace ColorGlove
             Point click_position = e.GetPosition(image);
             int baseIndex = ((int)click_position.Y * 640 + (int)click_position.X) * 4;
             Console.WriteLine("(x,y): (" + click_position.X + ", " + click_position.Y + ") RGB: (" + bitmapBits[baseIndex + 2] + ", " + bitmapBits[baseIndex + 1] + ", " + bitmapBits[baseIndex] + ")");
+
+            // Extract feature from this point:
+            double feature = classifier.extract_feature(depth, 1, click_position);
+            Console.WriteLine("Feature " + feature);
         }
 
         public Image getImage() { return image; }
@@ -214,7 +292,7 @@ namespace ColorGlove
             {
                 case Step.Depth: show_depth(depth, rgb);  break;
                 case Step.Color: show_color(depth, rgb); break;
-                case Step.Crop: crop_image(depth, rgb); break;
+                case Step.Crop: crop_color(depth, rgb); break;
                 case Step.PaintWhite: paint_white(depth, rgb); break;
                 case Step.MappedDepth: show_mapped_depth(depth, rgb); break;
                 case Step.ColorMatch: show_color_match(depth, rgb); break;
@@ -235,7 +313,7 @@ namespace ColorGlove
             bitmapBits = rgb;
         }
 
-        private void crop_image(short[] depth, byte[] rgb)
+        private void crop_color(short[] depth, byte[] rgb)
         {
             int x_0 = 220, x_1 = 390, y_0 = 150, y_1 = 362;
             //byte[] bitmapBits = new byte[(x_1 - x_0) * (y_1 - y_0) * 4];
@@ -333,6 +411,8 @@ namespace ColorGlove
 
         public void update(short[] depth, byte[] rgb)
         {
+            this.depth = depth;
+            this.rgb = rgb;
             foreach (Step step in pipeline) process(step, depth, rgb);
 
             bitmap.Dispatcher.Invoke(new Action(() =>
