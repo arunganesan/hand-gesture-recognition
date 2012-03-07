@@ -157,42 +157,59 @@ namespace ColorGlove
         {
             // Define features
             features = new Tuple<Vector, Vector>[2] {
-                new Tuple<Vector, Vector>(new Vector(0,0), new Vector(0,-10)), 
-                new Tuple<Vector, Vector>(new Vector(10, 10), new Vector(-10, 10))
+                new Tuple<Vector, Vector>(new Vector(0,0), new Vector(0,-1000)), 
+                new Tuple<Vector, Vector>(new Vector(1000, 1000), new Vector(-1000, 1000))
             };
         }
 
-        // Extract feature
+        public double [] extract_features(short[] depth, Point x)
+        {
+            double[] feature_vectors = new double[features.Length];
+            for (int i = 0; i < feature_vectors.Length; i++) feature_vectors[i] = extract_feature(depth, i, x);
+            return feature_vectors;
+
+        }
+
         public double extract_feature(short[] depth, int idx, Point x) 
         {
-
             Debug.Assert(idx <= features.Length, "Trying to access nonexistent feature.");
-            Tuple<Vector, Vector> feature = features[idx];
-            int x_linear = (int)(x.Y * this.width + x.X);
             
-            Point x_u = x + feature.Item1 / depth[x_linear];
+            //return (double)depth[(int)(x.Y * width + x.X)];
+            int x_linear = (int)(x.Y * width + x.X);
+            if (depth[x_linear] < 0) return -1;
+            
+            // The depth in mm!
+            //(double)(depth[(int)(x.Y * width + x.X)] >> DepthImageFrame.PlayerIndexBitmaskWidth);
+
+
+            double depth_in_mm = (double)(depth[x_linear] >> DepthImageFrame.PlayerIndexBitmaskWidth);
+
+            Tuple<Vector, Vector> feature = features[idx];
+            
+            Point x_u = x + feature.Item1 / depth_in_mm;
             double x_u_depth;
             if (x_u.X < 0 || x_u.X >= width || x_u.Y < 0 || x_u.Y >= height)
                 x_u_depth = outOfBounds;
             else
             {
                 int lin = (int)(x_u.Y * width + x_u.X);
-                x_u_depth = depth[lin];
+                x_u_depth = depth[lin] >> DepthImageFrame.PlayerIndexBitmaskWidth;
+                if (x_u_depth == -1) return -1;
             }
-            
 
-            Point x_v = x + feature.Item2 / depth[x_linear];
+
+            Point x_v = x + feature.Item2 / depth_in_mm;
             double x_v_depth;
             if (x_v.X < 0 || x_v.X >= width || x_v.Y < 0 || x_v.Y >= height)
                 x_v_depth = outOfBounds;
             else
             {
                 int lin = (int)(x_v.Y * width + x_v.X);
-                x_v_depth = depth[lin];
+                x_v_depth = depth[lin] >> DepthImageFrame.PlayerIndexBitmaskWidth;
+                if (x_v_depth == -1) return -1;
             }
 
             return x_u_depth - x_v_depth;
-
         }
     }
 
@@ -274,8 +291,10 @@ namespace ColorGlove
             Console.WriteLine("(x,y): (" + click_position.X + ", " + click_position.Y + ") RGB: (" + bitmapBits[baseIndex + 2] + ", " + bitmapBits[baseIndex + 1] + ", " + bitmapBits[baseIndex] + ")");
 
             // Extract feature from this point:
-            double feature = classifier.extract_feature(depth, 1, click_position);
-            Console.WriteLine("Feature " + feature);
+            double[] features = classifier.extract_features(depth, click_position);
+            Console.Write("Features: [ ");
+            foreach (double feature in features) Console.Write(feature + " ");
+            Console.WriteLine("]");
         }
 
         public Image getImage() { return image; }
