@@ -332,12 +332,23 @@ namespace ColorGlove
                 for (int i = 1; i < rgb.Length; i++) filestream.Write(" " + rgb[i]);
             }
 
-            // depth
+            //mapped depth
 
+            ColorImagePoint[] mapped = new ColorImagePoint[640 * 480];
+            sensor.MapDepthFrameToColorFrame(DepthImageFormat.Resolution640x480Fps30, depth, ColorImageFormat.RgbResolution640x480Fps30, mapped);
+            int[] mapped_depth = Enumerable.Repeat(-1, 640 * 480).ToArray() ;
             using (StreamWriter filestream = new StreamWriter(directory + "\\" + filename + "_depth.txt"))
             {
-                filestream.Write(depth[0]);
-                for (int i = 1; i < depth.Length; i++) filestream.Write(" " + depth[i]);
+                for (int i = 0; i < depth.Length; i++)
+                {
+                    ColorImagePoint depth_point = mapped[i];
+                    int idx = (depth_point.Y * 640 + depth_point.X);
+                    mapped_depth[idx] = depth[i] >> DepthImageFrame.PlayerIndexBitmaskWidth;
+                    // Just overwrite with the latest value
+                }
+
+                filestream.Write(mapped_depth[0]);
+                for (int i = 1; i < mapped_depth.Length; i++) filestream.Write(" " + mapped_depth[i]);
             }
             
 
