@@ -1,13 +1,7 @@
 <html>
    <head>
       <script src='http://code.jquery.com/jquery-1.7.1.min.js'></script>  
-      <script src='d3/d3.js'></script>  
-<<<<<<< HEAD
-      <script type="text/javascript">
-         xMax=screen.width;
-         yMax=screen.height;
-         scaleMax=10;
-=======
+      <script src='d3/d3.js'></script>        
       <script src='drawHands.js'></script>  
       <script type="text/javascript">
         effectiveWidth = screen.width- 50;
@@ -68,8 +62,8 @@
                }
             }
          }
-         )
->>>>>>> 23869e53fca8c44d2d568d2891c1219a510d4eb4
+         );
+
          function move()
          {
                var xPosition= Math.floor(Math.random()*xMax);
@@ -88,7 +82,7 @@
                scaleFactor= Math.floor(Math.random()*scaleMax) + 1;                                                             
                leftHandScale.attr("transform", "scale(" + scaleFactor +")");               
          }
-<<<<<<< HEAD
+
          function drawRightHand()
          {
             var handGroup= d3.select("#svgParent")
@@ -118,6 +112,7 @@
                 .attr("style", "fill:none;fill-opacity:0.75;fill-rule:evenodd;stroke:#000000;stroke-width:1.26577067px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1" );
                 */
          } 
+
          function drawLeftHand()
          {
          var handGroup= d3.select("#svgParent")
@@ -129,9 +124,7 @@
                 handGroup.append("svg:path")
                 .attr("d","M 30.158911,57.328433 C 19.202932,57.328433 8.8461083,57.328433 8.8461083,33.154759 C 8.8239883,11.28334 13.653137,15.499819 15.950285,17.292139 L 16.096857,13.517498 C 16.205365,10.723096 24.238263,10.891693 24.245975,13.095197 L 24.265632,9.634018 C 24.286436,5.9712631 33.579414,6.3412943 33.656393,8.771618 L 33.805956,13.493491 C 33.891549,10.831509 41.113281,9.825891 41.32842,15.004346 C 41.32842,23.062237 41.243736,31.736007 41.114891,34.305887 C 44.88101,37.759268 49.031843,20.903873 56.307299,23.997528 C 59.559856,26.803402 46.892004,46.588402 45.522507,48.674821 C 44.214951,50.66686 38.375896,57.328433 30.158911,57.328433 z")
                 .attr("style","fill:#ffffff;fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:2.51114988;stroke-linecap:butt;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" );
-                
-=======
-
+         }                
          function drawRect()
          {
             d3.select("#svgParent").append("svg:g")
@@ -171,26 +164,24 @@
                 + svgObject.property("__data__")["pivotY"] + ")" );
          }
          
-         function setPivotInRotate( svgObject, x, y)
+         function setPivotInRotate(svgObject, x, y)
          // This function sets the pivot point of an SVG element
          {
             svgObject.property("__data__")["pivotX"] = x;
             svgObject.property("__data__")["pivotY"] = y;
->>>>>>> 23869e53fca8c44d2d568d2891c1219a510d4eb4
          }
       </script>
    </head>
    <body>
-<<<<<<< HEAD
+<!--
       <h1>Nested SVG object</h1>
       <button onclick='move();'>Move</button>
       <button onclick='scale();'>Scale</button>
-=======
+-->
       <h1>Hands Using SVG</h1>
       <button onclick='move();'>Move</button>
       <button onclick='scale();'>Scale</button>
       <button onclick='webSocket.send("Hello, world!");'>Ask server</button>
->>>>>>> 23869e53fca8c44d2d568d2891c1219a510d4eb4
       <div id="MyDisplay" style="border: solid 2px; width: 200px; height: 50px;">
       </div>
       <div id="divCircle">
@@ -199,64 +190,19 @@
              </svg>
              -->
       </div>
-<<<<<<< HEAD
-      <script>   
-            d3.select("#divCircle").append("svg:svg")
-                .attr("width", screen.width)
-                .attr("height", screen.height)
-=======
       <script>               
             d3.select("#divCircle").append("svg:svg")
                 .attr("x", 100)
                 .attr("width", effectiveWidth)
                 .attr("height", effectiveHeight)
->>>>>>> 23869e53fca8c44d2d568d2891c1219a510d4eb4
                 .attr("id",  "svgParent");
             drawRightHand();
             drawLeftHand();
+            drawRect();
             rightHandScale=d3.select("#rightHandScale");
             leftHandScale=d3.select("#leftHandScale");
             rightHandTranslate=d3.select("#rightHandTranslate");
             leftHandTranslate=d3.select("#leftHandTranslate");
-<<<<<<< HEAD
       </script>
    </body>
 </html>
-=======
-            leftHandOutline = d3.select("#leftHandOutline");
-            rightHandOutline = d3.select("#rightHandOutline");
-            leftHandOutline.attr("fill", leftHandCloseState);
-            rightHandOutline.attr("fill", rightHandCloseState);
-            
-            // Draw a rectangle
-            drawRect();
-      </script>
-   </body>
-</html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
->>>>>>> 23869e53fca8c44d2d568d2891c1219a510d4eb4
