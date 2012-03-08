@@ -18,8 +18,7 @@ class Pixel:
     self.z = z
     self.label = label
 
-
-def load_sample(filename, label):
+def load_sample(filename, label, label_idx):
   # For each label, load up the file, sample 2000 pixels, and save their 
   # x,y,z location along with the label.
   
@@ -30,46 +29,48 @@ def load_sample(filename, label):
   depth_linear = [int(val) for val in depth_file.split(' ')]
   label_linear = [int(val) for val in label_file.split(' ')]
   
-  print 'Got depth map'
   depth = numpy.ndarray(shape=(640,480))
-  for idx, val in enumerate(depth_linear):
+  
+  
+  random_sampling = random.sample(range(640*480), 2000)
+  
+  for idx in random_sampling:
+  #for idx, val in enumerate(depth_linear):
+    val = depth_linear[idx]
     x = idx % 640
     y = int(idx/640)
-    depth[x,y] = float(val)
+    depth[x,y] = val
   
   # Now get the classification of each pixel
-  print 'Step 2'
   points = []
-  for y in range(480):
-    print y
-    for x in range(640):
-      # Get label
-      if label_file[(y*640 + x)*4] == 255: pixel_class = label
-      else: pixel_class = 'background'
+  
+  for idx in random_sampling:
+  #for y in range(480):
+  #  for x in range(640):
+  #    idx = y*640 + x
+      x = idx % 640
+      y = int(idx/640)
+      if label_linear[idx*4] == 255: pixel_class = label_idx
+      else: pixel_class = -1
       p = Pixel(x, y, depth[x,y], pixel_class)
       points.append(p)
   
-  print 'Done'
   return points
 
 if __name__ == '__main__':
   labels = os.listdir(samples_dir)
-  for label in labels:
-    print 'Processing ' + label
+  for label_idx, label in enumerate(labels):
+    print 'Processing %d - %s' % (label_idx, label)
     
     samples = glob.glob('%s/%s/*_processed.txt.gz' % (samples_dir, label))
     
     for sample in samples:
       print '\t%s' % sample
       m = re.match('(.*)_.*\.txt\.gz', os.path.basename(sample))
-      processed = load_sample(m.group(1), label)
-      print 'Done processed'
-      
+      processed = load_sample(m.group(1), label, label_idx)
       savefilename = processed_samples_dir + '/' + m.group(1) + '.obj.gz'
-      print 'Saving...'
       savefile = gzip.open(savefilename, 'w')
       
       cPickle.dump(processed, savefile)
-      print 'Saved.'
       savefile.close()
 
