@@ -22,8 +22,21 @@ class Pixel:
 def load_sample(filename, label):
   # For each label, load up the file, sample 2000 pixels, and save their 
   # x,y,z location along with the label.
-  sample_num = 2000
-  points = [Pixel(i,i,i,i) for i in range(2000)]
+  
+  # Open depth image, and assign label
+  depth_file = open('%s/%s/%s_depth.txt.gz' % (samples_dir, label, filename), 'r').readlines()[0]
+  label_file = open('%s/%s/%s_processed.txt.gz' % (samples_dir, label, filename), 'r').readlines()[0]
+  
+  depth = numpy.ndarray(shape=(640,480))
+  for i in range(len(depth_file.split(' '))):
+    x = i % 640
+    y = int(i/640)
+    depth[x,y] = float(depth_file.split(' ')[i])
+    
+
+  
+  sample_num = 2000  
+  points = [Pixel(i,i,i,i) for i in range(sample_num)]
   return random.sample(points, sample_num)
 
 if __name__ == '__main__':
