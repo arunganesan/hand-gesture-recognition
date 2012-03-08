@@ -2,26 +2,11 @@
 
 import numpy, os, glob, re, cPickle, random, gzip
 
-'''
-A random subset of 2000 example pixels from each image is chosen to ensure a 
-roughly even distribution across body parts
-'''
-
-
 processed_samples_dir = 'processed_samples'
 samples_dir = 'samples'
 
-class Pixel:
-  def __init__(self, x, y, z, label):
-    self.x = x
-    self.y = y
-    self.z = z
-    self.label = label
 
 def load_sample(filename, label, label_idx):
-  # For each label, load up the file, sample 2000 pixels, and save their 
-  # x,y,z location along with the label.
-  
   # Open depth image, and assign label
   depth_file = gzip.open('%s/%s/%s_depth.txt.gz' % (samples_dir, label, filename), 'r').readlines()[0]
   label_file = gzip.open('%s/%s/%s_processed.txt.gz' % (samples_dir, label, filename), 'r').readlines()[0]
@@ -29,33 +14,18 @@ def load_sample(filename, label, label_idx):
   depth_linear = [int(val) for val in depth_file.split(' ')]
   label_linear = [int(val) for val in label_file.split(' ')]
   
-  depth = numpy.ndarray(shape=(640,480))
+  save_format = numpy.ndarray(shape=(640,480, 2))
   
+  #random_sampling = random.sample(range(640*480), 2000)
   
-  random_sampling = random.sample(range(640*480), 2000)
-  
-  for idx in random_sampling:
-  #for idx, val in enumerate(depth_linear):
-    val = depth_linear[idx]
-    x = idx % 640
-    y = int(idx/640)
-    depth[x,y] = val
-  
-  # Now get the classification of each pixel
-  points = []
-  
-  for idx in random_sampling:
-  #for y in range(480):
-  #  for x in range(640):
-  #    idx = y*640 + x
-      x = idx % 640
-      y = int(idx/640)
+  for y in range(480):
+    for x in range(640):
+      idx = y*640 + x
       if label_linear[idx*4] == 255: pixel_class = label_idx
       else: pixel_class = -1
-      p = Pixel(x, y, depth[x,y], pixel_class)
-      points.append(p)
+      save_format[x,y,:] = [depth_linear[idx], pixel_class]
   
-  return points
+  return save_format
 
 if __name__ == '__main__':
   labels = os.listdir(samples_dir)
