@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 
-import numpy, gzip, random
+import numpy, gzip, random, cPickle, glob, os, re
 
 def make_features():
   max_offset = 1000
@@ -21,5 +21,24 @@ def make_features():
   
   return features
 
+def extract_features(features, image):
+  return features
+
 if __name__ == '__main__':
   features = make_features()
+  sf = gzip.open('features.obj', 'w')
+  cPickle.dump(features, sf)
+  sf.close()
+  
+  # Load pictures and calculate feature vectors
+  images = glob.glob('processed_samples/*.gz')
+  for image in images:
+    m = re.match('(.*)\.obj\.gz', os.path.basename(image))
+    filename = m.group(1)
+    
+    fv = extract_features(features, image)
+    fv_file = gzip.open('feature_vectors/%s.obj.gz' % filename, 'w')
+    cPickle.dump(fv, fv_file)
+    fv_file.close()
+    
+    exit(1)
