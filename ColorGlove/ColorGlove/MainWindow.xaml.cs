@@ -554,7 +554,7 @@ namespace ColorGlove
 
                         //nearest_color(rgb_tmp);
                         setLabel(rgb_tmp);
-
+                        // test
                         bitmapBits[baseIndex] = rgb_tmp[2];
                         bitmapBits[baseIndex + 1] = rgb_tmp[1];
                         bitmapBits[baseIndex + 2] = rgb_tmp[0];
