@@ -7,5 +7,5 @@ Kinect project. Hand gesture recognition. Data visualization. We would like to u
 
 ##Color labeling problem:
   There always seems to some noise the mapped depth image. Need understand why. Is depth image already unstable or is the problem of mapping.
-###Need to seperate the two: mapping of depth->image, and color labeling.
+  To evaluate the mapped labeling, need to seperate the two issues: mapping of depth->image, and color labeling.
    
