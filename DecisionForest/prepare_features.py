@@ -94,7 +94,7 @@ if __name__ == '__main__':
   # Load pictures and calculate feature vectors
   images = glob.glob('processed_samples/*.gz')
  
-  thread_count = 4
+  thread_count = 7
   chunk_size = int(math.ceil(float(len(images))/float(thread_count)))
   for chunk in chunks(images, chunk_size):
     print 'Starting thread'
