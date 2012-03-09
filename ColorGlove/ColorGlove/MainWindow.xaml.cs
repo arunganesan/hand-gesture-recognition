@@ -44,6 +44,11 @@ namespace ColorGlove
                 m.toggleProcessors();
             else if (e.Key == Key.S)
                 m.saveImages();
+            else if (e.Key == Key.Up)  // use up/down key to adjust range
+                m.increaseRange(); 
+            else if (e.Key == Key.Down)
+                m.decreaseRange();
+
         }
     }
 
@@ -52,7 +57,7 @@ namespace ColorGlove
     {
         private enum RangeModeFormat
         {
-            Default = 0, // If you're using Kinect Xbox you should use Default
+            Default = 0, // If you're using Kinect Xbox you should use Default in the KinectSetting region.
             Near = 1,
         };
         private RangeModeFormat RangeModeValue;
@@ -72,6 +77,10 @@ namespace ColorGlove
             RangeModeValue = RangeModeFormat.Near; // If it's kinect for Xbox, set to Default.
             DepthTimeout = 1000; // Timeout for the next fram in ms 
             ColorTimeout = 1000; // Timeout for the next fram in ms 
+            int lower = 100, upper = 1000; // thresholding parameters. Can be adjusted by Up/Down key.
+            #endregion
+
+            #region Create sensor
             KinectSensor.KinectSensors.StatusChanged += (object sender, StatusChangedEventArgs e) =>
             {
                 if (e.Sensor == sensor && e.Status != KinectStatus.Connected) setSensor(null);
@@ -82,33 +91,40 @@ namespace ColorGlove
                 if (sensor.Status == KinectStatus.Connected) setSensor(sensor);
             #endregion  
 
-            // Create and arrange Images
+            #region Create and arrange Images
             int total_processors = 2;
             processors = new Processor[total_processors];
             for (int i = 0; i < total_processors; i++)
             {
                 processors[i] = new Processor(this.sensor);
+                processors[i].lower = lower;
+                processors[i].upper = upper;
                 Image image = processors[i].getImage();
                 parent.mainContainer.Children.Add(image);
             }
+            #endregion
 
             #region Processor configurations
 
-
-            processors[1].updatePipeline(
-                                         Processor.Step.Color);
-                                          
-                                         //Processor.Step.MappedDepth);
-
-
             processors[0].updatePipeline(
+                // Show the rgb image
+                                         //Processor.Step.Color
+                // Show the depth image                                         
+                                        // Processor.Step.Depth    
+                                         
+                // Show the Color Labelling                                         
                                          Processor.Step.PaintWhite,
-                                         Processor.Step.ColorMatch);//, 
-                                         //Processor.Step.ColorMatch);
-
-            //processors[1].updatePipeline(Processor.Step.ColorMatch);
-            //processors[2].updatePipeline(Processor.Step.ColorMatch);
-            
+                                         Processor.Step.ColorMatch
+                                          
+           ); 
+                                        
+            processors[1].updatePipeline(
+                // Show the rgb image
+                                        Processor.Step.Color
+                // Show Mapped Depth Using RGB
+                                        //Processor.Step.PaintWhite,
+                                        //Processor.Step.MappedDepth                                        
+            );                            
             #endregion
 
             poller = new Thread(new ThreadStart(this.poll));
@@ -155,6 +171,18 @@ namespace ColorGlove
             poller.Resume();
         }
 
+        public void increaseRange()
+        {
+            processors[0].upper += 10;
+            processors[1].upper += 10;
+        }
+
+        public void decreaseRange()
+        {
+            processors[0].upper -= 10;
+            processors[1].upper -= 10;
+        }
+
         public void poll()
         {
             while (true)
@@ -172,6 +200,7 @@ namespace ColorGlove
         }
     }
 
+    #region classifer
     public class Classifier
     {
         Tuple<Vector, Vector>[] features;
@@ -241,15 +270,16 @@ namespace ColorGlove
             return x_u_depth - x_v_depth;
         }
     }
+    #endregion
 
     public class Processor
     {
         
-        private Dictionary<Tuple<byte, byte, byte>, byte[]> nearest_cache = new Dictionary<Tuple<byte, byte, byte>, byte[]>();
+        private Dictionary<Tuple<byte, byte, byte>, byte[]> nearest_cache = new Dictionary<Tuple<byte, byte, byte>, byte[]>(); // It seems not necessary to save the mapped result as byte[], byte should be enough.
         private WriteableBitmap bitmap;
         private byte[] bitmapBits;
         private Image image;
-        private int lower = 400, upper = 1000; // range for thresholding in show_mapped_depth()
+        public int lower, upper; // range for thresholding in show_mapped_depth(),  show_color_depth(). Set by the manager.
         public enum Step {
             PaintWhite, 
             Color, 
@@ -257,31 +287,55 @@ namespace ColorGlove
             Crop, 
             MappedDepth, 
             ColorMatch,
+            ColorLabelingInRGB,
         };
 
+        /*
+        public enum TestNewFeatureFormat { 
+            Default,
+            ShowHSLOrHSV,
+        };
+
+        public enum TestNewFeatureValue { 
+            
+        }
+        */
         private short[] depth;
         private byte[] rgb;
 
-        private float MinHueTarget, MaxHueTarget; // max/min hue value of the target color
+        private float MinHueTarget, MaxHueTarget, MinSatTarget, MaxSatTarget; // max/min hue value of the target color. Used for hue detection
 
-        private const float DesiredMinHue = 191.923f - .5f , DesiredMaxHue = 207.188f + .5f;
+        private const float DesiredMinHue = 198f - .5f , DesiredMaxHue = 214f + .5f,
+                                  DesiredMinSat =  0.174f, DesiredMaxSat = 0.397f; // Used for hue dection
 
         private Step [] pipeline = new Step[0];
         private KinectSensor sensor;
 
         private Classifier classifier;
-
         
         private readonly byte[] targetColor = new byte[] {255, 0, 0};
         private readonly byte[] backgroundColor = new byte[] { 255, 255, 255 };
-        
 
-        byte[,] colors = new byte[,] {
+        private List<byte[]> centroidColor = new List<byte[]> (); // the color of the centroid
+        private List<byte> centroidLabel = new List<byte> (); // the label of the centroid
+        private List<byte[]> labelColor = new List<byte[]> (); // the color of the label
+
+        //byte[,] centroidColor = new byte[,]  // centroids of the color used for labeling
+        /*
+        {
+                                  // start of target color
             {145, 170, 220},
             {170, 190, 250},
             {96,152,183},
             {180,211,230},
-            {156,196,221},
+            {156,196,221}, 
+            {80, 112, 144},
+            {68, 99, 133},
+            {76, 103, 141},
+            {122, 154, 173},
+            {120, 138, 162},
+                                 // end of target color
+                                 // start of background color
             {80, 80, 80},
             {250, 240, 240},
             {210, 180, 150},
@@ -290,14 +344,23 @@ namespace ColorGlove
             {153, 189, 206},
             {214, 207, 206},
             {122, 124, 130}
+                                // end of background color
         };
+        */
 
-        byte[,] replacement = new byte[,] {
+        byte[,] replacement = new byte[,]  // used for labeling
+        {
             {255,0,0},
             {255,0,0},
             {255,0,0},
             {255,0,0},
             {255,0,0},
+            {255,0,0},
+            {255,0,0},
+            {255,0,0},
+            {255,0,0},
+            {255,0,0},
+                                // end
             {255,255,255},
             {255,255,255},
             {255,255,255},
@@ -308,6 +371,7 @@ namespace ColorGlove
             {255,255,255},
             {255,255,255}
         };
+
         /*
         byte[,] colors = new byte[,] {
               {140, 140, 140},   // White  
@@ -333,6 +397,8 @@ namespace ColorGlove
             
             MinHueTarget = 360.0F;
             MaxHueTarget = 0.0F;
+            MinSatTarget = 1F;
+            MaxSatTarget = 0F;
             
             classifier = new Classifier();
 
@@ -342,6 +408,37 @@ namespace ColorGlove
 
             image.MouseLeftButtonUp += image_click;
 
+            #region Set Centroid Color and Label Color
+            
+            // First add label
+            labelColor.Add(new byte[] { 255, 0, 0 }); // 0 for target
+            labelColor.Add(new byte[] { 255, 255, 255 }); // 1 for background
+            
+            // Then add arbitrary labeled centroids.
+             // For target color (blue)
+            addCentroid(145, 170, 220, 0);
+            addCentroid(170, 190, 250,0);
+            addCentroid(96,152,183,0);
+            addCentroid(180,211,230,0);
+            addCentroid(156,196,221,0);
+            addCentroid(80, 112, 144,0);
+            addCentroid(68, 99, 133,0);
+            addCentroid(76, 103, 141,0);
+            addCentroid(122, 154, 173,0);
+            addCentroid(120, 138, 162, 0);
+            
+            // For background color 
+            addCentroid(80, 80, 80, 1);                
+            addCentroid(250, 240, 240, 1);                
+            addCentroid(210, 180, 150, 1);                
+            addCentroid(110, 86, 244, 1);                
+            addCentroid(75,58,151, 1);                
+            addCentroid(153, 189, 206, 1);                
+            addCentroid(214, 207, 206, 1);
+            addCentroid(122, 124, 130, 1);                
+            
+            #endregion
+
             /* For test*/
             /*
             Console.WriteLine("Distance between RGB(96, 152, 183) and RGB(156, 196, 221) is {0}", ColorDistance(new byte[] { 96, 152, 183 }, new byte[] { 156, 196, 221 }));
@@ -349,10 +446,18 @@ namespace ColorGlove
             */
         }
 
+        private void addCentroid(byte R, byte G, byte B, byte label)  // a helper function for adding labled centroid
+        {
+            centroidColor.Add(new byte[] { R, G, B });
+            centroidLabel.Add(label);
+        }
+
         private void image_click(object sender, MouseButtonEventArgs e) {
             Point click_position = e.GetPosition(image);
             int baseIndex = ((int)click_position.Y * 640 + (int)click_position.X) * 4;
-            Console.WriteLine("(x,y): (" + click_position.X + ", " + click_position.Y + ") RGB: (" + bitmapBits[baseIndex + 2] + ", " + bitmapBits[baseIndex + 1] + ", " + bitmapBits[baseIndex] + ")");
+            Console.WriteLine("(x,y): (" + click_position.X + ", " + click_position.Y + ") RGB: {" + bitmapBits[baseIndex + 2] + ", " + bitmapBits[baseIndex + 1] + ", " + bitmapBits[baseIndex] + "}");
+            
+            
             // Print HSL
             System.Drawing.Color color = System.Drawing.Color.FromArgb(bitmapBits[baseIndex + 2], bitmapBits[baseIndex + 1], bitmapBits[baseIndex]);
             float hue = color.GetHue();
@@ -361,7 +466,10 @@ namespace ColorGlove
             Console.WriteLine("HSL ({0:0.000}, {1:0.000}, {2:0.000})", hue, saturation, lightness);
             if (hue < MinHueTarget) MinHueTarget = hue;
             if (hue > MaxHueTarget) MaxHueTarget = hue;
-            Console.WriteLine("Target Hue (Min,Max), {0:0.000}, {1:0.000}", MinHueTarget, MaxHueTarget);
+            if (saturation < MinSatTarget) MinSatTarget = saturation;
+            if (saturation > MaxSatTarget) MaxSatTarget = saturation;
+
+            Console.WriteLine("Hue (Min,Max), {0:0.000}, {1:0.000}; Saturation (Min,Max), {2:0.000}, {3:0.000}", MinHueTarget, MaxHueTarget, MinSatTarget, MaxSatTarget);
 
             // Print distance to a reference point
             //    Console.WriteLine("Distance between RGB({0}, {1}, {2}) and RGB(90, 175, 221) is {3}", bitmapBits[baseIndex + 2], bitmapBits[baseIndex + 1], bitmapBits[baseIndex], ColorDistance(new byte[] { bitmapBits[baseIndex + 2], bitmapBits[baseIndex + 1], bitmapBits[baseIndex] }, new byte[] { 90, 175, 221 }));
@@ -446,6 +554,7 @@ namespace ColorGlove
                 case Step.PaintWhite: paint_white(depth, rgb); break;
                 case Step.MappedDepth: show_mapped_depth(depth, rgb); break;
                 case Step.ColorMatch: show_color_match(depth, rgb); break;
+                case Step.ColorLabelingInRGB: ColorLabellingInRGB(rgb); break;
             }
         }
 
@@ -551,10 +660,10 @@ namespace ColorGlove
                         rgb_tmp[0] = (byte)((int)rgb[baseIndex + 2] / 10 * 10); // Michael: why this?
                         rgb_tmp[1] = (byte)((int)rgb[baseIndex + 1] / 10 * 10);
                         rgb_tmp[2] = (byte)((int)rgb[baseIndex] / 10 * 10);
-
-                        //nearest_color(rgb_tmp);
-                        setLabel(rgb_tmp);
-                        // test
+                        
+                        nearest_color(rgb_tmp);
+                        //setLabel(rgb_tmp);
+                       
                         bitmapBits[baseIndex] = rgb_tmp[2];
                         bitmapBits[baseIndex + 1] = rgb_tmp[1];
                         bitmapBits[baseIndex + 2] = rgb_tmp[0];
@@ -562,6 +671,25 @@ namespace ColorGlove
                 }
             }
         }
+
+        private void ColorLabellingInRGB(byte[] bgr)
+        // Label the RGB image without involving depth image
+        {
+            byte[] rgb_tmp = new byte[3];
+            for (int i = 0; i < bgr.Length; i+=4) {
+                bitmapBits[i + 3] = 255;
+                rgb_tmp[0] =  bgr[i + 2] ;
+                rgb_tmp[1] = bgr[i + 1];
+                rgb_tmp[2] = bgr[i];
+
+                setLabel(rgb_tmp); // do the labeling
+                
+                bitmapBits[i] = rgb_tmp[2];
+                bitmapBits[i + 1] = rgb_tmp[1];
+                bitmapBits[i + 2] = rgb_tmp[0];
+            }
+        }
+
         #endregion
 
         public void update(short[] depth, byte[] rgb)
@@ -579,17 +707,23 @@ namespace ColorGlove
         }
 
         #region Color matching
+
         void setLabel(byte[] point)
         {
+            // Using HSV for color labeling
+            
             System.Drawing.Color color = System.Drawing.Color.FromArgb(point[0], point[1], point[2]);
             float hue = color.GetHue();
-            if (hue >= DesiredMinHue && hue <= DesiredMaxHue)
+            float sat = color.GetSaturation();
+            if (hue >= DesiredMinHue && hue <= DesiredMaxHue && sat >= DesiredMinSat && sat <= DesiredMaxSat)
             {
-                Array.Copy(targetColor, point, 3);                
+                //Array.Copy(targetColor, point, 3);                
             }
             else {
                 Array.Copy(backgroundColor, point, 3);                
             }
+            
+            
         }
 
         
@@ -609,42 +743,46 @@ namespace ColorGlove
 
             //int minIdx = 0;
             double minDistance = 1000000;
-            int minColor = -1;
+            int minColorLabel = -1;
 
-            for (int idx = 0; idx < colors.GetLength(0); idx++)
+            for (int idx = 0; idx < centroidColor.Count; idx++)
             {
                 //double distance = euc_distance(point, idx);
                 //double distance = ColorDistance(point, new Byte[]{colors[idx,0],colors[idx,1], colors[idx,2]}); // may be slow because of new
-                double distance = EuclideanDistance(point, new Byte[] { colors[idx, 0], colors[idx, 1], colors[idx, 2] }); // may be slow because of new
+                //double distance = EuclideanDistance(point, new Byte[] { centroidColor[idx, 0], centroidColor[idx, 1], centroidColor[idx, 2] }); // may be slow because of new
+                double distance = EuclideanDistance(point, centroidColor[idx] ); // may be slow because of new
                 if (distance < minDistance)
                 {
-                    minColor = idx;
+                    minColorLabel = centroidLabel[idx];
                     minDistance = distance;
                 }
             }
 
-
             nearest_cache.Add(new Tuple<byte, byte, byte>(point[0], point[1], point[2]),
-                new byte[] {replacement[minColor, 0],
-                            replacement[minColor, 1], 
-                            replacement[minColor, 2]});
+                new byte[] {labelColor[minColorLabel][0],
+                            labelColor[minColorLabel][1], 
+                            labelColor[minColorLabel][2]});
 
             //Console.WriteLine(nearest_cache.Count());
-
+            Array.Copy(labelColor[minColorLabel], point, 3);
+            /*
             point[0] = replacement[minColor, 0];
             point[1] = replacement[minColor, 1];
             point[2] = replacement[minColor, 2];
+             */
         }
 
-          
+        /*  
         double euc_distance(byte[] point, int colorIdx)
         {
-            return Math.Sqrt(Math.Pow(point[0] - colors[colorIdx, 0], 2) +
-                Math.Pow(point[1] - colors[colorIdx, 1], 2) +
-                Math.Pow(point[2] - colors[colorIdx, 2], 2));
+            return Math.Sqrt(Math.Pow(point[0] - centroidColor[colorIdx, 0], 2) +
+                Math.Pow(point[1] - centroidColor[colorIdx, 1], 2) +
+                Math.Pow(point[2] - centroidColor[colorIdx, 2], 2));
         }
+        */
 
         //double ColourDistance(byte[] point, int colorIdx)
+        
         double ColorDistance(byte[] point1, byte[] point2) // using human perception for the color metric
         {
 

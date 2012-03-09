@@ -52,14 +52,14 @@ namespace AlignRGBDepth
         };
 
         // Some settings: 
-        private BackgroundFormat BackgroundValue = BackgroundFormat.PureRGB; //PureDepth; //.PureRGB;
+        private BackgroundFormat BackgroundValue = BackgroundFormat.PureDepth; //PureDepth; //.PureRGB;
         //private BackgroundFormat BackgroundValue = BackgroundFormat.PureDepth;
         private ThresholdFormat ThresholdValue = ThresholdFormat.PureRGB; //.PureRGB; // MixedWhite
         private UnthresholdFormat UnthressholdValue = UnthresholdFormat.AllWhiteExceptMappedInThreshold; //AllWhite;
         //private UnthresholdFormat UnthressholdValue = UnthresholdFormat.Undefined;
         private RangeModeFormat RangeModeValue = RangeModeFormat.Near; //Default;
         //private FastModeFormat FastModeValue = FastModeFormat.AllocateArrayInAdvace;
-        private int rangeMin = 400, rangeMax = 4000;
+        private int rangeMin = 100, rangeMax = 4000;
         private short[] _usedcolorPixels = new short[640*480*4];
         private const int ColorPixelDataLength = 1228800;
         private const int DepthPixelDataLength = 307200;
