@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 
 import numpy, gzip, random, cPickle, glob, os, re
-import threading
+import threading, math
 
 def rint(minn, maxx): return random.randint(minn, maxx)
 
@@ -55,12 +55,15 @@ def extract_features(features, image_filename):
       
       
       u = (int(feature[0]/d), int(feature[1]/d))
-      if u[0] < 0 or u[0] >= width or u[1] < 0 or u[1] >= height: d_u = out_of_bounds
-      else: d_u = image[x + u[0], y + u[1], 0]
-        
+      (x_u, y_u) = (x + u[0], y + u[1])
+
+      if x_u < 0 or x_u >= width or y_u < 0 or y_u >= height: d_u = out_of_bounds
+      else: d_u = image[x_u, y_u, 0]
+      
       v = (int(feature[2]/d), int(feature[3]/d))
-      if v[0] < 0 or v[0] >= width or v[1] < 0 or v[1] >= height: d_v = out_of_bounds
-      else: d_v = image[x + v[0], y + v[1], 0]
+      (x_v, y_v) = (x + v[0], y + v[1])
+      if x_v < 0 or x_v >= width or y_v < 0 or y_v >= height: d_v = out_of_bounds
+      else: d_v = image[x_v, y_v, 0]
       
       image_features[s_idx, f_idx] = d_u - d_v
       
@@ -91,8 +94,9 @@ if __name__ == '__main__':
   # Load pictures and calculate feature vectors
   images = glob.glob('processed_samples/*.gz')
  
-  total_threads = 10
-  for chunk in chunks(images, total_threads):
+  thread_count = 1
+  chunk_size = int(math.ceil(float(len(images))/float(thread_count)))
+  for chunk in chunks(images, chunk_size):
     print 'Starting thread'
     t = threading.Thread(target=process_images, args=(chunk, features))
     t.start()
