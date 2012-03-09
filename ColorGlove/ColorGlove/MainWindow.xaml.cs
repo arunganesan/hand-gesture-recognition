@@ -50,15 +50,28 @@ namespace ColorGlove
 
     public class Manager
     {
+        private enum RangeModeFormat
+        {
+            Default = 0, // If you're using Kinect Xbox you should use Default
+            Near = 1,
+        };
+        private RangeModeFormat RangeModeValue;
         private KinectSensor sensor;
         private byte[] colorPixels;
         private short[] depthPixels;
         private Processor [] processors;
+        private int DepthTimeout;
+        private int ColorTimeout;
+
         Thread poller;
 
-        public Manager(MainWindow parent)
+        public Manager(MainWindow parent)  // Construct function
         {
-            // Initialize Kinect
+            // Initialize Kinect, set near mode here
+            #region KinectSetting
+            RangeModeValue = RangeModeFormat.Near; // If it's kinect for Xbox, set to Default.
+            DepthTimeout = 1000; // Timeout for the next fram in ms 
+            ColorTimeout = 1000; // Timeout for the next fram in ms 
             KinectSensor.KinectSensors.StatusChanged += (object sender, StatusChangedEventArgs e) =>
             {
                 if (e.Sensor == sensor && e.Status != KinectStatus.Connected) setSensor(null);
@@ -67,7 +80,8 @@ namespace ColorGlove
 
             foreach (var sensor in KinectSensor.KinectSensors)
                 if (sensor.Status == KinectStatus.Connected) setSensor(sensor);
-        
+            #endregion  
+
             // Create and arrange Images
             int total_processors = 2;
             processors = new Processor[total_processors];
@@ -80,13 +94,18 @@ namespace ColorGlove
 
             #region Processor configurations
 
-            processors[1].updatePipeline(Processor.Step.Crop,
-                                         Processor.Step.PaintWhite,
-                                         Processor.Step.MappedDepth);
 
-            processors[0].updatePipeline(Processor.Step.Crop,
-                                         Processor.Step.PaintWhite, 
-                                         Processor.Step.ColorMatch);
+            processors[1].updatePipeline(
+                                         Processor.Step.Color);
+                                          
+                                         //Processor.Step.MappedDepth);
+
+
+            processors[0].updatePipeline(
+                                         Processor.Step.PaintWhite,
+                                         Processor.Step.ColorMatch);//, 
+                                         //Processor.Step.ColorMatch);
+
             //processors[1].updatePipeline(Processor.Step.ColorMatch);
             //processors[2].updatePipeline(Processor.Step.ColorMatch);
             
@@ -105,9 +124,9 @@ namespace ColorGlove
                 sensor.ColorStream.Enable(ColorImageFormat.RgbResolution640x480Fps30);
                 sensor.DepthStream.Enable(DepthImageFormat.Resolution640x480Fps30);
 
-                // Commented out for XBox Kinect
-                //if (RangeModeValue == RangeModeFormat.Near)
-                //    _sensor.DepthStream.Range = DepthRange.Near; // set near mode 
+                // Can set this in the construct function {// Commented out for XBox Kinect}
+                if (RangeModeValue == RangeModeFormat.Near)
+                    sensor.DepthStream.Range = DepthRange.Near; // set near mode 
 
                 colorPixels = new byte[640 * 480 * 4];
                 depthPixels = new short[640 * 480];
@@ -123,7 +142,7 @@ namespace ColorGlove
         public void toggleProcessors()
         {
 
-            if (poller.ThreadState == System.Threading.ThreadState.Suspended) poller.Resume();
+            if (poller.ThreadState == System.Threading.ThreadState.Suspended) poller.Resume(); // Michael: Visual Studo said it's deprecated. Need to change?
             else poller.Suspend();
             //else poller.Resume();
         }
@@ -140,10 +159,10 @@ namespace ColorGlove
         {
             while (true)
             {
-                using (var frame = sensor.DepthStream.OpenNextFrame(1000))
+                using (var frame = sensor.DepthStream.OpenNextFrame(DepthTimeout))
                     if (frame != null) frame.CopyPixelDataTo(depthPixels);
 
-                using (var frame = sensor.ColorStream.OpenNextFrame(1000))
+                using (var frame = sensor.ColorStream.OpenNextFrame(ColorTimeout))
                     if (frame != null) frame.CopyPixelDataTo(colorPixels);
 
                 // Start all processing simultaneously in separate threads
@@ -225,43 +244,62 @@ namespace ColorGlove
 
     public class Processor
     {
-        private enum RangeModeFormat
-        {
-            Default = 0, // If you're using Kinect Xbox you should use Default
-            Near = 1,
-        };
-
-        private RangeModeFormat RangeModeValue = RangeModeFormat.Near;
+        
         private Dictionary<Tuple<byte, byte, byte>, byte[]> nearest_cache = new Dictionary<Tuple<byte, byte, byte>, byte[]>();
         private WriteableBitmap bitmap;
         private byte[] bitmapBits;
         private Image image;
-        private int lower = 400, upper = 2000;
-        public enum Step {PaintWhite, Color, Depth, Crop, MappedDepth, ColorMatch};
+        private int lower = 400, upper = 1000; // range for thresholding in show_mapped_depth()
+        public enum Step {
+            PaintWhite, 
+            Color, 
+            Depth, 
+            Crop, 
+            MappedDepth, 
+            ColorMatch,
+        };
 
         private short[] depth;
         private byte[] rgb;
+
+        private float MinHueTarget, MaxHueTarget; // max/min hue value of the target color
+
+        private const float DesiredMinHue = 191.923f - .5f , DesiredMaxHue = 207.188f + .5f;
 
         private Step [] pipeline = new Step[0];
         private KinectSensor sensor;
 
         private Classifier classifier;
 
+        
+        private readonly byte[] targetColor = new byte[] {255, 0, 0};
+        private readonly byte[] backgroundColor = new byte[] { 255, 255, 255 };
+        
+
         byte[,] colors = new byte[,] {
             {145, 170, 220},
             {170, 190, 250},
+            {96,152,183},
+            {180,211,230},
+            {156,196,221},
             {80, 80, 80},
             {250, 240, 240},
             {210, 180, 150},
             {110, 86, 244},
             {75,58,151},
-            {153, 189, 206}
-            
+            {153, 189, 206},
+            {214, 207, 206},
+            {122, 124, 130}
         };
 
         byte[,] replacement = new byte[,] {
             {255,0,0},
             {255,0,0},
+            {255,0,0},
+            {255,0,0},
+            {255,0,0},
+            {255,255,255},
+            {255,255,255},
             {255,255,255},
             {255,255,255},
             {255,255,255},
@@ -292,7 +330,10 @@ namespace ColorGlove
             image = new Image();
             image.Width = 640;
             image.Height = 480;
-
+            
+            MinHueTarget = 360.0F;
+            MaxHueTarget = 0.0F;
+            
             classifier = new Classifier();
 
             this.bitmap = new WriteableBitmap(640, 480, 96, 96, PixelFormats.Bgr32, null);
@@ -300,18 +341,39 @@ namespace ColorGlove
             image.Source = bitmap;
 
             image.MouseLeftButtonUp += image_click;
+
+            /* For test*/
+            /*
+            Console.WriteLine("Distance between RGB(96, 152, 183) and RGB(156, 196, 221) is {0}", ColorDistance(new byte[] { 96, 152, 183 }, new byte[] { 156, 196, 221 }));
+            Console.WriteLine("Distance between RGB(170, 190, 250) and RGB(80, 80, 80) is {0}", ColorDistance(new byte[] { 170, 190, 250 }, new byte[] { 80, 80, 80 }));
+            */
         }
 
         private void image_click(object sender, MouseButtonEventArgs e) {
             Point click_position = e.GetPosition(image);
             int baseIndex = ((int)click_position.Y * 640 + (int)click_position.X) * 4;
             Console.WriteLine("(x,y): (" + click_position.X + ", " + click_position.Y + ") RGB: (" + bitmapBits[baseIndex + 2] + ", " + bitmapBits[baseIndex + 1] + ", " + bitmapBits[baseIndex] + ")");
+            // Print HSL
+            System.Drawing.Color color = System.Drawing.Color.FromArgb(bitmapBits[baseIndex + 2], bitmapBits[baseIndex + 1], bitmapBits[baseIndex]);
+            float hue = color.GetHue();
+            float saturation = color.GetSaturation();
+            float lightness = color.GetBrightness();
+            Console.WriteLine("HSL ({0:0.000}, {1:0.000}, {2:0.000})", hue, saturation, lightness);
+            if (hue < MinHueTarget) MinHueTarget = hue;
+            if (hue > MaxHueTarget) MaxHueTarget = hue;
+            Console.WriteLine("Target Hue (Min,Max), {0:0.000}, {1:0.000}", MinHueTarget, MaxHueTarget);
+
+            // Print distance to a reference point
+            //    Console.WriteLine("Distance between RGB({0}, {1}, {2}) and RGB(90, 175, 221) is {3}", bitmapBits[baseIndex + 2], bitmapBits[baseIndex + 1], bitmapBits[baseIndex], ColorDistance(new byte[] { bitmapBits[baseIndex + 2], bitmapBits[baseIndex + 1], bitmapBits[baseIndex] }, new byte[] { 90, 175, 221 }));
+
 
             // Extract feature from this point:
+            /*
             double[] features = classifier.extract_features(depth, click_position);
             Console.Write("Features: [ ");
             foreach (double feature in features) Console.Write(feature + " ");
             Console.WriteLine("]");
+             */
         }
 
         public void processAndSave()
@@ -440,8 +502,11 @@ namespace ColorGlove
         }
 
         private void paint_white(short[] depth, byte[] rgb)
+        // make everything white except for something
         {
-            for (int i = 0; i < rgb.Length; i++) if (bitmapBits[i] != 0) bitmapBits[i] = 255;
+            //for (int i = 0; i < rgb.Length; i++) if (bitmapBits[i] != 0) bitmapBits[i] = 255; // Michael: why "if (bitmapBits[i] != 0)"
+            for (int i = 0; i < rgb.Length; i++) bitmapBits[i] = 255;
+            //Array.Clear(bitmapBits, 0, bitmapBits.Length);
         }
 
         private void show_mapped_depth(short[] depth, byte[] rgb)
@@ -467,6 +532,7 @@ namespace ColorGlove
         }
 
         private void show_color_match(short[] depth, byte[] rgb)
+        // Mainly for labelling.  Matches the rgb to the nearest color. The set of colors are in listed in the array "colors"
         {
             byte[] rgb_tmp = new byte[3];
             
@@ -482,11 +548,12 @@ namespace ColorGlove
 
                     if ((point.X >= 0 && point.X < 640) && (point.Y >= 0 && point.Y < 480) && bitmapBits[baseIndex] != 0)
                     {
-                        rgb_tmp[0] = (byte)((int)rgb[baseIndex + 2] / 10 * 10);
+                        rgb_tmp[0] = (byte)((int)rgb[baseIndex + 2] / 10 * 10); // Michael: why this?
                         rgb_tmp[1] = (byte)((int)rgb[baseIndex + 1] / 10 * 10);
                         rgb_tmp[2] = (byte)((int)rgb[baseIndex] / 10 * 10);
 
-                        nearest_color(rgb_tmp);
+                        //nearest_color(rgb_tmp);
+                        setLabel(rgb_tmp);
 
                         bitmapBits[baseIndex] = rgb_tmp[2];
                         bitmapBits[baseIndex + 1] = rgb_tmp[1];
@@ -501,6 +568,7 @@ namespace ColorGlove
         {
             this.depth = depth;
             this.rgb = rgb;
+            //Array.Clear(bitmapBits, 0, bitmapBits.Length); // Zero-all the bitmapBits                    
             foreach (Step step in pipeline) process(step, depth, rgb);
 
             bitmap.Dispatcher.Invoke(new Action(() =>
@@ -511,6 +579,20 @@ namespace ColorGlove
         }
 
         #region Color matching
+        void setLabel(byte[] point)
+        {
+            System.Drawing.Color color = System.Drawing.Color.FromArgb(point[0], point[1], point[2]);
+            float hue = color.GetHue();
+            if (hue >= DesiredMinHue && hue <= DesiredMaxHue)
+            {
+                Array.Copy(targetColor, point, 3);                
+            }
+            else {
+                Array.Copy(backgroundColor, point, 3);                
+            }
+        }
+
+        
         void nearest_color(byte[] point)
         {
             // In place rewriting of the array
@@ -531,7 +613,9 @@ namespace ColorGlove
 
             for (int idx = 0; idx < colors.GetLength(0); idx++)
             {
-                double distance = euc_distance(point, idx);
+                //double distance = euc_distance(point, idx);
+                //double distance = ColorDistance(point, new Byte[]{colors[idx,0],colors[idx,1], colors[idx,2]}); // may be slow because of new
+                double distance = EuclideanDistance(point, new Byte[] { colors[idx, 0], colors[idx, 1], colors[idx, 2] }); // may be slow because of new
                 if (distance < minDistance)
                 {
                     minColor = idx;
@@ -552,11 +636,30 @@ namespace ColorGlove
             point[2] = replacement[minColor, 2];
         }
 
+          
         double euc_distance(byte[] point, int colorIdx)
         {
             return Math.Sqrt(Math.Pow(point[0] - colors[colorIdx, 0], 2) +
                 Math.Pow(point[1] - colors[colorIdx, 1], 2) +
                 Math.Pow(point[2] - colors[colorIdx, 2], 2));
+        }
+
+        //double ColourDistance(byte[] point, int colorIdx)
+        double ColorDistance(byte[] point1, byte[] point2) // using human perception for the color metric
+        {
+
+            long rmean = ((long)point1[0] + (long)point2[0]) / 2;
+            long r = (long)point1[0] - (long)point2[0];
+            long g = (long)point1[1] - (long)point2[1];
+            long b = (long)point2[2] - (long)point2[2];
+            return Math.Sqrt((((512 + rmean) * r * r) >> 8) + 4 * g * g + (((767 - rmean) * b * b) >> 8));
+        }
+
+        double EuclideanDistance(byte[] point1, byte[] point2)
+        {
+            return Math.Sqrt(Math.Pow(point1[0] - point2[0], 2) +
+                Math.Pow(point1[1] - point2[1], 2) +
+                Math.Pow(point1[2] - point2[2], 2));
         }
         #endregion
 

@@ -19,7 +19,7 @@ namespace AlignRGBDepth
         private byte[] _colorPixels = new byte[0];
         private short[] _depthPixels = new short[0];
         const float MaxDepthDistance = 4095; // max value returned
-        const float MinDepthDistance = 100; // min value returned
+        const float MinDepthDistance =400; // 100; // min value returned
         const float MaxDepthDistanceOffset = MaxDepthDistance - MinDepthDistance;
         public enum BackgroundFormat
         {
@@ -52,12 +52,14 @@ namespace AlignRGBDepth
         };
 
         // Some settings: 
-        private BackgroundFormat BackgroundValue = BackgroundFormat.PureRGB;
-        private ThresholdFormat ThresholdValue = ThresholdFormat.PureRGB; // MixedWhite
+        private BackgroundFormat BackgroundValue = BackgroundFormat.PureRGB; //PureDepth; //.PureRGB;
+        //private BackgroundFormat BackgroundValue = BackgroundFormat.PureDepth;
+        private ThresholdFormat ThresholdValue = ThresholdFormat.PureRGB; //.PureRGB; // MixedWhite
         private UnthresholdFormat UnthressholdValue = UnthresholdFormat.AllWhiteExceptMappedInThreshold; //AllWhite;
+        //private UnthresholdFormat UnthressholdValue = UnthresholdFormat.Undefined;
         private RangeModeFormat RangeModeValue = RangeModeFormat.Near; //Default;
         //private FastModeFormat FastModeValue = FastModeFormat.AllocateArrayInAdvace;
-        private int rangeMin = 100, rangeMax = 900;
+        private int rangeMin = 400, rangeMax = 4000;
         private short[] _usedcolorPixels = new short[640*480*4];
         private const int ColorPixelDataLength = 1228800;
         private const int DepthPixelDataLength = 307200;
@@ -168,13 +170,12 @@ namespace AlignRGBDepth
 
                 for (int i = 0; i < _depthPixels.Length; i++)
                 {
-                    int depthVal = _depthPixels[i] >> DepthImageFrame.PlayerIndexBitmaskWidth;
-                    ColorImagePoint point = _mappedDepthLocations[i];                    
+                    int depthVal = _depthPixels[i] >> DepthImageFrame.PlayerIndexBitmaskWidth;                                     
                     if ((depthVal < rangeMax) && (depthVal > rangeMin))
-                    {                        
-
+                    {
+                        ColorImagePoint point = _mappedDepthLocations[i];   
                         if ((point.X >= 0 && point.X < 640) && (point.Y >= 0 && point.Y < 480))
-                        {
+                        {                            
                             int baseIndex = (point.Y * 640 + point.X) * 4;
                             if (ThresholdValue == ThresholdFormat.AllBlack)
                             {
@@ -204,9 +205,10 @@ namespace AlignRGBDepth
                     }                                 
                     else
                     {
+                        /*
                         if (UnthressholdValue == UnthresholdFormat.AllWhite)
                         {
-                            if ((point.X >= 0 && point.X < 640) && (point.Y >= 0 && point.Y < 480))
+                            //if ((point.X >= 0 && point.X < 640) && (point.Y >= 0 && point.Y < 480))
                             {
                                 int baseIndex = (point.Y * 640 + point.X) * 4;
                                 _bitmapBits[baseIndex] = (byte)(255);
@@ -215,6 +217,7 @@ namespace AlignRGBDepth
                                 
                             }
                         }
+                         */ 
                     }
 
                 }
