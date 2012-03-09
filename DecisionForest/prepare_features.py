@@ -77,6 +77,11 @@ def process_images(images, features):
     print filename
   
 
+# Courtesy this hacker on StackOverflow: http://stackoverflow.com/questions/312443/how-do-you-split-a-list-into-evenly-sized-chunks-in-python
+def chunks (l, n):
+  for i in xrange(0, len(l), n):
+    yield l[i:i + n]
+
 if __name__ == '__main__':
   features = make_features()
   sf = gzip.open('features.obj', 'w')
@@ -85,12 +90,12 @@ if __name__ == '__main__':
   
   # Load pictures and calculate feature vectors
   images = glob.glob('processed_samples/*.gz')
-  process_images(images, features)
-  
-  #total_threads = 10
-  #total_images = len(images)
-  #for t in enumerate(range(total_threads)):
-  #  if t == total_threads: image_set = [
+ 
+  total_threads = 10
+  for chunk in chunks(images, total_threads):
+    print 'Starting thread'
+    t = threading.Thread(target=process_images, args=(chunk, features))
+    t.start()
 
 
   
