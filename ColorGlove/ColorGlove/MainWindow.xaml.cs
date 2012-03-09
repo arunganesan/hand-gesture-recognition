@@ -44,6 +44,8 @@ namespace ColorGlove
                 m.toggleProcessors();
             else if (e.Key == Key.S)
                 m.saveImages();
+            else if (e.Key == Key.K)
+                m.kMeans();
         }
     }
 
@@ -80,11 +82,13 @@ namespace ColorGlove
 
             #region Processor configurations
 
-            processors[1].updatePipeline(Processor.Step.Crop,
-                                         Processor.Step.PaintWhite,
-                                         Processor.Step.MappedDepth);
+            //processors[1].updatePipeline(Processor.Step.Crop,
+            //                             Processor.Step.PaintWhite,
+            //                             Processor.Step.MappedDepth);
 
-            processors[0].updatePipeline(Processor.Step.Crop,
+            processors[0].updatePipeline(Processor.Step.Crop, Processor.Step.Color);
+
+            processors[1].updatePipeline(Processor.Step.Crop,
                                          Processor.Step.PaintWhite, 
                                          Processor.Step.ColorMatch);
             //processors[1].updatePipeline(Processor.Step.ColorMatch);
@@ -150,6 +154,12 @@ namespace ColorGlove
                 // XXX: For now, just send data to first processor
                 foreach (Processor p in processors) p.update(depthPixels, colorPixels);
             }
+        }
+
+
+        public void kMeans()
+        {
+            processors[0].kMeans();
         }
     }
 
@@ -232,7 +242,7 @@ namespace ColorGlove
         };
 
         private RangeModeFormat RangeModeValue = RangeModeFormat.Near;
-        private Dictionary<Tuple<byte, byte, byte>, byte[]> nearest_cache = new Dictionary<Tuple<byte, byte, byte>, byte[]>();
+        private static Dictionary<Tuple<byte, byte, byte>, byte[]> nearest_cache = new Dictionary<Tuple<byte, byte, byte>, byte[]>();
         private WriteableBitmap bitmap;
         private byte[] bitmapBits;
         private Image image;
@@ -242,33 +252,34 @@ namespace ColorGlove
         private short[] depth;
         private byte[] rgb;
 
+        // Used for cropping.
+        int x_0 = 220, x_1 = 390, y_0 = 150, y_1 = 362;
+
+
+        byte[] color = new byte[3];
+        double[] tmp_point = new double[3];
+        double[] tmp_point2 = new double[3];
+
         private Step [] pipeline = new Step[0];
         private KinectSensor sensor;
 
         private Classifier classifier;
 
-        byte[,] colors = new byte[,] {
-            {145, 170, 220},
-            {170, 190, 250},
-            {80, 80, 80},
-            {250, 240, 240},
-            {210, 180, 150},
-            {110, 86, 244},
-            {75,58,151},
-            {153, 189, 206}
+        static byte[,] colors = new byte[,] {
+            {0,0,0}
             
         };
 
-        byte[,] replacement = new byte[,] {
+        static byte[,] replacement = new byte[,] {
             {255,0,0},
-            {255,0,0},
+            {0,255,0},
+            {0,0,255},
             {255,255,255},
-            {255,255,255},
-            {255,255,255},
-            {255,255,255},
-            {255,255,255},
-            {255,255,255},
-            {255,255,255}
+            {0,0,0},
+            {150,150,150},
+            {0,255,255},
+            {255,255,0},
+            {255,0,255}
         };
         /*
         byte[,] colors = new byte[,] {
@@ -301,6 +312,136 @@ namespace ColorGlove
 
             image.MouseLeftButtonUp += image_click;
         }
+
+        public void kMeans() 
+        {
+            int k = 5;
+            // k = 5 seems to do well with background cleared out.
+            
+            Random rand = new Random();
+
+            // Randomly create 7 colors
+            double[,] clusters = new double[k, 3];
+            for (int i = 0; i < k; i++) {
+                clusters[i, 0] = rand.Next(0, 255);
+                clusters[i, 1] = rand.Next(0, 255);
+                clusters[i, 2] = rand.Next(0, 255);
+            }
+
+            // XXX: Assumes cropping!!!
+            int width = x_1 - x_0;
+            int height = y_1 - y_0;
+
+            int[] points = new int[width*height];
+            double[] point = new double[3];
+
+            int [] cluster_count = Enumerable.Repeat((int)0, k).ToArray();
+            double[,] cluster_centers = new double[k, 3];
+            for (int i = 0; i < k; i++)
+            {
+                cluster_centers[i, 0] =
+                cluster_centers[i, 1] =
+                cluster_centers[i, 2] = 0;
+            }
+
+            double[] cluster_deltas = new double[k];
+
+            double delta = 10000, epsilon = 0.1;
+
+            double minDistance = 10000;
+            int minCluster = -1;
+            while (delta > epsilon)
+            {
+                Console.WriteLine("Delta: " + delta);
+                // Step 1: label each point as a cluster
+                for (int i = 0; i < points.Length; i++)
+                {
+                    int y = i / width;
+                    int x = i % width;
+                    int adjusted_y = y_0 + y;
+                    int adjusted_x = x_0 + x;
+                    int adjusted_i = adjusted_y * 640 + adjusted_x;
+
+                    point[0] = rgb[adjusted_i * 4 + 2];
+                    point[1] = rgb[adjusted_i * 4 + 1];
+                    point[2] = rgb[adjusted_i * 4];
+
+                    minDistance = 10000;
+                    for (int idx = 0; idx < clusters.GetLength(0); idx++)
+                    {
+                        tmp_point2[0] = clusters[idx, 0];
+                        tmp_point2[1] = clusters[idx, 1];
+                        tmp_point2[2] = clusters[idx, 2];
+
+                        double distance = euc_distance(point, tmp_point2);
+                        if (distance < minDistance)
+                        {
+                            minCluster = idx;
+                            minDistance = distance;
+                        }
+                    }
+
+                    points[i] = minCluster;
+                    cluster_count[minCluster] ++;
+                }
+
+                // Step 2: update the cluster center values
+                for (int i = 0; i < points.Length; i++)
+                {
+                    int y = i / width;
+                    int x = i % width;
+                    int adjusted_y = y_0 + y;
+                    int adjusted_x = x_0 + x;
+                    int adjusted_i = adjusted_y * 640 + adjusted_x;
+
+                    cluster_centers[points[i], 0] += rgb[adjusted_i * 4 + 2];
+                    cluster_centers[points[i], 1] += rgb[adjusted_i * 4 + 1];
+                    cluster_centers[points[i], 2] += rgb[adjusted_i * 4];
+                }
+
+                for (int i = 0; i < k; i++)
+                {
+                    double r = cluster_centers[i, 0] / cluster_count[i];
+                    double g = cluster_centers[i, 1] / cluster_count[i];
+                    double b = cluster_centers[i, 2] / cluster_count[i];
+
+                    tmp_point[0] = clusters[i, 0];
+                    tmp_point[1] = clusters[i, 1];
+                    tmp_point[2] = clusters[i, 2];
+
+                    tmp_point2[0] = r;
+                    tmp_point2[1] = g;
+                    tmp_point2[2] = b;
+
+                    cluster_deltas[i] = euc_distance(tmp_point, tmp_point2);
+
+                    clusters[i, 0] = r;
+                    clusters[i, 1] = g;
+                    clusters[i, 2] = b;
+                }
+
+                delta = cluster_deltas[0];
+                for (int i = 1; i < k; i++)
+                    if (cluster_deltas[i] > delta) delta = cluster_deltas[i];
+
+            }
+
+
+            colors = new byte[k, 3];
+            for (int i = 0; i < k; i++)
+            {
+                colors[i, 0] = (byte)clusters[i, 0];
+                colors[i, 1] = (byte)clusters[i, 1];
+                colors[i, 2] = (byte)clusters[i, 2];
+            }
+
+            // Uncomment this line for stock color replacement.
+            //replacement = colors;
+            
+
+            Processor.nearest_cache.Clear();
+            Console.WriteLine("Done!");
+        } 
 
         private void image_click(object sender, MouseButtonEventArgs e) {
             Point click_position = e.GetPosition(image);
@@ -403,7 +544,6 @@ namespace ColorGlove
 
         private void crop_color(short[] depth, byte[] rgb)
         {
-            int x_0 = 220, x_1 = 390, y_0 = 150, y_1 = 362;
             //byte[] bitmapBits = new byte[(x_1 - x_0) * (y_1 - y_0) * 4];
             //this.bitmap = new WriteableBitmap((x_1 - x_0), (y_1 - y_0), 96, 96, PixelFormats.Bgr32, null);
             //image.Source = bitmap;
@@ -516,22 +656,25 @@ namespace ColorGlove
             // In place rewriting of the array
             //if (nearest_cache.ContainsKey(point))
             Tuple<byte, byte, byte> t = new Tuple<byte, byte, byte>(point[0], point[1], point[2]);
-            if (nearest_cache.ContainsKey(t))
+            if (Processor.nearest_cache.ContainsKey(t))
             {
                 //Console.WriteLine("Actually matching.");
-                point[0] = nearest_cache[t][0];
-                point[1] = nearest_cache[t][1];
-                point[2] = nearest_cache[t][2];
+                point[0] = Processor.nearest_cache[t][0];
+                point[1] = Processor.nearest_cache[t][1];
+                point[2] = Processor.nearest_cache[t][2];
                 return;
             }
 
             //int minIdx = 0;
             double minDistance = 1000000;
             int minColor = -1;
-
             for (int idx = 0; idx < colors.GetLength(0); idx++)
             {
-                double distance = euc_distance(point, idx);
+                color[0] = colors[idx, 0];
+                color[1] = colors[idx, 1];
+                color[2] = colors[idx, 2];
+
+                double distance = euc_distance(point, color);
                 if (distance < minDistance)
                 {
                     minColor = idx;
@@ -540,7 +683,7 @@ namespace ColorGlove
             }
 
 
-            nearest_cache.Add(new Tuple<byte, byte, byte>(point[0], point[1], point[2]),
+            Processor.nearest_cache.Add(new Tuple<byte, byte, byte>(point[0], point[1], point[2]),
                 new byte[] {replacement[minColor, 0],
                             replacement[minColor, 1], 
                             replacement[minColor, 2]});
@@ -552,11 +695,19 @@ namespace ColorGlove
             point[2] = replacement[minColor, 2];
         }
 
-        double euc_distance(byte[] point, int colorIdx)
+        double euc_distance(byte[] point, byte[] color)
         {
-            return Math.Sqrt(Math.Pow(point[0] - colors[colorIdx, 0], 2) +
-                Math.Pow(point[1] - colors[colorIdx, 1], 2) +
-                Math.Pow(point[2] - colors[colorIdx, 2], 2));
+            return Math.Sqrt(Math.Pow(point[0] - color[0], 2) +
+                Math.Pow(point[1] - color[1], 2) +
+                Math.Pow(point[2] - color[2], 2));
+        }
+
+
+        double euc_distance(double[] point, double[] point2)
+        {
+            return Math.Sqrt(Math.Pow(point[0] - point2[0], 2) +
+                Math.Pow(point[1] - point2[1], 2) +
+                Math.Pow(point[2] - point2[2], 2));
         }
         #endregion
 
