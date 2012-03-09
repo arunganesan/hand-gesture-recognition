@@ -1,6 +1,7 @@
 #! /usr/bin/env python
 
 import numpy, gzip, random, cPickle, glob, os, re
+import threading
 
 def rint(minn, maxx): return random.randint(minn, maxx)
 
@@ -23,34 +24,58 @@ def make_features():
   
   return features
 
-def extract_features(features, image):
+def extract_features(features, image_filename):
   '''
   If an offset pixel lies on the background or outside the bounds of the image,
   the depth probe d_1(x') is given a large positive constant value
   '''
   out_of_bounds = 1000
   
+  image_file = gzip.open(image_filename, 'r')
+  image = cPickle.load(image_file)
+  image_file.close()
+  
   width = 640
   height = 480
   num_features = features.shape[0]
   
-  image_features = numpy.ndarray(shape=(width, height, num_features))
+  num_samples = 2000
+  samples = [(i % width, int(i / width)) for i in random.sample(range(width*height), num_samples)]
+  image_features = numpy.ndarray(shape=(num_samples, num_features))
   
-  for y in range(height):
-    for x in range(width):
-      for idx, feature in enumerate(features):
-        d = float(image[x, y, 0])
-        u = (int(features[0]/d), int(features[1]/d))
-        if u[0] < 0 or u[0] >= width or u[1] < 0 or u[1] >= height: d_u = out_of_bounds
-        else: d_u = image[x + u[0], y + u[1], 0]
+  for s_idx, (x, y) in enumerate(samples):
+    for f_idx in range(num_features):
+      feature = features[f_idx, 0:4]
+      
+      d = float(image[x, y, 0])
+      
+      if d == 0:
+        image_features[s_idx, f_idx] = 0
+        continue
+      
+      
+      u = (int(feature[0]/d), int(feature[1]/d))
+      if u[0] < 0 or u[0] >= width or u[1] < 0 or u[1] >= height: d_u = out_of_bounds
+      else: d_u = image[x + u[0], y + u[1], 0]
         
-        v = (int(features[2]/d), int(features[3]/d))
-        if v[0] < 0 or v[0] >= width or v[1] < 0 or v[1] >= height: d_v = out_of_bounds
-        else: d_v = image[x + v[0], y + v[1], 0]
-        
-        image_features[x, y, idx] = d_u - d_v
-  
+      v = (int(feature[2]/d), int(feature[3]/d))
+      if v[0] < 0 or v[0] >= width or v[1] < 0 or v[1] >= height: d_v = out_of_bounds
+      else: d_v = image[x + v[0], y + v[1], 0]
+      
+      image_features[s_idx, f_idx] = d_u - d_v
+      
   return image_features
+
+def process_images(images, features):
+  for image in images:
+    m = re.match('(.*)\.obj\.gz', os.path.basename(image))
+    filename = m.group(1)
+    fv = extract_features(features, image)
+    fv_file = gzip.open('feature_vectors/%s.obj.gz' % filename, 'w')
+    cPickle.dump(fv, fv_file)
+    fv_file.close()
+    print filename
+  
 
 if __name__ == '__main__':
   features = make_features()
@@ -60,13 +85,13 @@ if __name__ == '__main__':
   
   # Load pictures and calculate feature vectors
   images = glob.glob('processed_samples/*.gz')
-  for image in images:
-    m = re.match('(.*)\.obj\.gz', os.path.basename(image))
-    filename = m.group(1)
-    
-    fv = extract_features(features, image)
-    fv_file = gzip.open('feature_vectors/%s.obj.gz' % filename, 'w')
-    cPickle.dump(fv, fv_file)
-    fv_file.close()
-    
-    exit(1)
+  process_images(images, features)
+  
+  #total_threads = 10
+  #total_images = len(images)
+  #for t in enumerate(range(total_threads)):
+  #  if t == total_threads: image_set = [
+
+
+  
+   
