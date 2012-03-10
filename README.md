@@ -13,4 +13,4 @@ Kinect project. Hand gesture recognition. Data visualization. We would like to u
   When using minimum distance for color labeling, cache is used to dramatically improve look-up time. Creadits go to Arun!
 
 ###Simple Statistics
-   In a single frame with horrizontal mode, there are 307200 pixeles, 10K of them may be hands, 77K of them may have -1 of depth.
+   In a single frame with horrizontal mode, there are 300K pixeles, 10K of them may be hands, 77K of them may have -1 of depth.
