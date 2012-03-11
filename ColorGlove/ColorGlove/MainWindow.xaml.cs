@@ -111,6 +111,7 @@ namespace ColorGlove
             //processors[1].updatePipeline(Processor.Step.ColorMatch);
             //processors[2].updatePipeline(Processor.Step.ColorMatch);
             
+            /*
             processors[0].updatePipeline(
                 // Show the rgb image
                                          //Processor.Step.Color
@@ -122,10 +123,12 @@ namespace ColorGlove
                                          Processor.Step.ColorMatch
                                           
            ); 
-                                        
+           */                             
             processors[1].updatePipeline(
                 // Show the rgb image
-                                        Processor.Step.Color
+                                        //Processor.Step.Color
+                // Show the depth image                                         
+                                        Processor.Step.Depth    
                 // Show Mapped Depth Using RGB
                                         //Processor.Step.PaintWhite,
                                         //Processor.Step.MappedDepth                                        
@@ -362,6 +365,9 @@ namespace ColorGlove
 
         byte targetLabel, backgroundLabel;
 
+        
+        FeatureExtractionLib.FeatureExtraction Feature;
+        List<int[]> listOfOffsetPosition;
         /*
         {
                                   // start of target color
@@ -443,7 +449,12 @@ namespace ColorGlove
             MaxHueTarget = 0.0F;
             MinSatTarget = 1F;
             MaxSatTarget = 0F;
-            
+            string directory = "C:\\Users\\Michael Zhang\\Desktop\\HandGestureRecognition\\ColorGlove\\ColorGlove\\bin\\Release\\training_samples";
+            Feature = new FeatureExtractionLib.FeatureExtraction( 
+                                                                                        FeatureExtractionLib.FeatureExtraction.KinectModeFormat.Near,
+                                                                                        directory);            
+
+
             //classifier = new Classifier();
 
             this.bitmap = new WriteableBitmap(640, 480, 96, 96, PixelFormats.Bgr32, null);
@@ -499,6 +510,16 @@ namespace ColorGlove
             addCentroid(122, 124, 130, backgroundLabel);                
             
             #endregion
+
+            // Offset displaying is on.
+            // Test offset
+            int minOffset = 50 * 2000;
+            int maxOffset = 500;
+            Feature.SetOffsetMax(minOffset);
+            Feature.SetOffsetMin(maxOffset);
+            Feature.generateOffsetPairs(20);
+
+            listOfOffsetPosition = new List<int[]>(); // remember to clear.
 
             
         }
@@ -648,6 +669,38 @@ namespace ColorGlove
             Point click_position = e.GetPosition(image);
             int baseIndex = ((int)click_position.Y * 640 + (int)click_position.X) * 4;
             Console.WriteLine("(x,y): (" + click_position.X + ", " + click_position.Y + ") RGB: {" + bitmapBits[baseIndex + 2] + ", " + bitmapBits[baseIndex + 1] + ", " + bitmapBits[baseIndex] + "}");
+            int depthIndex = (int) click_position.Y * 640 + (int) click_position.X;
+            // Show offsets pair 
+            Console.WriteLine("depth: {0}, baseIndex: {1}", depth[depthIndex], depthIndex);
+            
+            listOfOffsetPosition.Clear();
+            int depthVal = depth[depthIndex] >> DepthImageFrame.PlayerIndexBitmaskWidth;
+            Feature.getAllOffsetPairs(depthIndex, depthVal, listOfOffsetPosition);            
+            int bitmapIndex, X, Y;
+
+            for (int i = 0; i < listOfOffsetPosition.Count; i++)
+            {
+                X = listOfOffsetPosition[i][0];
+                Y = listOfOffsetPosition[i][1];
+                if (X >= 0 && X < 640 && Y >= 0 && Y < 480)
+                {
+                    bitmapIndex = (X * 640 + Y) * 4;
+                    bitmapBits[bitmapIndex + 2] = 255;
+                    bitmapBits[bitmapIndex + 1] = 0;
+                    bitmapBits[bitmapIndex] = 0;
+                    Console.WriteLine("Shift point({0},{1})", X, Y);
+                }
+                X = listOfOffsetPosition[i][2];
+                Y = listOfOffsetPosition[i][3];
+                if (X >= 0 && X < 640 && Y >= 0 && Y < 480)
+                {
+                    bitmapIndex = (X * 640 + Y) * 4;
+                    bitmapBits[bitmapIndex + 2] = 255;
+                    bitmapBits[bitmapIndex + 1] = 0;
+                    bitmapBits[bitmapIndex] = 0;
+                    Console.WriteLine("Shift point({0},{1})", X, Y);
+                }
+            }
             
             
             // Print HSL
@@ -885,18 +938,23 @@ namespace ColorGlove
 
         #endregion
 
+        private void updateHelper()
+        {
+            bitmap.Dispatcher.Invoke(new Action(() =>
+            {
+                bitmap.WritePixels(new Int32Rect(0, 0, bitmap.PixelWidth, bitmap.PixelHeight),
+                    bitmapBits, bitmap.PixelWidth * sizeof(int), 0);
+            }));
+        }
+
         public void update(short[] depth, byte[] rgb)
         {
             this.depth = depth;
             this.rgb = rgb;
             //Array.Clear(bitmapBits, 0, bitmapBits.Length); // Zero-all the bitmapBits                    
             foreach (Step step in pipeline) process(step, depth, rgb);
-
-            bitmap.Dispatcher.Invoke(new Action(() =>
-            {
-                bitmap.WritePixels(new Int32Rect(0, 0, bitmap.PixelWidth, bitmap.PixelHeight),
-                    bitmapBits, bitmap.PixelWidth * sizeof(int), 0);
-            }));
+            updateHelper();
+            
         }
 
         #region Color matching

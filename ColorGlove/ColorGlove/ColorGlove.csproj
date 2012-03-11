@@ -94,6 +94,12 @@
     </None>
     <AppDesigner Include="Properties\" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\FeatureExtractionLib\FeatureExtractionLib.csproj">
+      <Project>{7F3B6CFF-06CC-4C1D-B92B-7DEF3715C4A9}</Project>
+      <Name>FeatureExtractionLib</Name>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
