@@ -3,6 +3,7 @@ ColorGlove/bin/Debug/*
 ColorGlove/obj/x86/Debug/*
 ColorGlove/bin/Release
 ColorGlove/obj/x86/Release/*
+ColorGlove.suo
 
 *.exe
 *.pdb

@@ -1,55 +1,46 @@
 #! /usr/bin/env python
 
-import numpy, os, glob, re, cPickle, random
-
-'''
-A random subset of 2000 example pixels from each image is chosen to ensure a 
-roughly even distribution across body parts
-'''
-
+import numpy, os, glob, re, cPickle, random, gzip
 
 processed_samples_dir = 'processed_samples'
 samples_dir = 'samples'
 
-class Pixel:
-  def __init__(self, x, y, z, label):
-    self.x = x
-    self.y = y
-    self.z = z
-    self.label = label
 
-
-def load_sample(filename, label):
-  # For each label, load up the file, sample 2000 pixels, and save their 
-  # x,y,z location along with the label.
-  
+def load_sample(filename, label, label_idx):
   # Open depth image, and assign label
-  depth_file = open('%s/%s/%s_depth.txt.gz' % (samples_dir, label, filename), 'r').readlines()[0]
-  label_file = open('%s/%s/%s_processed.txt.gz' % (samples_dir, label, filename), 'r').readlines()[0]
+  depth_file = gzip.open('%s/%s/%s_depth.txt.gz' % (samples_dir, label, filename), 'r').readlines()[0]
+  label_file = gzip.open('%s/%s/%s_processed.txt.gz' % (samples_dir, label, filename), 'r').readlines()[0]
   
-  depth = numpy.ndarray(shape=(640,480))
-  for i in range(len(depth_file.split(' '))):
-    x = i % 640
-    y = int(i/640)
-    depth[x,y] = float(depth_file.split(' ')[i])
-    
-
+  depth_linear = [int(val) for val in depth_file.split(' ')]
+  label_linear = [int(val) for val in label_file.split(' ')]
   
-  sample_num = 2000  
-  points = [Pixel(i,i,i,i) for i in range(sample_num)]
-  return random.sample(points, sample_num)
+  save_format = numpy.ndarray(shape=(640,480, 2))
+  
+  #random_sampling = random.sample(range(640*480), 2000)
+  
+  for y in range(480):
+    for x in range(640):
+      idx = y*640 + x
+      if label_linear[idx*4] == 255: pixel_class = label_idx
+      else: pixel_class = -1
+      save_format[x,y,:] = [depth_linear[idx], pixel_class]
+  
+  return save_format
 
 if __name__ == '__main__':
   labels = os.listdir(samples_dir)
-  for label in labels:
+  for label_idx, label in enumerate(labels):
+    print 'Processing %d - %s' % (label_idx, label)
+    
     samples = glob.glob('%s/%s/*_processed.txt.gz' % (samples_dir, label))
     
     for sample in samples:
+      print '\t%s' % sample
       m = re.match('(.*)_.*\.txt\.gz', os.path.basename(sample))
-      processed = load_sample(m.group(1), label)
+      processed = load_sample(m.group(1), label, label_idx)
+      savefilename = processed_samples_dir + '/' + m.group(1) + '.obj.gz'
+      savefile = gzip.open(savefilename, 'w')
       
-      savefilename = processed_samples_dir + '/' + m.group(1) + '.obj'
-      savefile = open(savefilename, 'w')
       cPickle.dump(processed, savefile)
       savefile.close()
 
