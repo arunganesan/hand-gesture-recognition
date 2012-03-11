@@ -35,6 +35,7 @@ namespace ColorGlove
         private Dictionary<Tuple<byte, byte, byte>, byte> nearest_cache = new Dictionary<Tuple<byte, byte, byte>, byte>(); // It seems not necessary to save the mapped result as byte[], byte should be enough.
         private WriteableBitmap bitmap;
         private byte[] bitmapBits;
+        private byte[] overlayBitmapBits;
         private Image image;
         public int lower, upper; // range for thresholding in show_mapped_depth(),  show_color_depth(). Set by the manager.
         public enum Step
@@ -46,6 +47,7 @@ namespace ColorGlove
             MappedDepth,
             ColorMatch,
             ColorLabelingInRGB,
+            OverlayOffset,
         };
 
         public enum HandGestureFormat
@@ -186,30 +188,35 @@ namespace ColorGlove
                                                                                         FeatureExtractionLib.FeatureExtraction.KinectModeFormat.Near,
                                                                                         directory);
 
-
             //classifier = new Classifier();
-
             this.bitmap = new WriteableBitmap(640, 480, 96, 96, PixelFormats.Bgr32, null);
             this.bitmapBits = new byte[640 * 480 * 4];
+            overlayBitmapBits = new byte[640 * 480 * 4];
             image.Source = bitmap;
 
             image.MouseLeftButtonUp += image_click;
 
-            #region Set Centroid Color and Label Color
+            SetCentroidColorAndLabel();
+            
+            // Offset displaying is on.
+            // Test offset
+            int minOffset = 50 * 2000;
+            int maxOffset = 500;
+            Feature.SetOffsetMax(minOffset);
+            Feature.SetOffsetMin(maxOffset);
+            Feature.generateOffsetPairs(2000);
+            listOfOffsetPosition = new List<int[]>(); // remember to clear.
+        }
 
-
+        private void SetCentroidColorAndLabel()
+        {
             // First add label
             HandGestureValue = HandGestureFormat.CloseHand; // Which hand gesture;
-
-
             targetLabel = (byte)HandGestureValue;  // numerical value
             Console.WriteLine("targetLabel: {0}", targetLabel);
-
             backgroundLabel = 0;
-
             labelColor.Add(targetLabel, new byte[] { 255, 0, 0 }); // target is red
             labelColor.Add(backgroundLabel, new byte[] { 255, 255, 255 }); // background is white
-
             // Then add arbitrary labeled centroids.
             // For target color (blue)
 
@@ -241,19 +248,16 @@ namespace ColorGlove
             addCentroid(214, 207, 206, backgroundLabel);
             addCentroid(122, 124, 130, backgroundLabel);
 
-            #endregion
+        }
 
-            // Offset displaying is on.
-            // Test offset
-            int minOffset = 50 * 2000;
-            int maxOffset = 500;
-            Feature.SetOffsetMax(minOffset);
-            Feature.SetOffsetMin(maxOffset);
-            Feature.generateOffsetPairs(20);
+        public void increaseRange()
+        {
+            upper += 10;
+        }
 
-            listOfOffsetPosition = new List<int[]>(); // remember to clear.
-
-
+        public void decreaseRange()
+        {
+            upper -= 10;
         }
 
         public void kMeans()
@@ -410,28 +414,29 @@ namespace ColorGlove
             int depthVal = depth[depthIndex] >> DepthImageFrame.PlayerIndexBitmaskWidth;
             Feature.getAllOffsetPairs(depthIndex, depthVal, listOfOffsetPosition);
             int bitmapIndex, X, Y;
-
+            Array.Clear(overlayBitmapBits, 0, overlayBitmapBits.Length);
+            
             for (int i = 0; i < listOfOffsetPosition.Count; i++)
             {
                 X = listOfOffsetPosition[i][0];
                 Y = listOfOffsetPosition[i][1];
                 if (X >= 0 && X < 640 && Y >= 0 && Y < 480)
                 {
-                    bitmapIndex = (X * 640 + Y) * 4;
-                    bitmapBits[bitmapIndex + 2] = 255;
-                    bitmapBits[bitmapIndex + 1] = 0;
-                    bitmapBits[bitmapIndex] = 0;
-                    Console.WriteLine("Shift point({0},{1})", X, Y);
+                    bitmapIndex = (Y * 640 + X) * 4;
+                    //Debug.Assert(bitmapIndex + 2 <= 640 * 480*4, "bitmapIndex:" + bitmapIndex.ToString() + " X:" + X.ToString() + " Y:" + Y.ToString());
+                    overlayBitmapBits[bitmapIndex + 2] = 255;                    
+                    //Console.WriteLine("Shift point ({0},{1})", X, Y);
                 }
                 X = listOfOffsetPosition[i][2];
                 Y = listOfOffsetPosition[i][3];
                 if (X >= 0 && X < 640 && Y >= 0 && Y < 480)
                 {
-                    bitmapIndex = (X * 640 + Y) * 4;
-                    bitmapBits[bitmapIndex + 2] = 255;
-                    bitmapBits[bitmapIndex + 1] = 0;
-                    bitmapBits[bitmapIndex] = 0;
-                    Console.WriteLine("Shift point({0},{1})", X, Y);
+                    bitmapIndex = (Y * 640 + X) * 4;
+                    //Debug.Assert(bitmapIndex + 2 <= 640 * 480 * 4, "bitmapIndex:" + bitmapIndex.ToString() + " X:" + X.ToString() + " Y:" + Y.ToString());
+                    overlayBitmapBits[bitmapIndex + 2] = 255;
+                    //bitmapBits[bitmapIndex + 1] = 0;
+                    //bitmapBits[bitmapIndex] = 0;
+                    //Console.WriteLine("Shift point ({0},{1})", X, Y);
                 }
             }
 
@@ -541,10 +546,13 @@ namespace ColorGlove
                 case Step.MappedDepth: show_mapped_depth(depth, rgb); break;
                 case Step.ColorMatch: show_color_match(depth, rgb); break;
                 case Step.ColorLabelingInRGB: ColorLabellingInRGB(rgb); break;
+                case Step.OverlayOffset: ShowOverlayOffset(); break;
             }
         }
 
         #region Filter functions
+
+
         private void show_depth(short[] depth, byte[] rgb)
         {
             for (int i = 0; i < depth.Length; i++)
@@ -621,7 +629,7 @@ namespace ColorGlove
             }
         }
 
-        private void show_color_match(short[] depth, byte[] rgb)
+        private void show_color_match(short[] depth, byte[] rgb)  // Is it necessary to pass the arguments? Since they are alreay private members.
         // Mainly for labelling.  Matches the rgb to the nearest color. The set of colors are in listed in the array "colors"
         {
             sensor.MapDepthFrameToColorFrame(DepthImageFormat.Resolution640x480Fps30, depth, ColorImageFormat.RgbResolution640x480Fps30, mapped);
@@ -667,6 +675,16 @@ namespace ColorGlove
                 bitmapBits[i] = rgb_tmp[2];
                 bitmapBits[i + 1] = rgb_tmp[1];
                 bitmapBits[i + 2] = rgb_tmp[0];
+            }
+        }
+
+        private void ShowOverlayOffset() {
+            for (int i = 0; i < bitmapBits.Length; i += 4) {
+                if (overlayBitmapBits[i + 2] == 255) {
+                    bitmapBits[i + 2] = 255;
+                    bitmapBits[i + 1] = 0;
+                    bitmapBits[i ] = 0;
+                }
             }
         }
 

@@ -86,10 +86,12 @@ namespace ColorGlove
                 // Show the rgb image
                 //Processor.Step.Color
                 // Show the depth image                                         
-                                        Processor.Step.Depth
+                                        Processor.Step.Depth,
+                // Show overlap offest
+                                        Processor.Step.OverlayOffset
                 // Show Mapped Depth Using RGB
-                //Processor.Step.PaintWhite,
-                //Processor.Step.MappedDepth                                        
+                                        //Processor.Step.PaintWhite,
+                                        //Processor.Step.MappedDepth                                        
             );
 
             #endregion
@@ -140,14 +142,14 @@ namespace ColorGlove
 
         public void increaseRange()
         {
-            processors[0].upper += 10;
-            processors[1].upper += 10;
+            processors[0].increaseRange();
+            processors[1].increaseRange();
         }
 
         public void decreaseRange()
         {
-            processors[0].upper -= 10;
-            processors[1].upper -= 10;
+            processors[0].decreaseRange();
+            processors[1].decreaseRange();
         }
 
         public void poll()

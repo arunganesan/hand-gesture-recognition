@@ -118,7 +118,7 @@ namespace FeatureExtractionLib
                 getOnePairRandomOffset(u);
                 getOnePairRandomOffset(v);
                 listOfOffsetPairs.Add(new int[] { u[0], u[1], v[0], v[1] });
-                Console.WriteLine("U:({0},{1}), V:({2},{3})", u[0], u[1], v[0], v[1]);
+                //Console.WriteLine("U:({0},{1}), V:({2},{3})", u[0], u[1], v[0], v[1]);
             }
             
             
