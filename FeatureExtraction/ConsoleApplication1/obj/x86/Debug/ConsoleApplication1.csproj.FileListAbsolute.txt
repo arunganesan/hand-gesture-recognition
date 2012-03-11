@@ -1,0 +1,7 @@
+C:\Users\Michael Zhang\Desktop\HandGestureRecognition\FeatureExtraction\ConsoleApplication1\bin\Debug\ConsoleApplication1.exe
+C:\Users\Michael Zhang\Desktop\HandGestureRecognition\FeatureExtraction\ConsoleApplication1\bin\Debug\ConsoleApplication1.pdb
+C:\Users\Michael Zhang\Desktop\HandGestureRecognition\FeatureExtraction\ConsoleApplication1\obj\x86\Debug\ResolveAssemblyReference.cache
+C:\Users\Michael Zhang\Desktop\HandGestureRecognition\FeatureExtraction\ConsoleApplication1\obj\x86\Debug\ConsoleApplication1.exe
+C:\Users\Michael Zhang\Desktop\HandGestureRecognition\FeatureExtraction\ConsoleApplication1\obj\x86\Debug\ConsoleApplication1.pdb
+C:\Users\Michael Zhang\Desktop\HandGestureRecognition\FeatureExtraction\ConsoleApplication1\bin\Debug\FeatureExtraction.dll
+C:\Users\Michael Zhang\Desktop\HandGestureRecognition\FeatureExtraction\ConsoleApplication1\bin\Debug\FeatureExtraction.pdb
