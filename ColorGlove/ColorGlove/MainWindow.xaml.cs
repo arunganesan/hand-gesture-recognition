@@ -200,7 +200,10 @@ namespace ColorGlove
         }
     }
 
+    // Michael: Maybe let the classifier region unattentive, since I am working on feature extraction now.
+    
     #region classifer
+    /*
     public class Classifier
     {
         Tuple<Vector, Vector>[] features;
@@ -270,6 +273,7 @@ namespace ColorGlove
             return x_u_depth - x_v_depth;
         }
     }
+     */ 
     #endregion
 
     public class Processor
@@ -294,6 +298,8 @@ namespace ColorGlove
             OpenHand = 1,
             CloseHand = 2,
         };
+
+        private HandGestureFormat HandGestureValue;
         /*
         public enum TestNewFeatureFormat { 
             Default,
@@ -422,10 +428,10 @@ namespace ColorGlove
             
 
             // First add label
-            HandGestureFormat HandGestureValue = HandGestureFormat.CloseHand;
+            HandGestureValue = HandGestureFormat.CloseHand; // Which hand gesture;
 
 
-            targetLabel = (byte)HandGestureValue;  // Open hand
+            targetLabel = (byte)HandGestureValue;  // numerical value
             Console.WriteLine("targetLabel: {0}", targetLabel);
 
             backgroundLabel = 0;
@@ -520,13 +526,13 @@ namespace ColorGlove
                     bitmap.WritePixels(new Int32Rect(0, 0, bitmap.PixelWidth, bitmap.PixelHeight),
                         bitmapBits, bitmap.PixelWidth * sizeof(int), 0);
                 }));
-                        
-            var directory = "training_samples"; 
+
+            var directory = "training_samples" + "\\" + HandGestureValue;  // should check here.
             TimeSpan t = (DateTime.UtcNow - new DateTime(1970, 1, 1));
             string filename = t.TotalSeconds.ToString();
 
             // rgb
-            using (StreamWriter filestream = new StreamWriter(directory + "\\" + filename + "_rgb.txt"))
+            using (StreamWriter filestream = new StreamWriter(directory + "\\"  + filename + "_rgb.txt"))
             {
                 filestream.Write(rgb[0]);
                 for (int i = 1; i < rgb.Length; i++) filestream.Write(" " + rgb[i]);
