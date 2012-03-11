@@ -2,9 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-//using System.Diagnostics;
-using FeatureExtraction;
-namespace ConsoleApplication1
+
+namespace TestModuleForFeatureExtraction
 {
     class Program
     {
@@ -13,10 +12,11 @@ namespace ConsoleApplication1
             Console.WriteLine(
                 "Hello World");
             string directory = "C:\\Users\\Michael Zhang\\Desktop\\HandGestureRecognition\\ColorGlove\\ColorGlove\\bin\\Release\\training_samples";
-            FeatureExtraction.FeatureExtraction Feature = new FeatureExtraction.FeatureExtraction(directory);
+            FeatureExtractionLib.FeatureExtraction Feature = new FeatureExtractionLib.FeatureExtraction(directory);
             //Feature.testEnum();
             Feature.readDirectory();
-            Feature.testSample();
+            Feature.generateOffsetPairs(2000);
+            //Feature.testSample();
             //Feature.testSplit();
             Console.ReadKey();
         }

@@ -1,5 +1,0 @@
-C:\Users\Michael Zhang\Desktop\HandGestureRecognition\FeatureExtraction\FeatureExtraction\bin\Release\FeatureExtraction.dll
-C:\Users\Michael Zhang\Desktop\HandGestureRecognition\FeatureExtraction\FeatureExtraction\bin\Release\FeatureExtraction.pdb
-C:\Users\Michael Zhang\Desktop\HandGestureRecognition\FeatureExtraction\FeatureExtraction\obj\Release\ResolveAssemblyReference.cache
-C:\Users\Michael Zhang\Desktop\HandGestureRecognition\FeatureExtraction\FeatureExtraction\obj\Release\FeatureExtraction.dll
-C:\Users\Michael Zhang\Desktop\HandGestureRecognition\FeatureExtraction\FeatureExtraction\obj\Release\FeatureExtraction.pdb

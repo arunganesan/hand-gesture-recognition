@@ -3,9 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.IO;
-using System.Diagnostics;
 
-namespace FeatureExtraction
+namespace FeatureExtractionLib
 {
     public class FeatureExtraction
     {
@@ -18,6 +17,15 @@ namespace FeatureExtraction
 
         List<int> listOfTargetPosition, listOfBackgroundPosition;
 
+        List<int[]> listOfOffsetPairs; // Is this an efficient enough data structure? Or is two-dimensional array more efficient. Leave it on future work
+
+        public enum KinectModeFormat { 
+            Default = 0,
+            Near = 1,
+        };
+
+        private KinectModeFormat KinectMode;
+
         public enum HandGestureFormat
         {
             Background = 0,
@@ -27,16 +35,24 @@ namespace FeatureExtraction
         private HandGestureFormat HandGestureValue;
 
         public FeatureExtraction(string directory)
-        {            
-            depth = new short[width * height];                        
+        {
+            depth = new short[width * height];
             label = new byte[width * height];
             listOfTargetPosition = new List<int>();
             listOfBackgroundPosition = new List<int>();
+            listOfOffsetPairs = new List<int[]>();
+
             setDirectory(directory);
-            HandGestureValue = HandGestureFormat.CloseHand;
+            readOffsetPairs();
+
+
+            //HandGestureValue = HandGestureFormat.CloseHand;
             //byte tmp = (byte) HandGestureValue;
             //string tmp = "H" + HandGestureValue;
             //Console.WriteLine(tmp);
+        }
+
+        public void setKinectMode() { 
         }
 
         private void setDirectory(string s)
@@ -44,10 +60,29 @@ namespace FeatureExtraction
             directory = s;
         }
 
+        private void readOffsetPairs()
+        {
+
+        }
+
+        public void generateOffsetPairs(int numOfOffsetPairs)
+        {
+            Console.WriteLine("The progrom will now generate new pairs of offsets. Risks include training again. Are you sure you would like to continue?(Y/N)");
+            ConsoleKeyInfo cki = Console.ReadKey();
+            if (cki.Key.ToString() == "Y")
+            {
+                Console.WriteLine("Generating...");
+
+            }
+            else
+                Console.WriteLine("No");
+        }
+
         public void testEnum()
-        { 
+        {
             Array values = Enum.GetValues(typeof(HandGestureFormat));
-            foreach (HandGestureFormat val in values) {
+            foreach (HandGestureFormat val in values)
+            {
                 Console.WriteLine("Name: {0}, numerical value: {1}", val, (byte)val);
             }
         }
@@ -72,9 +107,9 @@ namespace FeatureExtraction
 
         public void readDirectory()
         {
-            
+
             Array values = Enum.GetValues(typeof(HandGestureFormat));
-            foreach(HandGestureFormat val in values )
+            foreach (HandGestureFormat val in values)
             {
                 //Console.WriteLine ("{0}: {1}", Enum.GetName(typeof(HandGestureFormat), val), val);
                 if (val == HandGestureFormat.Background)
@@ -92,38 +127,38 @@ namespace FeatureExtraction
                 }
                 //break; // debug
             }
-         
+
         }
 
         public void readFile(string filePath)
         {
-            
-                using (System.IO.StreamReader file = new System.IO.StreamReader(filePath))
+
+            using (System.IO.StreamReader file = new System.IO.StreamReader(filePath))
+            {
+                string line = file.ReadLine(); // read the whole file into memory
+                char[] delimiters = new char[] { '(', ')', ',', ' ' };
+                string[] parts = line.Split(delimiters, StringSplitOptions.RemoveEmptyEntries);
+                //int X = 0, Y = 0;
+                int countTargetLabel = 0;
+                int countDepthMinusOne = 0;
+                int countBackgounrdLabel = 0;
+                for (int i = 0; i < width * height; i++)
                 {
-                    string line = file.ReadLine(); // read the whole file into memory
-                    char[] delimiters = new char[] { '(', ')', ',', ' ' };
-                    string[] parts = line.Split(delimiters, StringSplitOptions.RemoveEmptyEntries);
-                    //int X = 0, Y = 0;
-                    int countTargetLabel = 0;
-                    int countDepthMinusOne = 0;
-                    int countBackgounrdLabel = 0;
-                    for (int i = 0; i < width * height; i++)
-                    {
-                        //twoDimensionDepth[X, Y] = (short) int.Parse( parts[2*i]);
-                        depth[i] = (short)int.Parse(parts[2 * i]);
-                        //twoDimensionLabel[X, Y] = (byte) int.Parse(parts[2 * i + 1]);
-                        label[i] = (byte)int.Parse(parts[2 * i + 1]);
-                        if (depth[i] == -1)
-                            countDepthMinusOne++;
-                        if (label[i] != 0)
-                            countTargetLabel++;
-                        else
-                            countBackgounrdLabel++;                                
-                    }
-                    Console.WriteLine("countTargetLabel:{0}, countDepthMinusOne:{1}, countBackgroundLabel:{2}, totalNumber:{3}", countTargetLabel, countDepthMinusOne, countBackgounrdLabel, width * height);   
-                            
-                };
-             
+                    //twoDimensionDepth[X, Y] = (short) int.Parse( parts[2*i]);
+                    depth[i] = (short)int.Parse(parts[2 * i]);
+                    //twoDimensionLabel[X, Y] = (byte) int.Parse(parts[2 * i + 1]);
+                    label[i] = (byte)int.Parse(parts[2 * i + 1]);
+                    if (depth[i] == -1)
+                        countDepthMinusOne++;
+                    if (label[i] != 0)
+                        countTargetLabel++;
+                    else
+                        countBackgounrdLabel++;
+                }
+                Console.WriteLine("countTargetLabel:{0}, countDepthMinusOne:{1}, countBackgroundLabel:{2}, totalNumber:{3}", countTargetLabel, countDepthMinusOne, countBackgounrdLabel, width * height);
+
+            };
+
         }
 
         private void extractFeature(int position)
@@ -177,20 +212,22 @@ namespace FeatureExtraction
                 list[k] = list[n];
                 list[n] = value;
             }
-        }        
+        }
 
-        private void randomSample(int numerPerClass) 
+        private void randomSample(int numerPerClass)
         // randomly sample numerPerClass of pixel in the depth image
-        { 
+        {
             // First make two lists for the labeled pixels
             listOfBackgroundPosition.Clear();
             listOfTargetPosition.Clear();
-            for (int i = 0; i < depth.Length; i++) {
+            for (int i = 0; i < depth.Length; i++)
+            {
                 if (label[i] == (byte)HandGestureFormat.Background)
                 {
                     listOfBackgroundPosition.Add(i);
                 }
-                else {
+                else
+                {
                     listOfTargetPosition.Add(i);
                 }
             }
@@ -204,6 +241,6 @@ namespace FeatureExtraction
             }
         }
 
-   
+
     }
 }

@@ -1,9 +1,18 @@
 ColorGlove/bin/*
 ColorGlove/bin/Debug/*
 ColorGlove/obj/x86/Debug/*
-ColorGlove/bin/Release
+ColorGlove/bin/Release/*
 ColorGlove/obj/x86/Release/*
-ColorGlove.suo
+FeatureExtractionLib/bin/*
+FeatureExtractionLib/Debug/*
+FeatureExtractionLib/obj/x86/Debug/*
+FeatureExtractionLib/bin/Release/*
+FeatureExtractionLib/obj/x86/Release/*
+TestModuleForFeatureExtraction/bin/*
+TestModuleForFeatureExtraction/Debug/*
+TestModuleForFeatureExtraction/obj/x86/Debug/*
+TestModuleForFeatureExtraction/bin/Release/*
+TestModuleForFeatureExtraction/obj/x86/Release/*
 
 *.exe
 *.pdb
