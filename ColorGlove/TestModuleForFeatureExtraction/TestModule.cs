@@ -21,7 +21,7 @@ namespace TestModuleNamespace
             TestModule FeatureExtractionTest = new TestModule();
             FeatureExtractionTest.SetupFeatureExtraction();
             //FeatureExtractionTest.TestDisplay();
-
+            FeatureExtractionTest.TestGenerateFeatures();
             Console.ReadKey();
         }
 
@@ -34,6 +34,12 @@ namespace TestModuleNamespace
                                                                                      KinectMode,
                                                                                      OffsetMode);
                                                                                      //directory);                        
+        }
+
+        private void TestGenerateFeatures()
+        {
+            Feature.ReadOffsetPairsFromFile();
+            Feature.GenerateFeatureVectorViaImageFiles();
         }
 
         private void TestDisplay(){

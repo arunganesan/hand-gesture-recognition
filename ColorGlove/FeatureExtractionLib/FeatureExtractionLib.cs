@@ -19,6 +19,10 @@ namespace FeatureExtractionLib
         private int numOfOffsetPairs;
         private Random _r;
         private OffsetModeFormat OffestMode;
+        private int numberPerClass;
+        private int UpperBound;
+        private string outputTraningFilename;
+        private StreamWriter outputFilestream;
 
         List<int> listOfTargetPosition, listOfBackgroundPosition;
 
@@ -64,6 +68,12 @@ namespace FeatureExtractionLib
             uMinDefault = 2000;
             SetDirectory(varDirectory);
             SetOffsetMode(varOffsetMode);
+
+            numberPerClass = 2000;
+            UpperBound = 10000;
+            outputTraningFilename = "NearModeFeatureVector.txt";
+            outputFilestream = new StreamWriter(directory + "\\" + outputTraningFilename);
+
         }
 
         public void SetOffsetMode(OffsetModeFormat varOffestMode) {
@@ -180,82 +190,59 @@ namespace FeatureExtractionLib
             
         }
 
+        private int HelperGetOffset(int Origin, int Offset, int curDepth) {
+            return (int)(Origin + (double)((Offset + 0.0) / (curDepth + 0.0)));
+        }
+
         public void GetAllOffsetPairs(int curPosition, int curDepth, List<int[]> listOfOffsetPosition)
         {
             int CurX = curPosition % width,  CurY = curPosition/ width;
             for (int i = 0; i < numOfOffsetPairs; i++) { 
-                int uX = listOfOffsetPairs[i][0], uY = listOfOffsetPairs[i][1], vX = listOfOffsetPairs[i][2], vY = listOfOffsetPairs[i][3];
-                int newUX = (int) ( CurX + (double)( (uX + 0.0) / (curDepth + 0.0)));
-                int newUY = (int)(CurY + (double)((uY + 0.0) / (curDepth + 0.0)));
-                int newVX = (int)(CurX + (double)((vX + 0.0) / (curDepth + 0.0)));
-                int newVY = (int)(CurY + (double)((vY + 0.0) / (curDepth + 0.0)));
-                /*
-                int uOneDimensionIndex = newUX * 640 + newUY;
-                int vOneDimensionIndex = newVX * 640 + newVY;
-                listOfOffsetPosition.Add(new int[] { uOneDimensionIndex, vOneDimensionIndex });
-                 */
+                int uX = listOfOffsetPairs[i][0], uY = listOfOffsetPairs[i][1], vX = listOfOffsetPairs[i][2], vY = listOfOffsetPairs[i][3];                                
+                int newUX = HelperGetOffset(CurX, uX, curDepth);                
+                int newUY = HelperGetOffset(CurY, uY, curDepth);
+                int newVX = HelperGetOffset(CurX, vX, curDepth);
+                int newVY = HelperGetOffset(CurY, vY, curDepth);
+                //= (int) ( CurX + (double)( (uX + 0.0) / (curDepth + 0.0)));
+                //int newUY = (int)(CurY + (double)((uY + 0.0) / (curDepth + 0.0)));
+                //int newVX = (int)(CurX + (double)((vX + 0.0) / (curDepth + 0.0)));
+                //int newVY = (int)(CurY + (double)((vY + 0.0) / (curDepth + 0.0)));        
                 listOfOffsetPosition.Add(new int[] { newUX, newUY, newVX, newVY });
             }
         }
 
-        public void GenerateFeatureVectorViaImageFiles()
-        {
-
-            Array values = Enum.GetValues(typeof(HandGestureFormat));
-            foreach (HandGestureFormat val in values)
+        private int GetDepthByPoint(int X, int Y){
+            if (X >= 0 && X < width && Y >= 0 && Y < height)
             {
-                //Console.WriteLine ("{0}: {1}", Enum.GetName(typeof(HandGestureFormat), val), val);
-                if (val == HandGestureFormat.Background)
-                    continue;
-                string subdirectory = directory + "\\" + val;
-                string[] fileEntries = Directory.GetFiles(subdirectory);
-                foreach (string filePath in fileEntries)
-                {
-                    string fileName = Path.GetFileName(filePath);
-                    string prefix = fileName.Substring(0, 10);
-                    if (prefix == "depthLabel")
-                        ReadImageFile(filePath);
-                    //Console.WriteLine(fileName);
-                    return; // debug
-                }
-                //break; // debug
+                int UIndex = Y * width + X;
+                if (depth[UIndex] < 0)
+                    return UpperBound;
+                else
+                    return depth[UIndex];
             }
-
+            else
+                return UpperBound;
         }
 
-        public void ReadImageFile(string filePath)
+        private void ExtractFeature(int oneDimensionIndex)
         {
-
-            using (System.IO.StreamReader file = new System.IO.StreamReader(filePath))
+            List<int[]> aListOfOffsetPosition = new List<int[]>();
+            List<int> featureVector = new List<int>();
+            GetAllOffsetPairs(oneDimensionIndex, depth[oneDimensionIndex], aListOfOffsetPosition);
+            //Console.WriteLine("Feature vector: {0}", label[oneDimensionIndex]);
+            outputFilestream.Write("{0}", label[oneDimensionIndex]);
+            //Console.WriteLine("aListOfOffsetPosition.Count:{0}", aListOfOffsetPosition.Count);
+            for (int i = 0; i < aListOfOffsetPosition.Count; i++)
             {
-                string line = file.ReadLine(); // read the whole file into memory
-                char[] delimiters = new char[] { '(', ')', ',', ' ' };
-                string[] parts = line.Split(delimiters, StringSplitOptions.RemoveEmptyEntries);
-                //int X = 0, Y = 0;
-                int countTargetLabel = 0;
-                int countDepthMinusOne = 0;
-                int countBackgounrdLabel = 0;
-                for (int i = 0; i < width * height; i++)
-                {
-                    //twoDimensionDepth[X, Y] = (short) int.Parse( parts[2*i]);
-                    depth[i] = (short)int.Parse(parts[2 * i]);
-                    //twoDimensionLabel[X, Y] = (byte) int.Parse(parts[2 * i + 1]);
-                    label[i] = (byte)int.Parse(parts[2 * i + 1]);
-                    if (depth[i] == -1)
-                        countDepthMinusOne++;
-                    if (label[i] != 0)
-                        countTargetLabel++;
-                    else
-                        countBackgounrdLabel++;
-                }
-                Console.WriteLine("countTargetLabel:{0}, countDepthMinusOne:{1}, countBackgroundLabel:{2}, totalNumber:{3}", countTargetLabel, countDepthMinusOne, countBackgounrdLabel, width * height);
+                int uX = aListOfOffsetPosition[i][0], uY = aListOfOffsetPosition[i][1];
+                int uDepth = GetDepthByPoint(aListOfOffsetPosition[i][0], aListOfOffsetPosition[i][1]);
+                int vDepth = GetDepthByPoint(aListOfOffsetPosition[i][2], aListOfOffsetPosition[i][3]);
+                featureVector.Add(uDepth - vDepth);
+                //Console.Write(" {0}", uDepth - vDepth);
+                outputFilestream.Write(" {0}:{1}", i+1, uDepth - vDepth); //notice a plus sign here
+            }
+            outputFilestream.WriteLine();
 
-            };
-
-        }
-
-        private void extractFeature(int position)
-        {
             /*
             Debug.Assert(position <= depth.Length, "Trying to access nonexistent feature.");
 
@@ -293,6 +280,65 @@ namespace FeatureExtractionLib
              */
         }
 
+        public void ReadImageFile(string filePath)
+        {
+            using (System.IO.StreamReader file = new System.IO.StreamReader(filePath))
+            {
+                string line = file.ReadLine(); // read the whole file into memory
+                char[] delimiters = new char[] { '(', ')', ',', ' ' };
+                string[] parts = line.Split(delimiters, StringSplitOptions.RemoveEmptyEntries);
+                //int X = 0, Y = 0;
+                int countTargetLabel = 0;
+                int countDepthMinusOne = 0;
+                int countBackgounrdLabel = 0;
+                for (int i = 0; i < width * height; i++)
+                {
+                    //twoDimensionDepth[X, Y] = (short) int.Parse( parts[2*i]);
+                    depth[i] = (short)int.Parse(parts[2 * i]);
+                    //twoDimensionLabel[X, Y] = (byte) int.Parse(parts[2 * i + 1]);
+                    label[i] = (byte)int.Parse(parts[2 * i + 1]);
+                    if (depth[i] == -1)
+                        countDepthMinusOne++;
+                    if (label[i] != 0)
+                        countTargetLabel++;
+                    else
+                        countBackgounrdLabel++;
+                }
+                Console.WriteLine("countTargetLabel:{0}, countDepthMinusOne:{1}, countBackgroundLabel:{2}, totalNumber:{3}", countTargetLabel, countDepthMinusOne, countBackgounrdLabel, width * height);
+                file.Close();
+            };
+
+        }
+
+        public void GenerateFeatureVectorViaImageFiles()
+        {
+
+            Array values = Enum.GetValues(typeof(HandGestureFormat));
+            foreach (HandGestureFormat val in values)
+            {
+                //Console.WriteLine ("{0}: {1}", Enum.GetName(typeof(HandGestureFormat), val), val);
+                if (val == HandGestureFormat.Background)
+                    continue;
+                string subdirectory = directory + "\\" + val + KinectMode;
+                Console.WriteLine("Current directoray: {0}", subdirectory);
+                string[] fileEntries = Directory.GetFiles(subdirectory);
+                foreach (string filePath in fileEntries)
+                {
+                    string fileName = Path.GetFileName(filePath);
+                    string prefix = fileName.Substring(0, 10);
+                    if (prefix == "depthLabel")
+                    {
+                        ReadImageFile(filePath);
+                        RandomSample(numberPerClass);
+                    }
+                    Console.WriteLine(fileName);
+                    return; // debug
+                }
+                break; // debug
+            }
+
+        }
+
         public void Shuffle(List<int> list)
         {
             Random rng = new Random();
@@ -307,7 +353,7 @@ namespace FeatureExtractionLib
             }
         }
 
-        private void randomSample(int numerPerClass)
+        private void RandomSample(int numerPerClass)
         // randomly sample numerPerClass of pixel in the depth image
         {
             // First make two lists for the labeled pixels
@@ -329,8 +375,9 @@ namespace FeatureExtractionLib
             Shuffle(listOfBackgroundPosition);
             for (int i = 0; i < numerPerClass; i++)
             {
-                extractFeature(listOfTargetPosition[i]);
-                extractFeature(listOfBackgroundPosition[i]);
+                ExtractFeature(listOfTargetPosition[i]);                
+                ExtractFeature(listOfBackgroundPosition[i]);
+                //return; //debug
             }
         }
 
@@ -374,7 +421,7 @@ namespace FeatureExtractionLib
 
         public void testSample()
         {
-            randomSample(100);
+            RandomSample(100);
         }
     }
 }
