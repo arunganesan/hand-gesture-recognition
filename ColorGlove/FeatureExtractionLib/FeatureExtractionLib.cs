@@ -12,11 +12,13 @@ namespace FeatureExtractionLib
         private short[] depth; // one dimensional depth image
         private byte[] label; // one dimensional label image
         //private byte[,] twoDimensionLabel;
+        private const string defaultDirectory = "..\\..\\..\\Data";
         private string directory;
-        private const int width = 640, height = 480;
+        private const int width = 640, height = 480;        
         private int uMinNear, uMaxNear, uMaxDefault, uMinDefault;
         private int numOfOffsetPairs;
-        private Random _r; 
+        private Random _r;
+        private OffsetModeFormat OffestMode;
 
         List<int> listOfTargetPosition, listOfBackgroundPosition;
 
@@ -36,9 +38,16 @@ namespace FeatureExtractionLib
             OpenHand = 1,
             CloseHand = 2,
         };
+
+        public enum OffsetModeFormat { 
+            PairsOf2000UniformDistribution,
+            PairsOf1000UniformDistribution,
+        };
+
         private HandGestureFormat HandGestureValue;
 
-        public FeatureExtraction(KinectModeFormat SetKinectMode, string directory = "C:\\Users\\Michael Zhang\\Desktop\\HandGestureRecognition\\ColorGlove\\ColorGlove\\bin\\Release\\training_samples")
+
+        public FeatureExtraction(KinectModeFormat SetKinectMode,  OffsetModeFormat varOffsetMode, string varDirectory = defaultDirectory)
         {
             depth = new short[width * height];
             label = new byte[width * height];
@@ -49,40 +58,87 @@ namespace FeatureExtractionLib
             _r= new Random();
             
             // Can set the following parameters using public functions
-            uMaxNear = 100 * 2000;
-            uMinNear = 500;
+            uMaxNear = 50 * 2000;
+            uMinNear = 500;            
             uMaxDefault = 300 * 2000;
             uMinDefault = 2000;
-            
-
-
-            setDirectory(directory);
-            //readOffsetPairs();
-
-            //HandGestureValue = HandGestureFormat.CloseHand;
-            //byte tmp = (byte) HandGestureValue;
-            //string tmp = "H" + HandGestureValue;
-            //Console.WriteLine(tmp);
+            SetDirectory(varDirectory);
+            SetOffsetMode(varOffsetMode);
         }
 
+        public void SetOffsetMode(OffsetModeFormat varOffestMode) {
+            OffestMode = varOffestMode;
+        }
 
+        private void SetDirectory(string dir)
+        // set working directory
+        {     
+            /*
+            Directory.SetCurrentDirectory(dir);
+            directory = Directory.GetCurrentDirectory();            
+            */
+            directory = dir;
+            Console.WriteLine("Current directory: {0}", directory);
+        }
 
-        private void setDirectory(string s)
+        private string getOffsetPairsFilename()
         {
-            directory = s;
+            string filename;
+            if (KinectMode == KinectModeFormat.Near)
+                filename = "NearModeOffsetPairs";
+            else
+                filename = "DefaultModeOffsetPairs";
+
+            return directory + "\\" + filename + "_" + OffestMode.ToString() + ".txt";
         }
 
-        public void readOffsetPairsFromFile()
+        public void ReadOffsetPairsFromFile()
         {
+            string filename = getOffsetPairsFilename();
+            //Console.WriteLine("Filename: {0}", filename);
+            try
+            {
+                StreamReader SR = new StreamReader(filename);
+
+                string line = SR.ReadLine(); // read the whole file into memory
+                char[] delimiters = new char[] { ' ' };
+                string[] parts = line.Split(delimiters, StringSplitOptions.RemoveEmptyEntries);
+                numOfOffsetPairs = int.Parse(parts[0]);
+                listOfOffsetPairs.Clear();
+
+                for (int i = 1; i <= numOfOffsetPairs * 4; i += 4)
+                {
+                    int[] tmpArray = new int[4];
+                    for (int j = 0; j < 4; j++)
+                        tmpArray[j] = int.Parse(parts[i + j]);
+                    listOfOffsetPairs.Add(tmpArray);
+                }
+                Console.WriteLine("Read {0} pairs from {1}", numOfOffsetPairs, filename);
+                SR.Close();
+            }
+            catch {
+                Console.WriteLine("Something wrong");
+            }
 
         }
 
-        public void writeOffsetPairsToFile()
+        public void WriteOffsetPairsToFile()
         {
+            // File format: numberOfPair Pair1UX Pair1UY Pair1VX Pair1VY Pair2UX Pair2UY Pair2VX Pair2VY
+            string filename = getOffsetPairsFilename();
 
+            Console.WriteLine("Writing to file: {0}", filename);            
+            using (StreamWriter filestream = new StreamWriter(directory + "\\" + filename) )
+            {
+                filestream.Write(listOfOffsetPairs.Count);
+                for (int i = 0; i < listOfOffsetPairs.Count; i++) {
+                    filestream.Write(" {0} {1} {2} {3}", listOfOffsetPairs[i][0], listOfOffsetPairs[i][1], listOfOffsetPairs[i][2], listOfOffsetPairs[i][3]);
+                }
+            }
+            Console.WriteLine("Finish writing to file: {0}", filename);            
         }
 
-        private void getOnePairRandomOffset(int [] arrayInt)
+        private void GetOnePairRandomOffset(int [] arrayInt)
         {
             if (KinectMode == KinectModeFormat.Near)
             {
@@ -101,7 +157,7 @@ namespace FeatureExtractionLib
                 arrayInt[1] = arrayInt[1] * -1;
         }
 
-        public void generateOffsetPairs(int setNumOfOffsetPairs)
+        public void GenerateOffsetPairs(int setNumOfOffsetPairs)
         {
             // Ask permission
             /*
@@ -115,8 +171,8 @@ namespace FeatureExtractionLib
             int [] u={0,0}, v={0,0};            
             for (int i = 0; i < numOfOffsetPairs; i++)
             {
-                getOnePairRandomOffset(u);
-                getOnePairRandomOffset(v);
+                GetOnePairRandomOffset(u);
+                GetOnePairRandomOffset(v);
                 listOfOffsetPairs.Add(new int[] { u[0], u[1], v[0], v[1] });
                 //Console.WriteLine("U:({0},{1}), V:({2},{3})", u[0], u[1], v[0], v[1]);
             }
@@ -124,7 +180,7 @@ namespace FeatureExtractionLib
             
         }
 
-        public void getAllOffsetPairs(int curPosition, int curDepth, List<int[]> listOfOffsetPosition)
+        public void GetAllOffsetPairs(int curPosition, int curDepth, List<int[]> listOfOffsetPosition)
         {
             int CurX = curPosition % width,  CurY = curPosition/ width;
             for (int i = 0; i < numOfOffsetPairs; i++) { 
@@ -142,7 +198,7 @@ namespace FeatureExtractionLib
             }
         }
 
-        public void readDirectory()
+        public void GenerateFeatureVectorViaImageFiles()
         {
 
             Array values = Enum.GetValues(typeof(HandGestureFormat));
@@ -158,7 +214,7 @@ namespace FeatureExtractionLib
                     string fileName = Path.GetFileName(filePath);
                     string prefix = fileName.Substring(0, 10);
                     if (prefix == "depthLabel")
-                        readFile(filePath);
+                        ReadImageFile(filePath);
                     //Console.WriteLine(fileName);
                     return; // debug
                 }
@@ -167,7 +223,7 @@ namespace FeatureExtractionLib
 
         }
 
-        public void readFile(string filePath)
+        public void ReadImageFile(string filePath)
         {
 
             using (System.IO.StreamReader file = new System.IO.StreamReader(filePath))

@@ -2,57 +2,67 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-
+using FeatureExtractionLib;
 
 namespace TestModuleNamespace
 {
     class TestModule
     {
+        private FeatureExtractionLib.FeatureExtraction Feature;
+        private int minOffset;
+        private int maxOffset;
+        private int NumofOffset;
+
         static void Main(string[] args)
         {
             Console.WriteLine(
-                "Hello World");
-            // test divide by
-            int a = 11, b = 5;
-            int c = a / b;
-            Console.WriteLine("c={0}", c);
-
+                "Hello World");            
             // test FeatureExtactionLib
-            TestModule FeatureExtraction = new TestModule();
-            FeatureExtraction.TestFeatureExtractionLib();
+            TestModule FeatureExtractionTest = new TestModule();
+            FeatureExtractionTest.SetupFeatureExtraction();
+            //FeatureExtractionTest.TestDisplay();
 
-           Console.ReadKey();
+            Console.ReadKey();
         }
 
-        public void TestFeatureExtractionLib() {
-            string directory = "C:\\Users\\Michael Zhang\\Desktop\\HandGestureRecognition\\ColorGlove\\ColorGlove\\bin\\Release\\training_samples";
-            FeatureExtractionLib.FeatureExtraction Feature = new FeatureExtractionLib.FeatureExtraction(
-                                                                                     FeatureExtractionLib.FeatureExtraction.KinectModeFormat.Near,
-                                                                                     directory);
+        public void SetupFeatureExtraction() {
+            //Default direcotry: "..\\..\\..\\Data";
+            // Need to setup the offset mode, and Kinect mode (near/default)                
+            FeatureExtraction.OffsetModeFormat OffsetMode = FeatureExtraction.OffsetModeFormat.PairsOf2000UniformDistribution;
+            FeatureExtraction.KinectModeFormat KinectMode = FeatureExtraction.KinectModeFormat.Near;
+                        Feature = new FeatureExtractionLib.FeatureExtraction(
+                                                                                     KinectMode,
+                                                                                     OffsetMode);
+                                                                                     //directory);                        
+        }
 
-            //Feature.testEnum();
-            Feature.readDirectory();
-
-            // // Test offset
-            int minOffset = 50 * 2000;
-            int maxOffset = 500;
-            Feature.SetOffsetMax(minOffset);
-            Feature.SetOffsetMin(maxOffset);
-            Feature.generateOffsetPairs(20);
-
+        private void TestDisplay(){
+            Feature.ReadOffsetPairsFromFile();
+            // Dispaly offset            
             List<int[]> listOfOffsetPosition = new List<int[]>();
 
             int curPosition = 300000;
-            Feature.getAllOffsetPairs(curPosition, 500, listOfOffsetPosition);
+            Feature.GetAllOffsetPairs(curPosition, 500, listOfOffsetPosition);
             int CurX = curPosition % 640, CurY = curPosition / 640;
             Console.WriteLine("Cur({0},{1})", CurX, CurY);
             for (int i = 0; i < listOfOffsetPosition.Count; i++)
             {
                 Console.WriteLine("ShiftXU:({0},{1}), ShiftXV:({2},{3})", listOfOffsetPosition[i][0], listOfOffsetPosition[i][1], listOfOffsetPosition[i][2], listOfOffsetPosition[i][3]);
-            }
+            }            
+        }
 
-            //Feature.testSample();
-            //Feature.testSplit();
+        private void TestGenerateOffset()
+        {
+            // Set up parameter for generating offset pairs
+            minOffset = 50 * 2000;
+            maxOffset = 500;
+            NumofOffset = 2000;
+            // Generate offset file and write to file            
+            Feature.SetOffsetMax(minOffset);
+            Feature.SetOffsetMin(maxOffset);
+            Feature.GenerateOffsetPairs(NumofOffset); // Note this number has to be consistent with FeatureExtraction.OffsetModeFormat                        
+            Feature.WriteOffsetPairsToFile();
+                    
         }
     }
 }

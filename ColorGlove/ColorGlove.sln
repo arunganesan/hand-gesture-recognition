@@ -3,8 +3,6 @@ Microsoft Visual Studio Solution File, Format Version 11.00
 # Visual Studio 2010
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ColorGlove", "ColorGlove\ColorGlove.csproj", "{96A4A593-732B-4340-98EC-0BD9B20AAA66}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{AF502D5C-D3EA-49B5-9D83-DB48FC0E657B}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FeatureExtractionLib", "FeatureExtractionLib\FeatureExtractionLib.csproj", "{7F3B6CFF-06CC-4C1D-B92B-7DEF3715C4A9}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestModule", "TestModuleForFeatureExtraction\TestModule.csproj", "{BB02BA52-A322-4EB1-9763-BD397FB885AF}"
