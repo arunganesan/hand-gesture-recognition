@@ -1,5 +1,0 @@
-C:\Users\Michael Zhang\Desktop\HandGestureRecognition\ColorGlove\FeatureExtractionLib\obj\Release\ResolveAssemblyReference.cache
-C:\Users\Michael Zhang\Desktop\HandGestureRecognition\ColorGlove\FeatureExtractionLib\bin\Release\FeatureExtractionLib.dll
-C:\Users\Michael Zhang\Desktop\HandGestureRecognition\ColorGlove\FeatureExtractionLib\bin\Release\FeatureExtractionLib.pdb
-C:\Users\Michael Zhang\Desktop\HandGestureRecognition\ColorGlove\FeatureExtractionLib\obj\Release\FeatureExtractionLib.dll
-C:\Users\Michael Zhang\Desktop\HandGestureRecognition\ColorGlove\FeatureExtractionLib\obj\Release\FeatureExtractionLib.pdb

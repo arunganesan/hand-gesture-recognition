@@ -90,29 +90,35 @@ namespace ColorGlove
             //processors[1].updatePipeline(Processor.Step.ColorMatch);
             //processors[2].updatePipeline(Processor.Step.ColorMatch);
 
-            /*
+            
             processors[0].updatePipeline(
                 // Show the rgb image
-                                         //Processor.Step.Color
+                                         Processor.Step.Color
                 // Show the depth image                                         
                                         // Processor.Step.Depth    
                                          
                 // Show the Color Labelling                                         
-                                         Processor.Step.PaintWhite,
-                                         Processor.Step.ColorMatch
+                                        // Processor.Step.PaintWhite,
+                                        // Processor.Step.ColorMatch
                                           
            ); 
-           */
+           
+
+            //processors[0].updatePipeline(Processor.Step.ColorMatch);
+            
             processors[1].updatePipeline(
                 // Show the rgb image
-                //Processor.Step.Color
+                                        // Processor.Step.Color
                 // Show the depth image                                         
-                                        Processor.Step.Depth,
+                //                        Processor.Step.Depth,
                 // Show overlap offest
-                                        Processor.Step.OverlayOffset
+                //                        Processor.Step.OverlayOffset
                 // Show Mapped Depth Using RGB
                                         //Processor.Step.PaintWhite,
-                                        //Processor.Step.MappedDepth                                        
+                                        //Processor.Step.MappedDepth
+                // Show the Color Labelling
+                                        Processor.Step.PaintWhite,
+                                        Processor.Step.ColorMatch
             );
 
             #endregion
@@ -131,8 +137,10 @@ namespace ColorGlove
                 sensor.DepthStream.Enable(DepthImageFormat.Resolution640x480Fps30);
 
                 // Can set this in the construct function {// Commented out for XBox Kinect}
-                if (RangeModeValue == RangeModeFormat.Near)
-                    sensor.DepthStream.Range = DepthRange.Near; // set near mode 
+
+                
+                //if (RangeModeValue == RangeModeFormat.Near)
+                //    sensor.DepthStream.Range = DepthRange.Near; // set near mode 
 
                 colorPixels = new byte[640 * 480 * 4];
                 depthPixels = new short[640 * 480];

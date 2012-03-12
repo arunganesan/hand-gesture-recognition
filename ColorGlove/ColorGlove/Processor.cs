@@ -51,7 +51,7 @@ namespace ColorGlove
         };
 
         private RangeModeFormat RangeModeValue = RangeModeFormat.Near;
-        private Dictionary<Tuple<byte, byte, byte>, byte> nearest_cache = new Dictionary<Tuple<byte, byte, byte>, byte>(); // It seems not necessary to save the mapped result as byte[], byte should be enough.
+        static private Dictionary<Tuple<byte, byte, byte>, byte> nearest_cache = new Dictionary<Tuple<byte, byte, byte>, byte>(); // It seems not necessary to save the mapped result as byte[], byte should be enough.
         private WriteableBitmap bitmap;
         private byte[] bitmapBits;
         private byte[] overlayBitmapBits;
@@ -67,6 +67,7 @@ namespace ColorGlove
             ColorMatch,
             ColorLabelingInRGB,
             OverlayOffset,
+            Denoise,
         };
 
         public enum HandGestureFormat
@@ -98,7 +99,7 @@ namespace ColorGlove
                                   DesiredMinSat = 0.174f, DesiredMaxSat = 0.397f; // Used for hue dection
 
         // Used for cropping.
-        int x_0 = 220, x_1 = 390, y_0 = 150, y_1 = 362;
+        int x_0 = 0, x_1 = 640, y_0 = 0, y_1 = 480;
 
 
         byte[] color = new byte[3];
@@ -112,8 +113,8 @@ namespace ColorGlove
         private readonly byte[] targetColor = new byte[] { 255, 0, 0 };
         private readonly byte[] backgroundColor = new byte[] { 255, 255, 255 };
 
-        private List<byte[]> centroidColor = new List<byte[]>(); // the color of the centroid
-        private List<byte> centroidLabel = new List<byte>(); // the label of the centroid        
+        static private List<byte[]> centroidColor = new List<byte[]>(); // the color of the centroid
+        static private List<byte> centroidLabel = new List<byte>(); // the label of the centroid
         private Dictionary<byte, byte[]> labelColor = new Dictionary<byte, byte[]>();
 
         byte targetLabel, backgroundLabel;
@@ -121,73 +122,7 @@ namespace ColorGlove
 
         FeatureExtractionLib.FeatureExtraction Feature;
         List<int[]> listOfOffsetPosition;
-        /*
-        {
-                                  // start of target color
-            {145, 170, 220},
-            {170, 190, 250},
-            {96,152,183},
-            {180,211,230},
-            {156,196,221}, 
-            {80, 112, 144},
-            {68, 99, 133},
-            {76, 103, 141},
-            {122, 154, 173},
-            {120, 138, 162},
-                                 // end of target color
-                                 // start of background color
-            {80, 80, 80},
-            {250, 240, 240},
-            {210, 180, 150},
-            {110, 86, 244},
-            {75,58,151},
-            {153, 189, 206},
-            {214, 207, 206},
-            {122, 124, 130}
-                                // end of background color
-        };
-        */
-        /*
-        byte[,] replacement = new byte[,]  // used for labeling
-        {
-            {255,0,0},
-            {255,0,0},
-            {255,0,0},
-            {255,0,0},
-            {255,0,0},
-            {255,0,0},
-            {255,0,0},
-            {255,0,0},
-            {255,0,0},
-            {255,0,0},
-                                // end
-            {255,255,255},
-            {255,255,255},
-            {255,255,255},
-            {255,255,255},
-            {255,255,255},
-            {255,255,255},
-            {255,255,255},
-            {255,255,255},
-            {255,255,255}
-        };
-        */
-
-        /*
-        byte[,] colors = new byte[,] {
-              {140, 140, 140},   // White  
-              {30, 30, 85},      // Blue
-              {55, 90, 70},      // Green
-              {115, 30, 100}     // Pink
-            };
-
-        byte[,] replacement = new byte[,] {
-              {255, 255, 255},   // White  
-              {0, 0, 255},      // Blue
-              {0, 255, 0},      // Green
-              {255, 0, 0}     // Red
-            };
-        */
+        
 
         public Processor(KinectSensor sensor)
         {
@@ -286,15 +221,13 @@ namespace ColorGlove
         }
 
         public void kMeans()
-        // This function doesn't work due to merge. Michael will look into that.
         {
-            /*
             int k = 5;
             // k = 5 seems to do well with background cleared out.
             
             Random rand = new Random();
 
-            // Randomly create 7 colors
+            // Randomly create K colors
             double[,] clusters = new double[k, 3];
             for (int i = 0; i < k; i++) {
                 clusters[i, 0] = rand.Next(0, 255);
@@ -302,7 +235,6 @@ namespace ColorGlove
                 clusters[i, 2] = rand.Next(0, 255);
             }
 
-            // XXX: Assumes cropping!!!
             int width = x_1 - x_0;
             int height = y_1 - y_0;
 
@@ -310,6 +242,8 @@ namespace ColorGlove
             double[] point = new double[3];
 
             int [] cluster_count = Enumerable.Repeat((int)0, k).ToArray();
+            int max_cluster = -1;
+
             double[,] cluster_centers = new double[k, 3];
             for (int i = 0; i < k; i++)
             {
@@ -320,7 +254,7 @@ namespace ColorGlove
 
             double[] cluster_deltas = new double[k];
 
-            double delta = 10000, epsilon = 0.1;
+            double delta = 10000, epsilon = 10;
 
             double minDistance = 10000;
             int minCluster = -1;
@@ -357,6 +291,7 @@ namespace ColorGlove
 
                     points[i] = minCluster;
                     cluster_count[minCluster] ++;
+
                 }
 
                 // Step 2: update the cluster center values
@@ -392,6 +327,9 @@ namespace ColorGlove
                     clusters[i, 0] = r;
                     clusters[i, 1] = g;
                     clusters[i, 2] = b;
+
+                    if (max_cluster == -1 || cluster_count[i] > cluster_count[max_cluster]) 
+                        max_cluster = i;
                 }
 
                 delta = cluster_deltas[0];
@@ -400,23 +338,23 @@ namespace ColorGlove
 
             }
 
-
-            colors = new byte[k, 3];
+            clearCentroids();
+            
             for (int i = 0; i < k; i++)
             {
-                colors[i, 0] = (byte)clusters[i, 0];
-                colors[i, 1] = (byte)clusters[i, 1];
-                colors[i, 2] = (byte)clusters[i, 2];
-            }
+                byte label;
+                if (i == max_cluster) label = this.targetLabel;
+                else label = this.backgroundLabel;
 
+                AddCentroid((byte)clusters[i, 0], (byte)clusters[i, 1], (byte)clusters[i, 2], label);
+            }
+            
             // Uncomment this line for stock color replacement.
             //replacement = colors;
             
-
             Processor.nearest_cache.Clear();
             Console.WriteLine("Done!");
 
-             */
         }
 
         private void AddCentroid(byte R, byte G, byte B, byte label)  // a helper function for adding labled centroid
@@ -425,6 +363,11 @@ namespace ColorGlove
             centroidLabel.Add(label);
         }
 
+        private void clearCentroids()
+        {
+            centroidColor.Clear();
+            centroidLabel.Clear();
+        }
 
         private void image_click(object sender, MouseButtonEventArgs e)
         {
@@ -551,11 +494,14 @@ namespace ColorGlove
                 case Step.ColorMatch: show_color_match(depth, rgb); break;
                 case Step.ColorLabelingInRGB: ColorLabellingInRGB(rgb); break;
                 case Step.OverlayOffset: ShowOverlayOffset(); break;
+                case Step.Denoise: Denoise(); break;
             }
         }
 
         #region Filter functions
-
+        private void Denoise()
+        {
+        }
 
         private void show_depth(short[] depth, byte[] rgb)
         {
@@ -576,6 +522,7 @@ namespace ColorGlove
             //this.bitmap = new WriteableBitmap((x_1 - x_0), (y_1 - y_0), 96, 96, PixelFormats.Bgr32, null);
             //image.Source = bitmap;
 
+            x_0 = 220; x_1 = 390; y_0 = 150; y_1 = 362;
 
             for (int i = 0; i < depth.Length; i++)
             {
@@ -779,17 +726,7 @@ namespace ColorGlove
                 Math.Pow(point[1] - point2[1], 2) +
                 Math.Pow(point[2] - point2[2], 2));
         }
-        /*  
-        double euc_distance(byte[] point, int colorIdx)
-        {
-            return Math.Sqrt(Math.Pow(point[0] - centroidColor[colorIdx, 0], 2) +
-                Math.Pow(point[1] - centroidColor[colorIdx, 1], 2) +
-                Math.Pow(point[2] - centroidColor[colorIdx, 2], 2));
-        }
-        */
-
-        //double ColourDistance(byte[] point, int colorIdx)
-
+        
         double ColorDistance(byte[] point1, byte[] point2) // using human perception for the color metric
         {
 
