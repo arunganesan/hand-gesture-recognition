@@ -486,7 +486,7 @@ namespace ColorGlove
         {
             switch (step)
             {
-                case Step.Depth: show_depth(depth, rgb); break;
+                case Step.Depth: ShowDepth(depth, rgb); break;
                 case Step.Color: show_color(depth, rgb); break;
                 case Step.Crop: crop_color(depth, rgb); break;
                 case Step.PaintWhite: paint_white(depth, rgb); break;
@@ -494,16 +494,103 @@ namespace ColorGlove
                 case Step.ColorMatch: show_color_match(depth, rgb); break;
                 case Step.ColorLabelingInRGB: ColorLabellingInRGB(rgb); break;
                 case Step.OverlayOffset: ShowOverlayOffset(); break;
-                case Step.Denoise: Denoise(); break;
+                case Step.Denoise: Denoise(rgb); break;
             }
         }
 
         #region Filter functions
-        private void Denoise()
+        
+        private void Denoise(byte[] rgb)
         {
+            int x, y;
+            int totalSurrounding = 0;
+            int width = 640, height = 480;
+            int[] sumSurrounding = new int[] { 0, 0, 0 };
+
+            // XXX: Doesn't work with cropping.
+            for (int i = 0; i < rgb.Length; i += 4)
+            {
+                x = i / 4 % width;
+                y = i / 4 / width;
+
+                // Average of surrounding points
+                sumSurrounding[0] = 0;
+                sumSurrounding[1] = 0;
+                sumSurrounding[2] = 0;
+                totalSurrounding = 0;
+
+                if (y != 0 && x != 0)
+                {
+                    sumSurrounding[0] += rgb[((y - 1) * width + (x - 1)) * 4];
+                    sumSurrounding[1] += rgb[((y - 1) * width + (x - 1)) * 4 + 1];
+                    sumSurrounding[2] += rgb[((y - 1) * width + (x - 1)) * 4 + 2];
+                    totalSurrounding++;
+                }
+
+                if (y != 0)
+                {
+                    sumSurrounding[0] += rgb[((y - 1) * width + (x)) * 4];
+                    sumSurrounding[1] += rgb[((y - 1) * width + (x)) * 4 + 1];
+                    sumSurrounding[2] += rgb[((y - 1) * width + (x)) * 4 + 2];
+                    totalSurrounding++;
+                }
+
+                if (y != 0 && x != width - 1)
+                {
+                    sumSurrounding[0] += rgb[((y - 1) * width + (x + 1)) * 4];
+                    sumSurrounding[1] += rgb[((y - 1) * width + (x + 1)) * 4 + 1];
+                    sumSurrounding[2] += rgb[((y - 1) * width + (x + 1)) * 4 + 2];
+                    totalSurrounding++;
+                }
+
+                if (x != width - 1)
+                {
+                    sumSurrounding[0] += rgb[((y) * width + (x + 1)) * 4];
+                    sumSurrounding[1] += rgb[((y) * width + (x + 1)) * 4 + 1];
+                    sumSurrounding[2] += rgb[((y) * width + (x + 1)) * 4 + 2];
+                    totalSurrounding++;
+                }
+
+                if (y != height - 1 && x != width - 1)
+                {
+                    sumSurrounding[0] += rgb[((y + 1) * width + (x + 1)) * 4];
+                    sumSurrounding[1] += rgb[((y + 1) * width + (x + 1)) * 4 + 1];
+                    sumSurrounding[2] += rgb[((y + 1) * width + (x + 1)) * 4 + 2];
+                    totalSurrounding++;
+                }
+
+                if (y != height - 1)
+                {
+                    sumSurrounding[0] += rgb[((y + 1) * width + (x)) * 4];
+                    sumSurrounding[1] += rgb[((y + 1) * width + (x)) * 4 + 1];
+                    sumSurrounding[2] += rgb[((y + 1) * width + (x)) * 4 + 2];
+                    totalSurrounding++;
+                }
+
+                if (y != height - 1 && x != 0)
+                {
+                    sumSurrounding[0] += rgb[((y + 1) * width + (x - 1)) * 4];
+                    sumSurrounding[1] += rgb[((y + 1) * width + (x - 1)) * 4 + 1];
+                    sumSurrounding[2] += rgb[((y + 1) * width + (x - 1)) * 4 + 2];
+                    totalSurrounding++;
+                }
+
+                if (x != 0)
+                {
+                    sumSurrounding[0] += rgb[((y) * width + (x - 1)) * 4];
+                    sumSurrounding[1] += rgb[((y) * width + (x - 1)) * 4 + 1];
+                    sumSurrounding[2] += rgb[((y) * width + (x - 1)) * 4 + 2];
+                    totalSurrounding++;
+                }
+
+                bitmapBits[i] = (byte)(sumSurrounding[0] / totalSurrounding);
+                bitmapBits[i + 1] = (byte)(sumSurrounding[1] / totalSurrounding);
+                bitmapBits[i + 2] = (byte)(sumSurrounding[2] / totalSurrounding);
+                bitmapBits[i + 3] = 255;
+            }
         }
 
-        private void show_depth(short[] depth, byte[] rgb)
+        private void ShowDepth(short[] depth, byte[] rgb)
         {
             for (int i = 0; i < depth.Length; i++)
             {

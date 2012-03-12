@@ -114,11 +114,13 @@ namespace ColorGlove
                 // Show overlap offest
                 //                        Processor.Step.OverlayOffset
                 // Show Mapped Depth Using RGB
-                                        //Processor.Step.PaintWhite,
-                                        //Processor.Step.MappedDepth
+                                        // Processor.Step.PaintWhite,
+                                        // Processor.Step.MappedDepth
                 // Show the Color Labelling
-                                        Processor.Step.PaintWhite,
-                                        Processor.Step.ColorMatch
+                                        // Processor.Step.PaintWhite,
+                                        // Processor.Step.ColorMatch
+                // Denoise
+                                        Processor.Step.Denoise
             );
 
             #endregion
