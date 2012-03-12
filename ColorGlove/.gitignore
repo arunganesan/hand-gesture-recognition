@@ -13,6 +13,7 @@ TestModuleForFeatureExtraction/Debug/*
 TestModuleForFeatureExtraction/obj/x86/Debug/*
 TestModuleForFeatureExtraction/bin/Release/*
 TestModuleForFeatureExtraction/obj/x86/Release/*
+*/obj/*
 
 *.exe
 *.pdb
