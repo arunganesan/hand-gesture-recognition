@@ -346,7 +346,7 @@ namespace ColorGlove
                 if (i == max_cluster) label = this.targetLabel;
                 else label = this.backgroundLabel;
 
-                addCentroid((byte)clusters[i, 0], (byte)clusters[i, 1], (byte)clusters[i, 2], label);
+                AddCentroid((byte)clusters[i, 0], (byte)clusters[i, 1], (byte)clusters[i, 2], label);
             }
             
             // Uncomment this line for stock color replacement.
