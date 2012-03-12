@@ -1,4 +1,5 @@
-﻿using System;
+﻿/*
+using System;
 using System.IO;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,12 +13,30 @@ using System.Windows.Media.Imaging;
 using System.Windows.Input;
 //using System.Windows.Navigation;
 //using System.Windows.Shapes;
-
-
 using System.Diagnostics;
 using System.Drawing.Imaging;
 using Microsoft.Kinect;
+using FeatureExtractionLib;
+*/
 
+using System;
+using System.IO;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Windows.Documents;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Data;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using System.Windows.Input;
+using System.Windows.Navigation;
+using System.Windows.Shapes;
+using System.Diagnostics;
+using System.Drawing.Imaging;
+using Microsoft.Kinect;
+using FeatureExtractionLib;
 
 namespace ColorGlove
 {
@@ -107,6 +126,7 @@ namespace ColorGlove
 
         public Processor(KinectSensor sensor)
         {
+            Debug.WriteLine("Start processor contruction");
             this.sensor = sensor;
             image = new Image();
             image.Width = 640;
@@ -118,15 +138,17 @@ namespace ColorGlove
             MaxHueTarget = 0.0F;
             MinSatTarget = 1F;
             MaxSatTarget = 0F;
-            string directory = "C:\\Users\\Michael Zhang\\Desktop\\HandGestureRecognition\\ColorGlove\\ColorGlove\\bin\\Release\\training_samples";
-            Feature = new FeatureExtractionLib.FeatureExtraction(
-                                                                                        FeatureExtractionLib.FeatureExtraction.KinectModeFormat.Near,
-                                                                                        directory);
+
+            // Setup FeatureExtraction Class
+            FeatureExtraction.OffsetModeFormat OffsetMode = FeatureExtraction.OffsetModeFormat.PairsOf2000UniformDistribution;
+            FeatureExtraction.KinectModeFormat KinectMode = FeatureExtraction.KinectModeFormat.Near;
+            Feature = new FeatureExtraction(KinectMode, OffsetMode);
+            Feature.ReadOffsetPairsFromFile();
 
             //classifier = new Classifier();
             this.bitmap = new WriteableBitmap(640, 480, 96, 96, PixelFormats.Bgr32, null);
             this.bitmapBits = new byte[640 * 480 * 4];
-            overlayBitmapBits = new byte[640 * 480 * 4];
+            overlayBitmapBits = new byte[640 * 480 * 4]; // overlay
             image.Source = bitmap;
 
             image.MouseLeftButtonUp += image_click;
@@ -134,13 +156,16 @@ namespace ColorGlove
             SetCentroidColorAndLabel();
             
             // Offset displaying is on.
-            // Test offset
+            // Generate offset pair
+            /*
             int minOffset = 50 * 2000;
             int maxOffset = 500;
             Feature.SetOffsetMax(minOffset);
             Feature.SetOffsetMin(maxOffset);
-            Feature.generateOffsetPairs(2000);
+            Feature.GenerateOffsetPairs(2000);
+            */
             listOfOffsetPosition = new List<int[]>(); // remember to clear.
+            Debug.WriteLine("Pass processor setting");
         }
 
         private void SetCentroidColorAndLabel()
@@ -155,33 +180,33 @@ namespace ColorGlove
             // Then add arbitrary labeled centroids.
             // For target color (blue)
 
-            addCentroid(145, 170, 220, targetLabel);
-            addCentroid(170, 190, 250, targetLabel);
-            addCentroid(96, 152, 183, targetLabel);
-            addCentroid(180, 211, 230, targetLabel);
-            addCentroid(156, 196, 221, targetLabel);
-            addCentroid(80, 112, 144, targetLabel);
-            addCentroid(68, 99, 133, targetLabel);
-            addCentroid(76, 103, 141, targetLabel);
-            addCentroid(122, 154, 173, targetLabel);
-            addCentroid(120, 138, 162, targetLabel);
-            addCentroid(109, 118, 137, targetLabel);
-            addCentroid(94, 124, 145, targetLabel);
-            addCentroid(78, 127, 153, targetLabel);
-            addCentroid(146, 177, 200, targetLabel);
-            addCentroid(155, 195, 199, targetLabel);
-            addCentroid(142, 182, 195, targetLabel);
+            AddCentroid(145, 170, 220, targetLabel);
+            AddCentroid(170, 190, 250, targetLabel);
+            AddCentroid(96, 152, 183, targetLabel);
+            AddCentroid(180, 211, 230, targetLabel);
+            AddCentroid(156, 196, 221, targetLabel);
+            AddCentroid(80, 112, 144, targetLabel);
+            AddCentroid(68, 99, 133, targetLabel);
+            AddCentroid(76, 103, 141, targetLabel);
+            AddCentroid(122, 154, 173, targetLabel);
+            AddCentroid(120, 138, 162, targetLabel);
+            AddCentroid(109, 118, 137, targetLabel);
+            AddCentroid(94, 124, 145, targetLabel);
+            AddCentroid(78, 127, 153, targetLabel);
+            AddCentroid(146, 177, 200, targetLabel);
+            AddCentroid(155, 195, 199, targetLabel);
+            AddCentroid(142, 182, 195, targetLabel);
 
             // For background color 
 
-            addCentroid(80, 80, 80, backgroundLabel);
-            addCentroid(250, 240, 240, backgroundLabel);
-            addCentroid(210, 180, 150, backgroundLabel);
-            addCentroid(110, 86, 244, backgroundLabel);
-            addCentroid(75, 58, 151, backgroundLabel);
-            addCentroid(153, 189, 206, backgroundLabel);
-            addCentroid(214, 207, 206, backgroundLabel);
-            addCentroid(122, 124, 130, backgroundLabel);
+            AddCentroid(80, 80, 80, backgroundLabel);
+            AddCentroid(250, 240, 240, backgroundLabel);
+            AddCentroid(210, 180, 150, backgroundLabel);
+            AddCentroid(110, 86, 244, backgroundLabel);
+            AddCentroid(75, 58, 151, backgroundLabel);
+            AddCentroid(153, 189, 206, backgroundLabel);
+            AddCentroid(214, 207, 206, backgroundLabel);
+            AddCentroid(122, 124, 130, backgroundLabel);
 
         }
 
@@ -332,7 +357,7 @@ namespace ColorGlove
 
         }
 
-        private void addCentroid(byte R, byte G, byte B, byte label)  // a helper function for adding labled centroid
+        private void AddCentroid(byte R, byte G, byte B, byte label)  // a helper function for adding labled centroid
         {
             centroidColor.Add(new byte[] { R, G, B });
             centroidLabel.Add(label);
@@ -350,12 +375,13 @@ namespace ColorGlove
             int baseIndex = ((int)click_position.Y * 640 + (int)click_position.X) * 4;
             Console.WriteLine("(x,y): (" + click_position.X + ", " + click_position.Y + ") RGB: {" + bitmapBits[baseIndex + 2] + ", " + bitmapBits[baseIndex + 1] + ", " + bitmapBits[baseIndex] + "}");
             int depthIndex = (int)click_position.Y * 640 + (int)click_position.X;
+            int depthVal = depth[depthIndex] >> DepthImageFrame.PlayerIndexBitmaskWidth;
             // Show offsets pair 
-            Console.WriteLine("depth: {0}, baseIndex: {1}", depth[depthIndex], depthIndex);
+            Console.WriteLine("depth: {0}, baseIndex: {1}", depthVal, depthIndex);
 
             listOfOffsetPosition.Clear();
-            int depthVal = depth[depthIndex] >> DepthImageFrame.PlayerIndexBitmaskWidth;
-            Feature.getAllOffsetPairs(depthIndex, depthVal, listOfOffsetPosition);
+
+            Feature.GetAllOffsetPairs(depthIndex, depthVal, listOfOffsetPosition);
             int bitmapIndex, X, Y;
             Array.Clear(overlayBitmapBits, 0, overlayBitmapBits.Length);
             
@@ -365,21 +391,15 @@ namespace ColorGlove
                 Y = listOfOffsetPosition[i][1];
                 if (X >= 0 && X < 640 && Y >= 0 && Y < 480)
                 {
-                    bitmapIndex = (Y * 640 + X) * 4;
-                    //Debug.Assert(bitmapIndex + 2 <= 640 * 480*4, "bitmapIndex:" + bitmapIndex.ToString() + " X:" + X.ToString() + " Y:" + Y.ToString());
-                    overlayBitmapBits[bitmapIndex + 2] = 255;                    
-                    //Console.WriteLine("Shift point ({0},{1})", X, Y);
+                    bitmapIndex = (Y * 640 + X) * 4;                    
+                    overlayBitmapBits[bitmapIndex + 2] = 255;                                        
                 }
                 X = listOfOffsetPosition[i][2];
                 Y = listOfOffsetPosition[i][3];
                 if (X >= 0 && X < 640 && Y >= 0 && Y < 480)
                 {
-                    bitmapIndex = (Y * 640 + X) * 4;
-                    //Debug.Assert(bitmapIndex + 2 <= 640 * 480 * 4, "bitmapIndex:" + bitmapIndex.ToString() + " X:" + X.ToString() + " Y:" + Y.ToString());
+                    bitmapIndex = (Y * 640 + X) * 4;                    
                     overlayBitmapBits[bitmapIndex + 2] = 255;
-                    //bitmapBits[bitmapIndex + 1] = 0;
-                    //bitmapBits[bitmapIndex] = 0;
-                    //Console.WriteLine("Shift point ({0},{1})", X, Y);
                 }
             }
 
@@ -441,16 +461,7 @@ namespace ColorGlove
                 for (int i = 0; i < depth.Length; i++)
                 {
                     int depthVal = depth[i] >> DepthImageFrame.PlayerIndexBitmaskWidth;
-                    byte label = depthLabel[i];
-                    /*
-                    ColorImagePoint depth_point = mapped[i]; // it's better to be name color_point, since it's mapped to the color image
-                    if (depth_point.X >= 0 && depth_point.X < 640 && depth_point.Y >= 0 && depth_point.Y < 480)
-                    {
-                        int idx = (depth_point.Y * 640 + depth_point.X);
-                        //mapped_depth[idx] = depth[i] >> DepthImageFrame.PlayerIndexBitmaskWidth;
-                        // update label.
-                    }
-                     */
+                    byte label = depthLabel[i];                    
                     depthAndLabel.Add(new int[] { depthVal, label });
                 }
                 /* Output file format: 
@@ -460,14 +471,7 @@ namespace ColorGlove
                 for (int i = 1; i < depthAndLabel.Count; i++) filestream.Write(" ({0},{1})", depthAndLabel[i][0], depthAndLabel[i][1]);
             }
 
-            /*
-            // processed
-            using (StreamWriter filestream = new StreamWriter(directory + "\\" + filename + "_processed.txt"))
-            {
-                filestream.Write(bitmapBits[0]);
-                for (int i = 1; i < bitmapBits.Length; i++) filestream.Write(" " + bitmapBits[i]);
-            }
-             */
+            
         }
 
         public Image getImage() { return image; }
