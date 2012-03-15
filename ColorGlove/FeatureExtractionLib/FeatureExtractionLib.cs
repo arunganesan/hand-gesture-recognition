@@ -7,13 +7,25 @@ using System.IO;
 namespace FeatureExtractionLib
 {
     public class FeatureExtraction
-    {   
+    {
         /* README 
-         * There are serval parameters in offset pairs, kinect mode. We use a human readable namespace mapping:
-         * mode name -> parameter set.
-         * Users of this library should first should the mode name before using the library.
-         * Users can also add new mode name, and its corresponding parameter set.
-         */
+         * How to use mode:
+            * There are serval parameters in offset pairs, kinect mode. We use a human readable namespace mapping:
+            * mode name -> parameter set.
+            * Users of this library should first should the mode name before using the library.
+            * Users can also add new mode name, and its corresponding parameter set.
+         
+         * How to generate offset pairs:
+            * If the user wants a new offset pairs, he needs to use a new Mode. After setting the parameters, he can call GenerateOffsetPairs() to generate a set of 
+            * offset pairs, and use WriteOffsetPairsToStorage() to store in file system (he doesn't need to care about the file name). And he can use 
+            * ReadOffsetPairsFromStorage() to get the offset pairs from the file system (again he doesn't need to worry about the file name, since it's bind into the mode name)
+         * How to get transformed points via the offset pairs for a given depth point:
+            * First the user needs to specify the mode, then he calls ReadOffsetPairsFromStorage() to get the offset pairs. Finally, he can call 
+            * FeatureExtractionLib.FeatureExtraction.GetAllTransformedPairs(..) for a given depth point to get all transformed pair of points.
+         
+         * How to generate feature vector file:
+            * Call FeatureExtractionLib.FeatureExtraction.GenerateFeatureVectorViaImageFiles()     
+        */
         public enum ModeFormat { 
             Maize,  
             Blue, // Operate in near Kinect mode, use a large box and a large number of offset
@@ -121,14 +133,14 @@ namespace FeatureExtractionLib
                 uMin = x;
         }
 
-        private string getOffsetPairsFilename()
+        private string GetOffsetPairsFilename()
         {          
             return directory + "\\" + "Offset" + Mode + ".txt";
         }
 
-        public void ReadOffsetPairsFromFile()
+        public void ReadOffsetPairsFromStorage()
         {
-            string filename = getOffsetPairsFilename();
+            string filename = GetOffsetPairsFilename();
             //Console.WriteLine("Filename: {0}", filename);
             try
             {
@@ -156,10 +168,10 @@ namespace FeatureExtractionLib
 
         }
 
-        public void WriteOffsetPairsToFile()
+        public void WriteOffsetPairsToStorage()
         {
             // File format: numberOfPair Pair1UX Pair1UY Pair1VX Pair1VY Pair2UX Pair2UY Pair2VX Pair2VY
-            string filepath = getOffsetPairsFilename();
+            string filepath = GetOffsetPairsFilename();
 
             Console.WriteLine("Writing to file: {0}", filepath);            
             using (StreamWriter filestream = new StreamWriter(filepath) )
@@ -219,7 +231,7 @@ namespace FeatureExtractionLib
             return (int)(Origin + (double)((Offset + 0.0) / (curDepth + 0.0)));
         }
 
-        public void GetAllOffsetPairs(int curPosition, int curDepth, List<int[]> listOfOffsetPosition)
+        public void GetAllTransformedPairs(int curPosition, int curDepth, List<int[]> listOfTransformedPairPosition)
         {
             int CurX = curPosition % width,  CurY = curPosition/ width;
             for (int i = 0; i < numOfOffsetPairs; i++) { 
@@ -228,7 +240,7 @@ namespace FeatureExtractionLib
                 int newUY = HelperGetOffset(CurY, uY, curDepth);
                 int newVX = HelperGetOffset(CurX, vX, curDepth);
                 int newVY = HelperGetOffset(CurY, vY, curDepth);
-                listOfOffsetPosition.Add(new int[] { newUX, newUY, newVX, newVY });
+                listOfTransformedPairPosition.Add(new int[] { newUX, newUY, newVX, newVY });
             }
         }
 
@@ -245,11 +257,11 @@ namespace FeatureExtractionLib
                 return UpperBound;
         }
 
-        private void ExtractFeature(int oneDimensionIndex)
+        private void ExtractFeatureFromOneDepthPoint(int oneDimensionIndex)
         {
             List<int[]> aListOfOffsetPosition = new List<int[]>();
             List<int> featureVector = new List<int>();
-            GetAllOffsetPairs(oneDimensionIndex, depth[oneDimensionIndex], aListOfOffsetPosition);
+            GetAllTransformedPairs(oneDimensionIndex, depth[oneDimensionIndex], aListOfOffsetPosition);
             //Console.WriteLine("Feature vector: {0}", label[oneDimensionIndex]);
             outputFilestream.Write("{0}", label[oneDimensionIndex]);
             //Console.WriteLine("aListOfOffsetPosition.Count:{0}", aListOfOffsetPosition.Count);
@@ -266,7 +278,7 @@ namespace FeatureExtractionLib
             outputFilestream.WriteLine();
         }
 
-        public void ReadImageFile(string filePath)
+        private void ReadImageFileToGetDepthAndLabel(string filePath)
         {
             using (System.IO.StreamReader file = new System.IO.StreamReader(filePath))
             {
@@ -278,10 +290,8 @@ namespace FeatureExtractionLib
                 int countDepthMinusOne = 0;
                 int countBackgounrdLabel = 0;
                 for (int i = 0; i < width * height; i++)
-                {
-                    //twoDimensionDepth[X, Y] = (short) int.Parse( parts[2*i]);
-                    depth[i] = (short)int.Parse(parts[2 * i]);
-                    //twoDimensionLabel[X, Y] = (byte) int.Parse(parts[2 * i + 1]);
+                {                 
+                    depth[i] = (short)int.Parse(parts[2 * i]);                  
                     label[i] = (byte)int.Parse(parts[2 * i + 1]);
                     if (depth[i] == -1)
                         countDepthMinusOne++;
@@ -318,7 +328,7 @@ namespace FeatureExtractionLib
                     string prefix = fileName.Substring(0, 10);
                     if (prefix == "depthLabel")
                     {
-                        ReadImageFile(filePath);
+                        ReadImageFileToGetDepthAndLabel(filePath);
                         RandomSample(sampledNumberPerClass); // including writing to file
                     }
                     /*
@@ -367,8 +377,8 @@ namespace FeatureExtractionLib
             Shuffle(listOfBackgroundPosition);
             for (int i = 0; i < numerPerClass; i++)
             {
-                ExtractFeature(listOfTargetPosition[i]);                
-                ExtractFeature(listOfBackgroundPosition[i]);
+                ExtractFeatureFromOneDepthPoint(listOfTargetPosition[i]);                
+                ExtractFeatureFromOneDepthPoint(listOfBackgroundPosition[i]);
                 //return; //debug
             }
         }

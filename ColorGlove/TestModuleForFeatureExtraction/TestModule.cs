@@ -36,17 +36,17 @@ namespace TestModuleNamespace
 
         private void TestGenerateFeatures()
         {
-            Feature.ReadOffsetPairsFromFile();
+            Feature.ReadOffsetPairsFromStorage();
             Feature.GenerateFeatureVectorViaImageFiles();
         }
 
         private void TestDisplay(){
-            Feature.ReadOffsetPairsFromFile();
+            Feature.ReadOffsetPairsFromStorage();
             // Dispaly offset            
             List<int[]> listOfOffsetPosition = new List<int[]>();
 
             int curPosition = 300000;
-            Feature.GetAllOffsetPairs(curPosition, 500, listOfOffsetPosition);
+            Feature.GetAllTransformedPairs(curPosition, 500, listOfOffsetPosition);
             int CurX = curPosition % 640, CurY = curPosition / 640;
             Console.WriteLine("Cur({0},{1})", CurX, CurY);
             for (int i = 0; i < listOfOffsetPosition.Count; i++)
@@ -58,7 +58,7 @@ namespace TestModuleNamespace
         private void TestGenerateOffset()
         {            
             Feature.GenerateOffsetPairs(); 
-            Feature.WriteOffsetPairsToFile();                    
+            Feature.WriteOffsetPairsToStorage();                    
         }
     }
 }

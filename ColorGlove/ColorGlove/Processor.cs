@@ -121,7 +121,7 @@ namespace ColorGlove
 
 
         FeatureExtractionLib.FeatureExtraction Feature;
-        List<int[]> listOfOffsetPosition;
+        List<int[]> listOfTransformedPairPosition;
         
 
         public Processor(KinectSensor sensor)
@@ -144,9 +144,9 @@ namespace ColorGlove
             // To setup the mode, see README in the library
             FeatureExtraction.ModeFormat MyMode = FeatureExtraction.ModeFormat.Maize;
             Feature = new FeatureExtractionLib.FeatureExtraction(
-                                                                         MyMode);                                    
-            //Feature.ReadOffsetPairsFromFile(); 
-            Feature.GenerateOffsetPairs(); // use this to test the offset pairs parameters setting
+                                                                         MyMode);
+            Feature.ReadOffsetPairsFromStorage();
+            //Feature.GenerateOffsetPairs(); // use this to test the offset pairs parameters setting
 
             //classifier = new Classifier();
             this.bitmap = new WriteableBitmap(640, 480, 96, 96, PixelFormats.Bgr32, null);
@@ -158,7 +158,7 @@ namespace ColorGlove
 
             SetCentroidColorAndLabel();
             
-            listOfOffsetPosition = new List<int[]>(); // remember to clear.
+            listOfTransformedPairPosition = new List<int[]>(); // remember to clear.
             Debug.WriteLine("Pass processor setting");
         }
 
@@ -373,23 +373,23 @@ namespace ColorGlove
             // Show offsets pair 
             Console.WriteLine("depth: {0}, baseIndex: {1}", depthVal, depthIndex);
 
-            listOfOffsetPosition.Clear();
+            listOfTransformedPairPosition.Clear();
 
-            Feature.GetAllOffsetPairs(depthIndex, depthVal, listOfOffsetPosition);
+            Feature.GetAllTransformedPairs(depthIndex, depthVal, listOfTransformedPairPosition);
             int bitmapIndex, X, Y;
             Array.Clear(overlayBitmapBits, 0, overlayBitmapBits.Length);
             
-            for (int i = 0; i < listOfOffsetPosition.Count; i++)
+            for (int i = 0; i < listOfTransformedPairPosition.Count; i++)
             {
-                X = listOfOffsetPosition[i][0];
-                Y = listOfOffsetPosition[i][1];
+                X = listOfTransformedPairPosition[i][0];
+                Y = listOfTransformedPairPosition[i][1];
                 if (X >= 0 && X < 640 && Y >= 0 && Y < 480)
                 {
                     bitmapIndex = (Y * 640 + X) * 4;                    
                     overlayBitmapBits[bitmapIndex + 2] = 255;                                        
                 }
-                X = listOfOffsetPosition[i][2];
-                Y = listOfOffsetPosition[i][3];
+                X = listOfTransformedPairPosition[i][2];
+                Y = listOfTransformedPairPosition[i][3];
                 if (X >= 0 && X < 640 && Y >= 0 && Y < 480)
                 {
                     bitmapIndex = (Y * 640 + X) * 4;                    
