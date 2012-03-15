@@ -140,10 +140,13 @@ namespace ColorGlove
             MaxSatTarget = 0F;
 
             // Setup FeatureExtraction Class
-            FeatureExtraction.OffsetModeFormat OffsetMode = FeatureExtraction.OffsetModeFormat.PairsOf2000UniformDistribution;
-            FeatureExtraction.KinectModeFormat KinectMode = FeatureExtraction.KinectModeFormat.Near;
-            Feature = new FeatureExtraction(KinectMode, OffsetMode);
-            Feature.ReadOffsetPairsFromFile();
+            //Default direcotry: "..\\..\\..\\Data";
+            // To setup the mode, see README in the library
+            FeatureExtraction.ModeFormat MyMode = FeatureExtraction.ModeFormat.Maize;
+            Feature = new FeatureExtractionLib.FeatureExtraction(
+                                                                         MyMode);                                    
+            //Feature.ReadOffsetPairsFromFile(); 
+            Feature.GenerateOffsetPairs(); // use this to test the offset pairs parameters setting
 
             //classifier = new Classifier();
             this.bitmap = new WriteableBitmap(640, 480, 96, 96, PixelFormats.Bgr32, null);
@@ -155,15 +158,6 @@ namespace ColorGlove
 
             SetCentroidColorAndLabel();
             
-            // Offset displaying is on.
-            // Generate offset pair
-            /*
-            int minOffset = 50 * 2000;
-            int maxOffset = 500;
-            Feature.SetOffsetMax(minOffset);
-            Feature.SetOffsetMin(maxOffset);
-            Feature.GenerateOffsetPairs(2000);
-            */
             listOfOffsetPosition = new List<int[]>(); // remember to clear.
             Debug.WriteLine("Pass processor setting");
         }

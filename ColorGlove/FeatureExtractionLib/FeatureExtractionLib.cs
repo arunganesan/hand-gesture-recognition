@@ -7,99 +7,123 @@ using System.IO;
 namespace FeatureExtractionLib
 {
     public class FeatureExtraction
-    {
-        //private short[,] twoDimensionDepth;
+    {   
+        /* README 
+         * There are serval parameters in offset pairs, kinect mode. We use a human readable namespace mapping:
+         * mode name -> parameter set.
+         * Users of this library should first should the mode name before using the library.
+         * Users can also add new mode name, and its corresponding parameter set.
+         */
+        public enum ModeFormat { 
+            Maize,  
+            Blue, // Operate in near Kinect mode, use a large box and a large number of offset
+            Abstraction, // Operate in default Kinect mode, use a large box and a large number of offset
+            //Add you favarite mode here.
+        };
+
+        private ModeFormat Mode;
         private short[] depth; // one dimensional depth image
-        private byte[] label; // one dimensional label image
-        //private byte[,] twoDimensionLabel;
+        private byte[] label; // one dimensional label image        
         private const string defaultDirectory = "..\\..\\..\\Data";
         private string directory;
         private const int width = 640, height = 480;        
-        private int uMinNear, uMaxNear, uMaxDefault, uMinDefault;
+        
+        private int uMin, uMax;
+        // can try to generate circularly uniform offset pair
         private int numOfOffsetPairs;
-        private Random _r;
-        private OffsetModeFormat OffestMode;
-        private int numberPerClass;
-        private int UpperBound;
-        private string outputTraningFilename;
+        private Random _r;        
+        private int sampledNumberPerClass; // used when generating the feature vectors from the image. It sample pixels that are the same class uniformly in an image.
+        private int UpperBound; // used when calculating the feature value. UpperBound is given when the depth is <0 or the pixel is out-of-bound.
+        private string traningFilename;
         private StreamWriter outputFilestream;
 
         List<int> listOfTargetPosition, listOfBackgroundPosition;
 
         List<int[]> listOfOffsetPairs; // Is this an efficient enough data structure? Or is two-dimensional array more efficient. Leave it on future work
 
-        public enum KinectModeFormat
+        private enum KinectModeFormat
         {
             Default = 0,
             Near = 1,
         };
-
         private KinectModeFormat KinectMode;
-
         public enum HandGestureFormat
         {
             Background = 0,
             OpenHand = 1,
             CloseHand = 2,
         };
-
-        public enum OffsetModeFormat { 
-            PairsOf2000UniformDistribution,
-            PairsOf1000UniformDistribution,
-        };
-
         private HandGestureFormat HandGestureValue;
 
 
-        public FeatureExtraction(KinectModeFormat SetKinectMode,  OffsetModeFormat varOffsetMode, string varDirectory = defaultDirectory)
+        public FeatureExtraction(ModeFormat setMode= ModeFormat.Maize, string varDirectory = defaultDirectory)
+        // Construct fiunction
         {
             depth = new short[width * height];
             label = new byte[width * height];
             listOfTargetPosition = new List<int>();
             listOfBackgroundPosition = new List<int>();
-            listOfOffsetPairs = new List<int[]>();
-            KinectMode = SetKinectMode;
-            _r= new Random();
-            
-            // Can set the following parameters using public functions
-            uMaxNear = 50 * 2000;
-            uMinNear = 500;            
-            uMaxDefault = 300 * 2000;
-            uMinDefault = 2000;
+            listOfOffsetPairs = new List<int[]>();            
+            _r= new Random(); // used for random number generator                        
             SetDirectory(varDirectory);
-            SetOffsetMode(varOffsetMode);
-
-            numberPerClass = 2000;
-            UpperBound = 10000;
-            outputTraningFilename = "NearModeFeatureVector.txt";
-            outputFilestream = new StreamWriter(directory + "\\" + outputTraningFilename);
-
+            SetMode(setMode);            
         }
 
-        public void SetOffsetMode(OffsetModeFormat varOffestMode) {
-            OffestMode = varOffestMode;
+        private void SetMode(ModeFormat setMode) {
+            Mode = setMode;
+            switch (setMode) {
+                case ModeFormat.Maize:   
+                    numOfOffsetPairs = 2000;
+                    uMin = 500;
+                    uMax = 50 * 2000;
+                    sampledNumberPerClass = 2000;
+                    UpperBound = 10000;
+                    KinectMode = KinectModeFormat.Near;
+                    traningFilename = "Maize";            
+                    break;
+                case ModeFormat.Blue: // Operate in near Kinect mode, use a large box and a large number of offset            
+                    numOfOffsetPairs = 2000;
+                    uMin = 500;
+                    uMax = 50 * 2000;
+                    sampledNumberPerClass = 2000;
+                    UpperBound = 10000;
+                    KinectMode = KinectModeFormat.Near;
+                    traningFilename = "Blue";            
+                    break;
+                case ModeFormat.Abstraction: // Operate in default Kinect mode, use a large box and a large number of offset
+                    numOfOffsetPairs = 2000;
+                    uMin = 2000;
+                    uMax = 300 * 2000;
+                    sampledNumberPerClass = 2000;
+                    UpperBound = 10000;
+                    KinectMode = KinectModeFormat.Default;
+                    traningFilename = "Abstraction";            
+                    break;
+            }
+            traningFilename = "FeatureVector" + traningFilename + ".txt";
         }
-
+        
         private void SetDirectory(string dir)
         // set working directory
         {     
-            /*
-            Directory.SetCurrentDirectory(dir);
-            directory = Directory.GetCurrentDirectory();            
-            */
             directory = dir;
             Console.WriteLine("Current directory: {0}", directory);
+            Console.WriteLine("Current working directory: {0}", Directory.GetCurrentDirectory());
+        }
+
+        public void SetOffsetMax(int x)
+        {            
+                uMax = x;
+        }
+
+        public void SetOffsetMin(int x)
+        {            
+                uMin = x;
         }
 
         private string getOffsetPairsFilename()
-        {
-            string filename;
-            if (KinectMode == KinectModeFormat.Near)
-                filename = "NearModeOffsetPairs";
-            else
-                filename = "DefaultModeOffsetPairs";
-
-            return directory + "\\" + filename + "_" + OffestMode.ToString() + ".txt";
+        {          
+            return directory + "\\" + "Offset" + Mode + ".txt";
         }
 
         public void ReadOffsetPairsFromFile()
@@ -135,30 +159,30 @@ namespace FeatureExtractionLib
         public void WriteOffsetPairsToFile()
         {
             // File format: numberOfPair Pair1UX Pair1UY Pair1VX Pair1VY Pair2UX Pair2UY Pair2VX Pair2VY
-            string filename = getOffsetPairsFilename();
+            string filepath = getOffsetPairsFilename();
 
-            Console.WriteLine("Writing to file: {0}", filename);            
-            using (StreamWriter filestream = new StreamWriter(directory + "\\" + filename) )
+            Console.WriteLine("Writing to file: {0}", filepath);            
+            using (StreamWriter filestream = new StreamWriter(filepath) )
             {
                 filestream.Write(listOfOffsetPairs.Count);
                 for (int i = 0; i < listOfOffsetPairs.Count; i++) {
                     filestream.Write(" {0} {1} {2} {3}", listOfOffsetPairs[i][0], listOfOffsetPairs[i][1], listOfOffsetPairs[i][2], listOfOffsetPairs[i][3]);
                 }
             }
-            Console.WriteLine("Finish writing to file: {0}", filename);            
+            Console.WriteLine("Finish writing to file: {0}", filepath);            
         }
 
         private void GetOnePairRandomOffset(int [] arrayInt)
         {
             if (KinectMode == KinectModeFormat.Near)
             {
-                arrayInt[0] = _r.Next(uMinNear, uMaxNear);
-                arrayInt[1] = _r.Next(uMinNear, uMaxNear);
+                arrayInt[0] = _r.Next(uMin, uMax);
+                arrayInt[1] = _r.Next(uMin, uMax);
             }
             else
             {
-                arrayInt[0] = _r.Next(uMinDefault, uMaxDefault);
-                arrayInt[1] = _r.Next(uMinDefault, uMaxDefault);
+                arrayInt[0] = _r.Next(uMin, uMax);
+                arrayInt[1] = _r.Next(uMin, uMax);
             }
             int flipX = _r.Next(2), flipY = _r.Next(2);
             if (flipX == 0)
@@ -167,7 +191,8 @@ namespace FeatureExtractionLib
                 arrayInt[1] = arrayInt[1] * -1;
         }
 
-        public void GenerateOffsetPairs(int setNumOfOffsetPairs)
+        public void GenerateOffsetPairs()
+        // Generate offset pairs and write them into memory: listoOfOffsetPairs. Not write them into file yet.
         {
             // Ask permission
             /*
@@ -176,7 +201,7 @@ namespace FeatureExtractionLib
             
             if (cki.Key.ToString() == "Y")
             */
-            numOfOffsetPairs = setNumOfOffsetPairs;
+            //numOfOffsetPairs = setNumOfOffsetPairs; This is set in the Mode
             Console.WriteLine("Generating...");
             int [] u={0,0}, v={0,0};            
             for (int i = 0; i < numOfOffsetPairs; i++)
@@ -203,10 +228,6 @@ namespace FeatureExtractionLib
                 int newUY = HelperGetOffset(CurY, uY, curDepth);
                 int newVX = HelperGetOffset(CurX, vX, curDepth);
                 int newVY = HelperGetOffset(CurY, vY, curDepth);
-                //= (int) ( CurX + (double)( (uX + 0.0) / (curDepth + 0.0)));
-                //int newUY = (int)(CurY + (double)((uY + 0.0) / (curDepth + 0.0)));
-                //int newVX = (int)(CurX + (double)((vX + 0.0) / (curDepth + 0.0)));
-                //int newVY = (int)(CurY + (double)((vY + 0.0) / (curDepth + 0.0)));        
                 listOfOffsetPosition.Add(new int[] { newUX, newUY, newVX, newVY });
             }
         }
@@ -239,45 +260,10 @@ namespace FeatureExtractionLib
                 int vDepth = GetDepthByPoint(aListOfOffsetPosition[i][2], aListOfOffsetPosition[i][3]);
                 featureVector.Add(uDepth - vDepth);
                 //Console.Write(" {0}", uDepth - vDepth);
-                outputFilestream.Write(" {0}:{1}", i+1, uDepth - vDepth); //notice a plus sign here
+                if (uDepth!= vDepth) // only write non-zero feature, to utilize sparcity
+                    outputFilestream.Write(" {0}:{1}", i+1, uDepth - vDepth); //notice a plus sign here
             }
             outputFilestream.WriteLine();
-
-            /*
-            Debug.Assert(position <= depth.Length, "Trying to access nonexistent feature.");
-
-            if (depth[position] < 0) return;
-
-            // The depth in mm!            
-            Tuple<Vector, Vector> feature = features[position];
-
-            int X = position % width, Y = position - X* width;
-
-            Point x_u = x + feature.Item1 / depth_in_mm;
-            double x_u_depth;
-            if (x_u.X < 0 || x_u.X >= width || x_u.Y < 0 || x_u.Y >= height)
-                x_u_depth = outOfBounds;
-            else
-            {
-                int lin = (int)(x_u.Y * width + x_u.X);
-                x_u_depth = depth[lin] >> DepthImageFrame.PlayerIndexBitmaskWidth;
-                if (x_u_depth == -1) return -1;
-            }
-
-
-            Point x_v = x + feature.Item2 / depth_in_mm;
-            double x_v_depth;
-            if (x_v.X < 0 || x_v.X >= width || x_v.Y < 0 || x_v.Y >= height)
-                x_v_depth = outOfBounds;
-            else
-            {
-                int lin = (int)(x_v.Y * width + x_v.X);
-                x_v_depth = depth[lin] >> DepthImageFrame.PlayerIndexBitmaskWidth;
-                if (x_v_depth == -1) return -1;
-            }
-
-            return x_u_depth - x_v_depth;
-             */
         }
 
         public void ReadImageFile(string filePath)
@@ -314,7 +300,8 @@ namespace FeatureExtractionLib
         {
 
             Array values = Enum.GetValues(typeof(HandGestureFormat));
-            foreach (HandGestureFormat val in values)
+            outputFilestream = new StreamWriter(directory + "\\" + traningFilename);         
+            foreach (HandGestureFormat val in values) // go through each directory
             {
                 //Console.WriteLine ("{0}: {1}", Enum.GetName(typeof(HandGestureFormat), val), val);
                 if (val == HandGestureFormat.Background)
@@ -322,19 +309,24 @@ namespace FeatureExtractionLib
                 string subdirectory = directory + "\\" + val + KinectMode;
                 Console.WriteLine("Current directoray: {0}", subdirectory);
                 string[] fileEntries = Directory.GetFiles(subdirectory);
-                foreach (string filePath in fileEntries)
+                int tmpCounter = 0;
+                foreach (string filePath in fileEntries) // go through each file within the subdirectory
                 {
+                    tmpCounter++;                    
                     string fileName = Path.GetFileName(filePath);
+                    Console.WriteLine("Generating feature vecor for files {0}", fileName);
                     string prefix = fileName.Substring(0, 10);
                     if (prefix == "depthLabel")
                     {
                         ReadImageFile(filePath);
-                        RandomSample(numberPerClass);
+                        RandomSample(sampledNumberPerClass); // including writing to file
                     }
-                    Console.WriteLine(fileName);
-                    return; // debug
+                    /*
+                    if (tmpCounter==1) 
+                        break; // debug
+                     */ 
                 }
-                break; // debug
+                //break; // debug
             }
 
         }
@@ -380,22 +372,7 @@ namespace FeatureExtractionLib
                 //return; //debug
             }
         }
-
-        public void SetOffsetMax(int x)
-        {
-            if (KinectMode == KinectModeFormat.Default)
-                uMaxDefault = x;
-            else
-                uMaxNear = x;
-        }
-
-        public void SetOffsetMin(int x)
-        {
-            if (KinectMode == KinectModeFormat.Default)
-                uMinDefault = x;
-            else
-                uMinNear = x;
-        }
+ 
 
         public void testEnum()
         {

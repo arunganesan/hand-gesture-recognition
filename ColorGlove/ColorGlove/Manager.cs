@@ -110,9 +110,9 @@ namespace ColorGlove
                 // Show the rgb image
                                         // Processor.Step.Color
                 // Show the depth image                                         
-                //                        Processor.Step.Depth,
+                                        Processor.Step.Depth,
                 // Show overlap offest
-                //                        Processor.Step.OverlayOffset
+                                        Processor.Step.OverlayOffset
                 // Show Mapped Depth Using RGB
                                         // Processor.Step.PaintWhite,
                                         // Processor.Step.MappedDepth
@@ -120,7 +120,7 @@ namespace ColorGlove
                                         // Processor.Step.PaintWhite,
                                         // Processor.Step.ColorMatch
                 // Denoise
-                                        Processor.Step.Denoise
+                //                        Processor.Step.Denoise
             );
 
             #endregion
@@ -138,11 +138,11 @@ namespace ColorGlove
                 sensor.ColorStream.Enable(ColorImageFormat.RgbResolution640x480Fps30);
                 sensor.DepthStream.Enable(DepthImageFormat.Resolution640x480Fps30);
 
-                // Can set this in the construct function {// Commented out for XBox Kinect}
+                // Arun, you can change the mode back to default in line 57, which is the kinect setting region. So it would be easier to see there.
 
                 
-                //if (RangeModeValue == RangeModeFormat.Near)
-                //    sensor.DepthStream.Range = DepthRange.Near; // set near mode 
+                if (RangeModeValue == RangeModeFormat.Near)
+                    sensor.DepthStream.Range = DepthRange.Near; // set near mode 
 
                 colorPixels = new byte[640 * 480 * 4];
                 depthPixels = new short[640 * 480];

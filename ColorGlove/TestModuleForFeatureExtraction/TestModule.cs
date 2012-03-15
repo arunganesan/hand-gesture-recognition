@@ -22,18 +22,16 @@ namespace TestModuleNamespace
             FeatureExtractionTest.SetupFeatureExtraction();
             //FeatureExtractionTest.TestDisplay();
             FeatureExtractionTest.TestGenerateFeatures();
+            //FeatureExtractionTest.TestGenerateOffset();
             Console.ReadKey();
         }
 
         public void SetupFeatureExtraction() {
             //Default direcotry: "..\\..\\..\\Data";
-            // Need to setup the offset mode, and Kinect mode (near/default)                
-            FeatureExtraction.OffsetModeFormat OffsetMode = FeatureExtraction.OffsetModeFormat.PairsOf2000UniformDistribution;
-            FeatureExtraction.KinectModeFormat KinectMode = FeatureExtraction.KinectModeFormat.Near;
+            // To setup the mode, see README in the library
+            FeatureExtraction.ModeFormat MyMode = FeatureExtraction.ModeFormat.Maize;            
                         Feature = new FeatureExtractionLib.FeatureExtraction(
-                                                                                     KinectMode,
-                                                                                     OffsetMode);
-                                                                                     //directory);                        
+                                                                                     MyMode);                                                                                     
         }
 
         private void TestGenerateFeatures()
@@ -58,17 +56,9 @@ namespace TestModuleNamespace
         }
 
         private void TestGenerateOffset()
-        {
-            // Set up parameter for generating offset pairs
-            minOffset = 50 * 2000;
-            maxOffset = 500;
-            NumofOffset = 2000;
-            // Generate offset file and write to file            
-            Feature.SetOffsetMax(minOffset);
-            Feature.SetOffsetMin(maxOffset);
-            Feature.GenerateOffsetPairs(NumofOffset); // Note this number has to be consistent with FeatureExtraction.OffsetModeFormat                        
-            Feature.WriteOffsetPairsToFile();
-                    
+        {            
+            Feature.GenerateOffsetPairs(); 
+            Feature.WriteOffsetPairsToFile();                    
         }
     }
 }
