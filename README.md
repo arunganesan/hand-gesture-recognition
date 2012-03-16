@@ -1,7 +1,7 @@
 #Hand Gesture Recognition
 ## Authors: Arun Ganesan and Caoxie (Michael) Zhang
 
-Using Kinect for hand gesture recognition. Key idea: (1) per-pixel classification, and then pooling. (2) use color glove to generate abundant labled data.
+Using Kinect for hand gesture recognition. Key ideas: (1) per-pixel classification, and then pooling. (2) use color glove to generate abundant labled data.
 
 #[Wiki]
 
