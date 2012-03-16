@@ -145,8 +145,9 @@ namespace ColorGlove
             FeatureExtraction.ModeFormat MyMode = FeatureExtraction.ModeFormat.Blue;
             Feature = new FeatureExtractionLib.FeatureExtraction(
                                                                          MyMode);
-            Feature.ReadOffsetPairsFromStorage();
-            //Feature.GenerateOffsetPairs(); // use this to test the offset pairs parameters setting
+            
+            //Feature.ReadOffsetPairsFromStorage();
+            Feature.GenerateOffsetPairs(); // use this to test the offset pairs parameters setting
 
             //classifier = new Classifier();
             this.bitmap = new WriteableBitmap(640, 480, 96, 96, PixelFormats.Bgr32, null);
@@ -156,7 +157,7 @@ namespace ColorGlove
 
             image.MouseLeftButtonUp += image_click;
 
-            HandGestureValue = HandGestureFormat.OpenHand; // Which hand gesture;
+            HandGestureValue = HandGestureFormat.CloseHand; // Which hand gesture;
             SetCentroidColorAndLabel();
             
             listOfTransformedPairPosition = new List<int[]>(); // remember to clear.
@@ -193,6 +194,8 @@ namespace ColorGlove
             AddCentroid(142, 182, 195, targetLabel);
             AddCentroid(146, 189, 211, targetLabel);
             AddCentroid(159, 198, 214, targetLabel);
+            AddCentroid(147, 196, 210, targetLabel);
+            
 
             // For background color 
             
@@ -205,7 +208,8 @@ namespace ColorGlove
             AddCentroid(153, 189, 206, backgroundLabel);
             AddCentroid(214, 207, 206, backgroundLabel);
             AddCentroid(122, 124, 130, backgroundLabel);
-
+            AddCentroid(124, 102, 11, backgroundLabel);
+            
         }
 
         public void increaseRange()
@@ -377,31 +381,47 @@ namespace ColorGlove
             // Show offsets pair 
             Console.WriteLine("depth: {0}, baseIndex: {1}", depthVal, depthIndex);
 
-            listOfTransformedPairPosition.Clear();
-
-            Feature.GetAllTransformedPairs(depthIndex, depthVal, listOfTransformedPairPosition);
-            int bitmapIndex, X, Y;
-            Array.Clear(overlayBitmapBits, 0, overlayBitmapBits.Length);
             
-            for (int i = 0; i < listOfTransformedPairPosition.Count; i++)
+
+            // timer start
+            DateTime ExecutionStartTime; //Var will hold Execution Starting Time
+            DateTime ExecutionStopTime;//Var will hold Execution Stopped Time
+            TimeSpan ExecutionTime;//Var will count Total Execution Time-Our Main Hero
+
+            ExecutionStartTime = DateTime.Now; //Gets the system Current date time expressed as local time
+
+            for (depthIndex = 0; depthIndex < depth.Length; depthIndex++)
             {
-                X = listOfTransformedPairPosition[i][0];
-                Y = listOfTransformedPairPosition[i][1];
-                if (X >= 0 && X < 640 && Y >= 0 && Y < 480)
+                depthVal = depth[depthIndex];
+                listOfTransformedPairPosition.Clear();
+                Feature.GetAllTransformedPairs(depthIndex, depthVal, listOfTransformedPairPosition);
+                int bitmapIndex, X, Y;
+                Array.Clear(overlayBitmapBits, 0, overlayBitmapBits.Length);
+
+                for (int i = 0; i < listOfTransformedPairPosition.Count; i++)
                 {
-                    bitmapIndex = (Y * 640 + X) * 4;                    
-                    overlayBitmapBits[bitmapIndex + 2] = 255;                                        
+                    X = listOfTransformedPairPosition[i][0];
+                    Y = listOfTransformedPairPosition[i][1];
+                    if (X >= 0 && X < 640 && Y >= 0 && Y < 480)
+                    {
+                        bitmapIndex = (Y * 640 + X) * 4;
+                        overlayBitmapBits[bitmapIndex + 2] = 255;
+                    }
+                    X = listOfTransformedPairPosition[i][2];
+                    Y = listOfTransformedPairPosition[i][3];
+                    if (X >= 0 && X < 640 && Y >= 0 && Y < 480)
+                    {
+                        bitmapIndex = (Y * 640 + X) * 4;
+                        overlayBitmapBits[bitmapIndex + 2] = 255;
+                    }
                 }
-                X = listOfTransformedPairPosition[i][2];
-                Y = listOfTransformedPairPosition[i][3];
-                if (X >= 0 && X < 640 && Y >= 0 && Y < 480)
-                {
-                    bitmapIndex = (Y * 640 + X) * 4;                    
-                    overlayBitmapBits[bitmapIndex + 2] = 255;
-                }
+
             }
-
-
+            ExecutionStopTime = DateTime.Now;
+            ExecutionTime = ExecutionStopTime - ExecutionStartTime;
+            Console.WriteLine("Use {0} ms for getting transformed points", ExecutionTime.TotalMilliseconds.ToString());
+            // timer off 
+            
             // Print HSL
             /*
             System.Drawing.Color color = System.Drawing.Color.FromArgb(bitmapBits[baseIndex + 2], bitmapBits[baseIndex + 1], bitmapBits[baseIndex]);
@@ -442,13 +462,15 @@ namespace ColorGlove
             TimeSpan t = (DateTime.UtcNow - new DateTime(1970, 1, 1));
             string filename = t.TotalSeconds.ToString();
 
+            /*
             // rgb
+
             using (StreamWriter filestream = new StreamWriter(directory + "\\" + filename + "_rgb.txt"))
             {
                 filestream.Write(rgb[0]);
                 for (int i = 1; i < rgb.Length; i++) filestream.Write(" " + rgb[i]);
             }
-
+            */
             //mapped depth
 
             //sensor.MapDepthFrameToColorFrame(DepthImageFormat.Resolution640x480Fps30, depth, ColorImageFormat.RgbResolution640x480Fps30, mapped);
