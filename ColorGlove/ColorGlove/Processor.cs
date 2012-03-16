@@ -156,6 +156,7 @@ namespace ColorGlove
 
             image.MouseLeftButtonUp += image_click;
 
+            HandGestureValue = HandGestureFormat.OpenHand; // Which hand gesture;
             SetCentroidColorAndLabel();
             
             listOfTransformedPairPosition = new List<int[]>(); // remember to clear.
@@ -165,7 +166,7 @@ namespace ColorGlove
         private void SetCentroidColorAndLabel()
         {
             // First add label
-            HandGestureValue = HandGestureFormat.CloseHand; // Which hand gesture;
+            // Set which hand gesture to use in the contruct function
             targetLabel = (byte)HandGestureValue;  // numerical value
             Console.WriteLine("targetLabel: {0}", targetLabel);
             backgroundLabel = 0;
@@ -434,7 +435,7 @@ namespace ColorGlove
                     bitmapBits, bitmap.PixelWidth * sizeof(int), 0);
             }));
 
-            var directory = "training_samples" + "\\" + HandGestureValue;  // should check here.
+            var directory = "training_samples" + "\\" + HandGestureValue + RangeModeValue;  // assume the directory exist
             TimeSpan t = (DateTime.UtcNow - new DateTime(1970, 1, 1));
             string filename = t.TotalSeconds.ToString();
 

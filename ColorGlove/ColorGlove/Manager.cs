@@ -110,15 +110,15 @@ namespace ColorGlove
                 // Show the rgb image
                                         // Processor.Step.Color
                 // Show the depth image                                         
-                                        Processor.Step.Depth,
+                                       // Processor.Step.Depth,
                 // Show overlap offest
-                                        Processor.Step.OverlayOffset
+                                       // Processor.Step.OverlayOffset
                 // Show Mapped Depth Using RGB
                                         // Processor.Step.PaintWhite,
                                         // Processor.Step.MappedDepth
                 // Show the Color Labelling
-                                        // Processor.Step.PaintWhite,
-                                        // Processor.Step.ColorMatch
+                                        Processor.Step.PaintWhite,
+                                        Processor.Step.ColorMatch
                 // Denoise
                 //                        Processor.Step.Denoise
             );
