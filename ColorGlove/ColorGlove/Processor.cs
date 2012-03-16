@@ -50,12 +50,23 @@ namespace ColorGlove
             Near = 1,
         };
 
+        private bool paused = false;
+        private delegate void PauseDelegate (MouseButtonEventArgs e);
+        private PauseDelegate pauseDelegate;
+
+        // for Kmeans
+        int k = 7;
+        double[,] kMeans_clusters;
+        int[] kMeans_assignments;
+
         private RangeModeFormat RangeModeValue = RangeModeFormat.Near;
         static private Dictionary<Tuple<byte, byte, byte>, byte> nearest_cache = new Dictionary<Tuple<byte, byte, byte>, byte>(); // It seems not necessary to save the mapped result as byte[], byte should be enough.
         private WriteableBitmap bitmap;
         private byte[] bitmapBits;
+        private byte[] tmpBuffer;
         private byte[] overlayBitmapBits;
         private Image image;
+        private Manager manager;
         public int lower, upper; // range for thresholding in show_mapped_depth(),  show_color_depth(). Set by the manager.
         public enum Step
         {
@@ -69,6 +80,7 @@ namespace ColorGlove
             OverlayOffset,
             Denoise,
         };
+
 
         public enum HandGestureFormat
         {
@@ -105,6 +117,7 @@ namespace ColorGlove
         byte[] color = new byte[3];
         double[] tmp_point = new double[3];
         double[] tmp_point2 = new double[3];
+        byte[] tmp_byte = new byte[3];
         private Step[] pipeline = new Step[0];
         private KinectSensor sensor;
 
@@ -124,9 +137,10 @@ namespace ColorGlove
         List<int[]> listOfTransformedPairPosition;
         
 
-        public Processor(KinectSensor sensor)
+        public Processor(KinectSensor sensor, Manager manager)
         {
             Debug.WriteLine("Start processor contruction");
+            this.manager = manager;
             this.sensor = sensor;
             image = new Image();
             image.Width = 640;
@@ -152,6 +166,7 @@ namespace ColorGlove
             //classifier = new Classifier();
             this.bitmap = new WriteableBitmap(640, 480, 96, 96, PixelFormats.Bgr32, null);
             this.bitmapBits = new byte[640 * 480 * 4];
+            tmpBuffer = new byte[640 * 480 * 4];
             overlayBitmapBits = new byte[640 * 480 * 4]; // overlay
             image.Source = bitmap;
 
@@ -167,6 +182,8 @@ namespace ColorGlove
         private void SetCentroidColorAndLabel()
         {
             // First add label
+            //HandGestureValue = HandGestureFormat.CloseHand; // Which hand gesture;
+            HandGestureValue = HandGestureFormat.OpenHand;
             // Set which hand gesture to use in the contruct function
             targetLabel = (byte)HandGestureValue;  // numerical value
             Console.WriteLine("targetLabel: {0}", targetLabel);
@@ -224,23 +241,23 @@ namespace ColorGlove
 
         public void kMeans()
         {
-            int k = 5;
             // k = 5 seems to do well with background cleared out.
             
             Random rand = new Random();
 
             // Randomly create K colors
-            double[,] clusters = new double[k, 3];
+            kMeans_clusters = new double[k, 3];
             for (int i = 0; i < k; i++) {
-                clusters[i, 0] = rand.Next(0, 255);
-                clusters[i, 1] = rand.Next(0, 255);
-                clusters[i, 2] = rand.Next(0, 255);
+                kMeans_clusters[i, 0] = rand.Next(0, 255);
+                kMeans_clusters[i, 1] = rand.Next(0, 255);
+                kMeans_clusters[i, 2] = rand.Next(0, 255);
             }
+
 
             int width = x_1 - x_0;
             int height = y_1 - y_0;
 
-            int[] points = new int[width*height];
+            kMeans_assignments = new int[width * height];
             double[] point = new double[3];
 
             int [] cluster_count = Enumerable.Repeat((int)0, k).ToArray();
@@ -256,7 +273,7 @@ namespace ColorGlove
 
             double[] cluster_deltas = new double[k];
 
-            double delta = 10000, epsilon = 10;
+            double delta = 10000, epsilon = 0.1;
 
             double minDistance = 10000;
             int minCluster = -1;
@@ -264,7 +281,7 @@ namespace ColorGlove
             {
                 Console.WriteLine("Delta: " + delta);
                 // Step 1: label each point as a cluster
-                for (int i = 0; i < points.Length; i++)
+                for (int i = 0; i < kMeans_assignments.Length; i++)
                 {
                     int y = i / width;
                     int x = i % width;
@@ -277,11 +294,11 @@ namespace ColorGlove
                     point[2] = rgb[adjusted_i * 4];
 
                     minDistance = 10000;
-                    for (int idx = 0; idx < clusters.GetLength(0); idx++)
+                    for (int idx = 0; idx < kMeans_clusters.GetLength(0); idx++)
                     {
-                        tmp_point2[0] = clusters[idx, 0];
-                        tmp_point2[1] = clusters[idx, 1];
-                        tmp_point2[2] = clusters[idx, 2];
+                        tmp_point2[0] = kMeans_clusters[idx, 0];
+                        tmp_point2[1] = kMeans_clusters[idx, 1];
+                        tmp_point2[2] = kMeans_clusters[idx, 2];
 
                         double distance = euc_distance(point, tmp_point2);
                         if (distance < minDistance)
@@ -291,13 +308,13 @@ namespace ColorGlove
                         }
                     }
 
-                    points[i] = minCluster;
+                    kMeans_assignments[i] = minCluster;
                     cluster_count[minCluster] ++;
 
                 }
 
                 // Step 2: update the cluster center values
-                for (int i = 0; i < points.Length; i++)
+                for (int i = 0; i < kMeans_assignments.Length; i++)
                 {
                     int y = i / width;
                     int x = i % width;
@@ -305,9 +322,9 @@ namespace ColorGlove
                     int adjusted_x = x_0 + x;
                     int adjusted_i = adjusted_y * 640 + adjusted_x;
 
-                    cluster_centers[points[i], 0] += rgb[adjusted_i * 4 + 2];
-                    cluster_centers[points[i], 1] += rgb[adjusted_i * 4 + 1];
-                    cluster_centers[points[i], 2] += rgb[adjusted_i * 4];
+                    cluster_centers[kMeans_assignments[i], 0] += rgb[adjusted_i * 4 + 2];
+                    cluster_centers[kMeans_assignments[i], 1] += rgb[adjusted_i * 4 + 1];
+                    cluster_centers[kMeans_assignments[i], 2] += rgb[adjusted_i * 4];
                 }
 
                 for (int i = 0; i < k; i++)
@@ -316,9 +333,9 @@ namespace ColorGlove
                     double g = cluster_centers[i, 1] / cluster_count[i];
                     double b = cluster_centers[i, 2] / cluster_count[i];
 
-                    tmp_point[0] = clusters[i, 0];
-                    tmp_point[1] = clusters[i, 1];
-                    tmp_point[2] = clusters[i, 2];
+                    tmp_point[0] = kMeans_clusters[i, 0];
+                    tmp_point[1] = kMeans_clusters[i, 1];
+                    tmp_point[2] = kMeans_clusters[i, 2];
 
                     tmp_point2[0] = r;
                     tmp_point2[1] = g;
@@ -326,9 +343,9 @@ namespace ColorGlove
 
                     cluster_deltas[i] = euc_distance(tmp_point, tmp_point2);
 
-                    clusters[i, 0] = r;
-                    clusters[i, 1] = g;
-                    clusters[i, 2] = b;
+                    kMeans_clusters[i, 0] = r;
+                    kMeans_clusters[i, 1] = g;
+                    kMeans_clusters[i, 2] = b;
 
                     if (max_cluster == -1 || cluster_count[i] > cluster_count[max_cluster]) 
                         max_cluster = i;
@@ -339,24 +356,47 @@ namespace ColorGlove
                     if (cluster_deltas[i] > delta) delta = cluster_deltas[i];
 
             }
-
-            clearCentroids();
             
-            for (int i = 0; i < k; i++)
+            // Show all colors, wait for the user's click. 
+
+            for (int i = 0; i < kMeans_assignments.Length; i++)
             {
-                byte label;
-                if (i == max_cluster) label = this.targetLabel;
-                else label = this.backgroundLabel;
-
-                AddCentroid((byte)clusters[i, 0], (byte)clusters[i, 1], (byte)clusters[i, 2], label);
+                bitmapBits[4 * i + 2] = (byte)kMeans_clusters[kMeans_assignments[i], 0];
+                bitmapBits[4 * i + 1] = (byte)kMeans_clusters[kMeans_assignments[i], 1];
+                bitmapBits[4 * i + 0] = (byte)kMeans_clusters[kMeans_assignments[i], 2];
             }
-            
-            // Uncomment this line for stock color replacement.
-            //replacement = colors;
-            
-            Processor.nearest_cache.Clear();
-            Console.WriteLine("Done!");
 
+            Console.WriteLine("Done K-Means. Pausing for user click.");
+            Processor.nearest_cache.Clear();
+
+            updateHelper();
+            pause(new PauseDelegate(this.updateKMeansCentroid));         
+        }
+
+        private void updateKMeansCentroid(MouseButtonEventArgs e)
+        {
+            Console.WriteLine("Click acquired.");
+
+            lock (centroidColor)
+            {
+                clearCentroids();
+                Point click_position = e.GetPosition(image);
+                int baseIndex = ((int)click_position.Y * 640 + (int)click_position.X);
+                
+                for (int i = 0; i < k; i++)
+                {
+                    byte label;
+                    if (kMeans_assignments[baseIndex] == i) label = this.targetLabel;
+                    else label = this.backgroundLabel;
+
+                    if (label == this.targetLabel)
+                    {
+                        Console.WriteLine("Found a color of interest.");
+                    }
+
+                    AddCentroid((byte)kMeans_clusters[i, 0], (byte)kMeans_clusters[i, 1], (byte)kMeans_clusters[i, 2], label);
+                }
+            }
         }
 
         private void AddCentroid(byte R, byte G, byte B, byte label)  // a helper function for adding labled centroid
@@ -369,6 +409,19 @@ namespace ColorGlove
         {
             centroidColor.Clear();
             centroidLabel.Clear();
+        }
+
+        private void pause(PauseDelegate func)
+        {
+            pauseDelegate = func;
+            paused = true;
+        }
+
+        private void unPause(MouseButtonEventArgs e)
+        {
+            pauseDelegate(e);
+            Console.WriteLine("Unpausing.");
+            paused = false;
         }
 
         private void image_click(object sender, MouseButtonEventArgs e)
@@ -390,7 +443,7 @@ namespace ColorGlove
 
             ExecutionStartTime = DateTime.Now; //Gets the system Current date time expressed as local time
 
-            for (depthIndex = 0; depthIndex < depth.Length; depthIndex++)
+            //for (depthIndex = 0; depthIndex < depth.Length; depthIndex++) // test for looping through all pixels
             {
                 depthVal = depth[depthIndex];
                 listOfTransformedPairPosition.Clear();
@@ -415,8 +468,10 @@ namespace ColorGlove
                         overlayBitmapBits[bitmapIndex + 2] = 255;
                     }
                 }
-
             }
+
+            if (paused) unPause(e);
+            
             ExecutionStopTime = DateTime.Now;
             ExecutionTime = ExecutionStopTime - ExecutionStartTime;
             Console.WriteLine("Use {0} ms for getting transformed points", ExecutionTime.TotalMilliseconds.ToString());
@@ -471,6 +526,7 @@ namespace ColorGlove
                 for (int i = 1; i < rgb.Length; i++) filestream.Write(" " + rgb[i]);
             }
             */
+
             //mapped depth
 
             //sensor.MapDepthFrameToColorFrame(DepthImageFormat.Resolution640x480Fps30, depth, ColorImageFormat.RgbResolution640x480Fps30, mapped);
@@ -514,13 +570,13 @@ namespace ColorGlove
                 case Step.ColorMatch: show_color_match(depth, rgb); break;
                 case Step.ColorLabelingInRGB: ColorLabellingInRGB(rgb); break;
                 case Step.OverlayOffset: ShowOverlayOffset(); break;
-                case Step.Denoise: Denoise(rgb); break;
+                case Step.Denoise: Denoise(); break;
             }
         }
 
         #region Filter functions
         
-        private void Denoise(byte[] rgb)
+        private void Denoise()
         {
             int x, y;
             int totalSurrounding = 0;
@@ -528,7 +584,7 @@ namespace ColorGlove
             int[] sumSurrounding = new int[] { 0, 0, 0 };
 
             // XXX: Doesn't work with cropping.
-            for (int i = 0; i < rgb.Length; i += 4)
+            for (int i = 0; i < bitmapBits.Length; i += 4)
             {
                 x = i / 4 % width;
                 y = i / 4 / width;
@@ -541,73 +597,75 @@ namespace ColorGlove
 
                 if (y != 0 && x != 0)
                 {
-                    sumSurrounding[0] += rgb[((y - 1) * width + (x - 1)) * 4];
-                    sumSurrounding[1] += rgb[((y - 1) * width + (x - 1)) * 4 + 1];
-                    sumSurrounding[2] += rgb[((y - 1) * width + (x - 1)) * 4 + 2];
+                    sumSurrounding[0] += bitmapBits[((y - 1) * width + (x - 1)) * 4];
+                    sumSurrounding[1] += bitmapBits[((y - 1) * width + (x - 1)) * 4 + 1];
+                    sumSurrounding[2] += bitmapBits[((y - 1) * width + (x - 1)) * 4 + 2];
                     totalSurrounding++;
                 }
 
                 if (y != 0)
                 {
-                    sumSurrounding[0] += rgb[((y - 1) * width + (x)) * 4];
-                    sumSurrounding[1] += rgb[((y - 1) * width + (x)) * 4 + 1];
-                    sumSurrounding[2] += rgb[((y - 1) * width + (x)) * 4 + 2];
+                    sumSurrounding[0] += bitmapBits[((y - 1) * width + (x)) * 4];
+                    sumSurrounding[1] += bitmapBits[((y - 1) * width + (x)) * 4 + 1];
+                    sumSurrounding[2] += bitmapBits[((y - 1) * width + (x)) * 4 + 2];
                     totalSurrounding++;
                 }
 
                 if (y != 0 && x != width - 1)
                 {
-                    sumSurrounding[0] += rgb[((y - 1) * width + (x + 1)) * 4];
-                    sumSurrounding[1] += rgb[((y - 1) * width + (x + 1)) * 4 + 1];
-                    sumSurrounding[2] += rgb[((y - 1) * width + (x + 1)) * 4 + 2];
+                    sumSurrounding[0] += bitmapBits[((y - 1) * width + (x + 1)) * 4];
+                    sumSurrounding[1] += bitmapBits[((y - 1) * width + (x + 1)) * 4 + 1];
+                    sumSurrounding[2] += bitmapBits[((y - 1) * width + (x + 1)) * 4 + 2];
                     totalSurrounding++;
                 }
 
                 if (x != width - 1)
                 {
-                    sumSurrounding[0] += rgb[((y) * width + (x + 1)) * 4];
-                    sumSurrounding[1] += rgb[((y) * width + (x + 1)) * 4 + 1];
-                    sumSurrounding[2] += rgb[((y) * width + (x + 1)) * 4 + 2];
+                    sumSurrounding[0] += bitmapBits[((y) * width + (x + 1)) * 4];
+                    sumSurrounding[1] += bitmapBits[((y) * width + (x + 1)) * 4 + 1];
+                    sumSurrounding[2] += bitmapBits[((y) * width + (x + 1)) * 4 + 2];
                     totalSurrounding++;
                 }
 
                 if (y != height - 1 && x != width - 1)
                 {
-                    sumSurrounding[0] += rgb[((y + 1) * width + (x + 1)) * 4];
-                    sumSurrounding[1] += rgb[((y + 1) * width + (x + 1)) * 4 + 1];
-                    sumSurrounding[2] += rgb[((y + 1) * width + (x + 1)) * 4 + 2];
+                    sumSurrounding[0] += bitmapBits[((y + 1) * width + (x + 1)) * 4];
+                    sumSurrounding[1] += bitmapBits[((y + 1) * width + (x + 1)) * 4 + 1];
+                    sumSurrounding[2] += bitmapBits[((y + 1) * width + (x + 1)) * 4 + 2];
                     totalSurrounding++;
                 }
 
                 if (y != height - 1)
                 {
-                    sumSurrounding[0] += rgb[((y + 1) * width + (x)) * 4];
-                    sumSurrounding[1] += rgb[((y + 1) * width + (x)) * 4 + 1];
-                    sumSurrounding[2] += rgb[((y + 1) * width + (x)) * 4 + 2];
+                    sumSurrounding[0] += bitmapBits[((y + 1) * width + (x)) * 4];
+                    sumSurrounding[1] += bitmapBits[((y + 1) * width + (x)) * 4 + 1];
+                    sumSurrounding[2] += bitmapBits[((y + 1) * width + (x)) * 4 + 2];
                     totalSurrounding++;
                 }
 
                 if (y != height - 1 && x != 0)
                 {
-                    sumSurrounding[0] += rgb[((y + 1) * width + (x - 1)) * 4];
-                    sumSurrounding[1] += rgb[((y + 1) * width + (x - 1)) * 4 + 1];
-                    sumSurrounding[2] += rgb[((y + 1) * width + (x - 1)) * 4 + 2];
+                    sumSurrounding[0] += bitmapBits[((y + 1) * width + (x - 1)) * 4];
+                    sumSurrounding[1] += bitmapBits[((y + 1) * width + (x - 1)) * 4 + 1];
+                    sumSurrounding[2] += bitmapBits[((y + 1) * width + (x - 1)) * 4 + 2];
                     totalSurrounding++;
                 }
 
                 if (x != 0)
                 {
-                    sumSurrounding[0] += rgb[((y) * width + (x - 1)) * 4];
-                    sumSurrounding[1] += rgb[((y) * width + (x - 1)) * 4 + 1];
-                    sumSurrounding[2] += rgb[((y) * width + (x - 1)) * 4 + 2];
+                    sumSurrounding[0] += bitmapBits[((y) * width + (x - 1)) * 4];
+                    sumSurrounding[1] += bitmapBits[((y) * width + (x - 1)) * 4 + 1];
+                    sumSurrounding[2] += bitmapBits[((y) * width + (x - 1)) * 4 + 2];
                     totalSurrounding++;
                 }
 
-                bitmapBits[i] = (byte)(sumSurrounding[0] / totalSurrounding);
-                bitmapBits[i + 1] = (byte)(sumSurrounding[1] / totalSurrounding);
-                bitmapBits[i + 2] = (byte)(sumSurrounding[2] / totalSurrounding);
-                bitmapBits[i + 3] = 255;
+                tmpBuffer[i] = (byte)(sumSurrounding[0] / totalSurrounding);
+                tmpBuffer[i + 1] = (byte)(sumSurrounding[1] / totalSurrounding);
+                tmpBuffer[i + 2] = (byte)(sumSurrounding[2] / totalSurrounding);
+                tmpBuffer[i + 3] = 255;
             }
+
+            Array.Copy(tmpBuffer, bitmapBits, tmpBuffer.Length);
         }
 
         private void ShowDepth(short[] depth, byte[] rgb)
@@ -759,6 +817,7 @@ namespace ColorGlove
 
         public void update(short[] depth, byte[] rgb)
         {
+            if (paused) return;
             this.depth = depth;
             this.rgb = rgb;
             //Array.Clear(bitmapBits, 0, bitmapBits.Length); // Zero-all the bitmapBits                    
@@ -805,16 +864,18 @@ namespace ColorGlove
             double minDistance = 1000000;
             byte minColorLabel = backgroundLabel;
 
-            for (int idx = 0; idx < centroidColor.Count; idx++)
+            lock (centroidColor)
             {
-                double distance = EuclideanDistance(point, centroidColor[idx]);
-                if (distance < minDistance)
+                for (int idx = 0; idx < centroidColor.Count; idx++)
                 {
-                    minColorLabel = centroidLabel[idx];
-                    minDistance = distance;
+                    double distance = EuclideanDistance(point, centroidColor[idx]);
+                    if (distance < minDistance)
+                    {
+                        minColorLabel = centroidLabel[idx];
+                        minDistance = distance;
+                    }
                 }
             }
-
 
             nearest_cache.Add(new Tuple<byte, byte, byte>(point[0], point[1], point[2]),
                 minColorLabel);
