@@ -145,8 +145,8 @@ namespace ColorGlove
             FeatureExtraction.ModeFormat MyMode = FeatureExtraction.ModeFormat.Blue;
             Feature = new FeatureExtractionLib.FeatureExtraction(
                                                                          MyMode);
-            //Feature.ReadOffsetPairsFromStorage();
-            Feature.GenerateOffsetPairs(); // use this to test the offset pairs parameters setting
+            Feature.ReadOffsetPairsFromStorage();
+            //Feature.GenerateOffsetPairs(); // use this to test the offset pairs parameters setting
 
             //classifier = new Classifier();
             this.bitmap = new WriteableBitmap(640, 480, 96, 96, PixelFormats.Bgr32, null);
@@ -191,12 +191,15 @@ namespace ColorGlove
             AddCentroid(146, 177, 200, targetLabel);
             AddCentroid(155, 195, 199, targetLabel);
             AddCentroid(142, 182, 195, targetLabel);
+            AddCentroid(146, 189, 211, targetLabel);
+            AddCentroid(159, 198, 214, targetLabel);
 
             // For background color 
-
+            
             AddCentroid(80, 80, 80, backgroundLabel);
             AddCentroid(250, 240, 240, backgroundLabel);
             AddCentroid(210, 180, 150, backgroundLabel);
+            
             AddCentroid(110, 86, 244, backgroundLabel);
             AddCentroid(75, 58, 151, backgroundLabel);
             AddCentroid(153, 189, 206, backgroundLabel);
@@ -435,7 +438,7 @@ namespace ColorGlove
                     bitmapBits, bitmap.PixelWidth * sizeof(int), 0);
             }));
 
-            var directory = "training_samples" + "\\" + HandGestureValue + RangeModeValue;  // assume the directory exist
+            var directory = "..\\..\\..\\Data" + "\\" + HandGestureValue + RangeModeValue;  // assume the directory exist
             TimeSpan t = (DateTime.UtcNow - new DateTime(1970, 1, 1));
             string filename = t.TotalSeconds.ToString();
 
