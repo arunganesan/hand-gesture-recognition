@@ -6,6 +6,7 @@ Kinect project. Hand gesture recognition. Data visualization. We would like to u
 
 #[Experiment result]
 
+#[How to Use Liblinear++]
 ##Vertical mode:
   In vertical mode, the hands are very close to background, not sure if the depth features are good enough.
 
@@ -22,3 +23,7 @@ Kinect project. Hand gesture recognition. Data visualization. We would like to u
 [Experiment result]: https://github.com/arunganesan/hand-gesture-recognition/wiki/Experimental-Results
 
 [Wiki]: https://github.com/arunganesan/hand-gesture-recognition/wiki
+
+[How to Use Liblinear++]: https://github.com/arunganesan/hand-gesture-recognition/wiki/liblinear++
+
+
