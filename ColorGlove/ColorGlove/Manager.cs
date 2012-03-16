@@ -54,7 +54,8 @@ namespace ColorGlove
         {
             // Initialize Kinect, set near mode here
             #region KinectSetting
-            RangeModeValue = RangeModeFormat.Near; // If it's kinect for Xbox, set to Default.
+            //RangeModeValue = RangeModeFormat.Near; // If it's kinect for Xbox, set to Default.
+            RangeModeValue = RangeModeFormat.Default;
             DepthTimeout = 1000; // Timeout for the next fram in ms 
             ColorTimeout = 1000; // Timeout for the next fram in ms 
             int lower = 100, upper = 1000; // thresholding parameters. Can be adjusted by Up/Down key.
@@ -76,7 +77,7 @@ namespace ColorGlove
             processors = new Processor[total_processors];
             for (int i = 0; i < total_processors; i++)
             {
-                processors[i] = new Processor(this.sensor);
+                processors[i] = new Processor(this.sensor, this);
                 processors[i].lower = lower;
                 processors[i].upper = upper;
                 Image image = processors[i].getImage();
@@ -108,17 +109,18 @@ namespace ColorGlove
             
             processors[1].updatePipeline(
                 // Show the rgb image
-                                        // Processor.Step.Color
+                //                         Processor.Step.PaintWhite,
+                //                         Processor.Step.ColorMatch
                 // Show the depth image                                         
-                                        Processor.Step.Depth,
+                                        //Processor.Step.Depth
                 // Show overlap offest
-                                        Processor.Step.OverlayOffset
+                //                        Processor.Step.OverlayOffset
                 // Show Mapped Depth Using RGB
                                         // Processor.Step.PaintWhite,
                                         // Processor.Step.MappedDepth
                 // Show the Color Labelling
-                                        // Processor.Step.PaintWhite,
-                                        // Processor.Step.ColorMatch
+                                         Processor.Step.PaintWhite,
+                                         Processor.Step.ColorMatch
                 // Denoise
                 //                        Processor.Step.Denoise
             );
@@ -157,11 +159,18 @@ namespace ColorGlove
 
         public void toggleProcessors()
         {
+            // Michael: Visual Studo said it's deprecated. Need to change?
+            // Arun: Their reason is that if a thread is holding a lock while 
+            //          suspended, it may deadlock. We're not using any locks
+            //          and pausing a thread like this is convenient, so I think 
+            //          we can continue.
 
-            if (poller.ThreadState == System.Threading.ThreadState.Suspended) poller.Resume(); // Michael: Visual Studo said it's deprecated. Need to change?
+            if (poller.ThreadState == System.Threading.ThreadState.Suspended) poller.Resume(); 
             else poller.Suspend();
             //else poller.Resume();
         }
+
+
 
         public void saveImages()
         {
@@ -170,6 +179,7 @@ namespace ColorGlove
             processors[0].processAndSave();
             poller.Resume();
         }
+
 
         public void increaseRange()
         {
