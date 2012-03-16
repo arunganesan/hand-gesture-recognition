@@ -8,7 +8,7 @@ Using Kinect for hand gesture recognition. Key idea: (1) per-pixel classificatio
 
 #[How to Use Liblinear++]
 
-
+#[Random Thoughts]
 
 [Experiment result]: https://github.com/arunganesan/hand-gesture-recognition/wiki/Experimental-Results
 
@@ -16,4 +16,4 @@ Using Kinect for hand gesture recognition. Key idea: (1) per-pixel classificatio
 
 [How to Use Liblinear++]: https://github.com/arunganesan/hand-gesture-recognition/wiki/liblinear++
 
-
+[Random Thoughts]: https://github.com/arunganesan/hand-gesture-recognition/wiki/Random-Thoughts
