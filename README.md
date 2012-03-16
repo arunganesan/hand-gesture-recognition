@@ -2,7 +2,9 @@
 Arun and Michael
 Kinect project. Hand gesture recognition. Data visualization. We would like to use color gloves for generating training data.
 
-#[[Experiment result]]
+#[Wiki]
+
+#[Experiment result]
 
 ##Vertical mode:
   In vertical mode, the hands are very close to background, not sure if the depth features are good enough.
@@ -18,3 +20,5 @@ Kinect project. Hand gesture recognition. Data visualization. We would like to u
    In a single frame with horrizontal mode, there are 300K pixeles, 10K of them may be hands, 77K of them may have -1 of depth.
    A image (sampled 4000 pixel) can generate a LIBSVM format feature vector of size 56MB (each pixel has 2000 features). This is a large number.
 [Experiment result]: https://github.com/arunganesan/hand-gesture-recognition/wiki/Experimental-Results
+
+[Wiki]: https://github.com/arunganesan/hand-gesture-recognition/wiki
