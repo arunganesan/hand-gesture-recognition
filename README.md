@@ -1,6 +1,6 @@
-#Hello World.
-Arun and Michael
-Kinect project. Hand gesture recognition. Data visualization. We would like to use color gloves for generating training data.
+#Hand Gesture Recognition
+Arun Ganesan and Caoxie (Michael) Zhang
+Using Kinect for hand gesture recognition. Key idea: (1) We would like to use color gloves for generating training data.
 
 #[Wiki]
 
