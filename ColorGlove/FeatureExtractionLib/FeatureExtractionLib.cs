@@ -109,6 +109,7 @@ namespace FeatureExtractionLib
                     KinectMode = KinectModeFormat.Near;
                     traningFilename = "Blue";
                     RandomGenerationMode = RandomGenerationModeFormat.Circular;
+                    // 76 imgs
                     break;
                 case ModeFormat.Abstraction: // Operate in default Kinect mode, use a large box and a large number of offset
                     numOfOffsetPairs = 2000;

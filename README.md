@@ -1,19 +1,23 @@
-#Hello World.
-Arun and Michael
-Kinect project. Hand gesture recognition. Data visualization. We would like to use color gloves for generating training data.
+#Hand Gesture Recognition
+## Authors: Arun Ganesan and Caoxie (Michael) Zhang
 
-#Experiment result: see wiki
+Using Kinect for hand gesture recognition. Key ideas: (1) per-pixel classification, and then pooling. (2) use color glove to generate abundant labled data.
 
-##Vertical mode:
-  In vertical mode, the hands are very close to background, not sure if the depth features are good enough.
+#[Wiki]
 
-##Color labeling problem:
-  There always seems to exist some noise the mapped depth image. Need understand why. Is depth image already unstable or is the problem of mapping.
-  To evaluate the mapped labeling, need to seperate the two issues: mapping of depth->image, and color labeling.
+#[Experiment result]
 
-##Tricks
-  When using minimum distance for color labeling, cache is used to dramatically improve look-up time. Creadits go to Arun!
+#[How to Use Liblinear++]
 
-###Simple Statistics
-   In a single frame with horrizontal mode, there are 300K pixeles, 10K of them may be hands, 77K of them may have -1 of depth.
-   A image (sampled 4000 pixel) can generate a LIBSVM format feature vector of size 56MB (each pixel has 2000 features). This is a large number.
+#[Random Thoughts]
+
+# Michael's plan:
+    Going to look using GPU in Kinect, since it will be inevitable to use. 
+
+[Experiment result]: https://github.com/arunganesan/hand-gesture-recognition/wiki/Experimental-Results
+
+[Wiki]: https://github.com/arunganesan/hand-gesture-recognition/wiki
+
+[How to Use Liblinear++]: https://github.com/arunganesan/hand-gesture-recognition/wiki/liblinear++
+
+[Random Thoughts]: https://github.com/arunganesan/hand-gesture-recognition/wiki/Random-Thoughts

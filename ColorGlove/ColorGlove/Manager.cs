@@ -94,13 +94,13 @@ namespace ColorGlove
             
             processors[0].updatePipeline(
                 // Show the rgb image
-                                         Processor.Step.Color
+                                     //    Processor.Step.Color
                 // Show the depth image                                         
                                         // Processor.Step.Depth    
                                          
                 // Show the Color Labelling                                         
-                                        // Processor.Step.PaintWhite,
-                                        // Processor.Step.ColorMatch
+                                         Processor.Step.PaintWhite,
+                                         Processor.Step.ColorMatch
                                           
            ); 
            
@@ -121,6 +121,8 @@ namespace ColorGlove
                 // Show the Color Labelling
                                          Processor.Step.PaintWhite,
                                          Processor.Step.ColorMatch
+                                       // Processor.Step.PaintWhite,
+                                       // Processor.Step.ColorMatch
                 // Denoise
                 //                        Processor.Step.Denoise
             );
