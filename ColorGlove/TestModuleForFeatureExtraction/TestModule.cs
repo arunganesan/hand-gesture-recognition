@@ -29,7 +29,7 @@ namespace TestModuleNamespace
         public void SetupFeatureExtraction() {
             //Default direcotry: "..\\..\\..\\Data";
             // To setup the mode, see README in the library
-            FeatureExtraction.ModeFormat MyMode = FeatureExtraction.ModeFormat.Maize;            
+            FeatureExtraction.ModeFormat MyMode = FeatureExtraction.ModeFormat.Blue;            
                         Feature = new FeatureExtractionLib.FeatureExtraction(
                                                                                      MyMode);                                                                                     
         }

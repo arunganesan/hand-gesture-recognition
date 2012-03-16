@@ -42,12 +42,19 @@ namespace FeatureExtractionLib
         
         private int uMin, uMax;
         // can try to generate circularly uniform offset pair
+        private enum RandomGenerationModeFormat { 
+            Default, // which is a box
+            Circular, // uniform in a polar system (radius is uniform and angle is uniform)
+        };
+        private RandomGenerationModeFormat RandomGenerationMode;
+
         private int numOfOffsetPairs;
         private Random _r;        
         private int sampledNumberPerClass; // used when generating the feature vectors from the image. It sample pixels that are the same class uniformly in an image.
         private int UpperBound; // used when calculating the feature value. UpperBound is given when the depth is <0 or the pixel is out-of-bound.
         private string traningFilename;
         private StreamWriter outputFilestream;
+        private List<int> featureVector = new List<int>();
 
         List<int> listOfTargetPosition, listOfBackgroundPosition;
 
@@ -65,8 +72,7 @@ namespace FeatureExtractionLib
             OpenHand = 1,
             CloseHand = 2,
         };
-        private HandGestureFormat HandGestureValue;
-
+        //private HandGestureFormat HandGestureValue;
 
         public FeatureExtraction(ModeFormat setMode= ModeFormat.Maize, string varDirectory = defaultDirectory)
         // Construct fiunction
@@ -91,16 +97,18 @@ namespace FeatureExtractionLib
                     sampledNumberPerClass = 2000;
                     UpperBound = 10000;
                     KinectMode = KinectModeFormat.Near;
-                    traningFilename = "Maize";            
+                    traningFilename = "Maize";
+                    RandomGenerationMode = RandomGenerationModeFormat.Default;
                     break;
-                case ModeFormat.Blue: // Operate in near Kinect mode, use a large box and a large number of offset            
+                case ModeFormat.Blue:       
                     numOfOffsetPairs = 2000;
                     uMin = 500;
-                    uMax = 50 * 2000;
-                    sampledNumberPerClass = 2000;
+                    uMax = 40 * 2000;
+                    sampledNumberPerClass = 1000;
                     UpperBound = 10000;
                     KinectMode = KinectModeFormat.Near;
-                    traningFilename = "Blue";            
+                    traningFilename = "Blue";
+                    RandomGenerationMode = RandomGenerationModeFormat.Circular;
                     break;
                 case ModeFormat.Abstraction: // Operate in default Kinect mode, use a large box and a large number of offset
                     numOfOffsetPairs = 2000;
@@ -109,7 +117,8 @@ namespace FeatureExtractionLib
                     sampledNumberPerClass = 2000;
                     UpperBound = 10000;
                     KinectMode = KinectModeFormat.Default;
-                    traningFilename = "Abstraction";            
+                    traningFilename = "Abstraction";
+                    RandomGenerationMode = RandomGenerationModeFormat.Default;
                     break;
             }
             traningFilename = "FeatureVector" + traningFilename + ".txt";
@@ -186,21 +195,22 @@ namespace FeatureExtractionLib
 
         private void GetOnePairRandomOffset(int [] arrayInt)
         {
-            if (KinectMode == KinectModeFormat.Near)
+            if (RandomGenerationMode == RandomGenerationModeFormat.Default)
             {
                 arrayInt[0] = _r.Next(uMin, uMax);
                 arrayInt[1] = _r.Next(uMin, uMax);
+                int flipX = _r.Next(2), flipY = _r.Next(2);
+                if (flipX == 0)
+                    arrayInt[0] = arrayInt[0] * -1;
+                if (flipY == 0)
+                    arrayInt[1] = arrayInt[1] * -1;
             }
-            else
-            {
-                arrayInt[0] = _r.Next(uMin, uMax);
-                arrayInt[1] = _r.Next(uMin, uMax);
+            else if (RandomGenerationMode == RandomGenerationModeFormat.Circular) {
+                float radius = _r.Next((int) (uMin * 1.414), (int) (uMax * 1.141));
+                float angle = _r.Next(361);
+                arrayInt[0] = (int) (radius * Math.Cos(angle / 180.0 * Math.PI));
+                arrayInt[1] = (int)(radius * Math.Sin(angle / 180.0 * Math.PI));
             }
-            int flipX = _r.Next(2), flipY = _r.Next(2);
-            if (flipX == 0)
-                arrayInt[0] = arrayInt[0] * -1;
-            if (flipY == 0)
-                arrayInt[1] = arrayInt[1] * -1;
         }
 
         public void GenerateOffsetPairs()
@@ -260,7 +270,7 @@ namespace FeatureExtractionLib
         private void ExtractFeatureFromOneDepthPoint(int oneDimensionIndex)
         {
             List<int[]> aListOfOffsetPosition = new List<int[]>();
-            List<int> featureVector = new List<int>();
+            featureVector.Clear();
             GetAllTransformedPairs(oneDimensionIndex, depth[oneDimensionIndex], aListOfOffsetPosition);
             //Console.WriteLine("Feature vector: {0}", label[oneDimensionIndex]);
             outputFilestream.Write("{0}", label[oneDimensionIndex]);
@@ -272,9 +282,11 @@ namespace FeatureExtractionLib
                 int vDepth = GetDepthByPoint(aListOfOffsetPosition[i][2], aListOfOffsetPosition[i][3]);
                 featureVector.Add(uDepth - vDepth);
                 //Console.Write(" {0}", uDepth - vDepth);
-                if (uDepth!= vDepth) // only write non-zero feature, to utilize sparcity
-                    outputFilestream.Write(" {0}:{1}", i+1, uDepth - vDepth); //notice a plus sign here
+                
             }
+            for (int i=0; i< aListOfOffsetPosition.Count; i++)
+                if (featureVector[i]!=0) // only write non-zero feature, to utilize sparcity
+                    outputFilestream.Write(" {0}:{1}", i + 1, featureVector[i]); //notice a plus sign here
             outputFilestream.WriteLine();
         }
 
@@ -334,7 +346,7 @@ namespace FeatureExtractionLib
                     /*
                     if (tmpCounter==1) 
                         break; // debug
-                     */ 
+                    */ 
                 }
                 //break; // debug
             }

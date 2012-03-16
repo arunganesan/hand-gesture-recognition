@@ -142,11 +142,11 @@ namespace ColorGlove
             // Setup FeatureExtraction Class
             //Default direcotry: "..\\..\\..\\Data";
             // To setup the mode, see README in the library
-            FeatureExtraction.ModeFormat MyMode = FeatureExtraction.ModeFormat.Maize;
+            FeatureExtraction.ModeFormat MyMode = FeatureExtraction.ModeFormat.Blue;
             Feature = new FeatureExtractionLib.FeatureExtraction(
                                                                          MyMode);
-            Feature.ReadOffsetPairsFromStorage();
-            //Feature.GenerateOffsetPairs(); // use this to test the offset pairs parameters setting
+            //Feature.ReadOffsetPairsFromStorage();
+            Feature.GenerateOffsetPairs(); // use this to test the offset pairs parameters setting
 
             //classifier = new Classifier();
             this.bitmap = new WriteableBitmap(640, 480, 96, 96, PixelFormats.Bgr32, null);
