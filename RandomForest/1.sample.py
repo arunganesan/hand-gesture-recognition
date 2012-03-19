@@ -1,3 +1,4 @@
+#! /usr/bin/env python
 print __doc__
 
 from time import time
