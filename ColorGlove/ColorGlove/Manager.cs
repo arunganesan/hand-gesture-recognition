@@ -47,7 +47,10 @@ namespace ColorGlove
         private Processor[] processors;
         private int DepthTimeout;
         private int ColorTimeout;
-
+        private enum ProcessorModeFormat { 
+            Arun,
+            Michael,
+        }
         Thread poller;
 
         public Manager(MainWindow parent)  // Construct function
@@ -86,46 +89,45 @@ namespace ColorGlove
             #endregion
 
             #region Processor configurations
+			
+            ProcessorModeFormat ProcessorMode= ProcessorModeFormat.Michael; // set he mode for processor here
+            if (ProcessorMode == ProcessorModeFormat.Michael)
+            {
+                processors[0].updatePipeline(
+                    // Show the rgb image
+                                            Processor.Step.Color
+                    // Show the depth image                                         
+                    // Processor.Step.Depth    
+
+                    // Show the Color Labelling                                         
+                    // Processor.Step.PaintWhite,
+                    // Processor.Step.ColorMatch
+
+               );
 
 
-            //processors[1].updatePipeline(Processor.Step.ColorMatch);
-            //processors[2].updatePipeline(Processor.Step.ColorMatch);
+                //processors[0].updatePipeline(Processor.Step.ColorMatch);
 
-            
-            processors[0].updatePipeline(
-                // Show the rgb image
-                                         Processor.Step.Color
-                // Show the depth image                                         
-                                        // Processor.Step.Depth    
-                                         
-                // Show the Color Labelling
-                //                         Processor.Step.PaintWhite,
-                //                         Processor.Step.ColorMatch
-                                          
-           ); 
-           
-
-            //processors[0].updatePipeline(Processor.Step.ColorMatch);
-            
-            processors[1].updatePipeline(
-                // Show the rgb image
-                //                            Processor.Step.Color
-                // Show the depth image                                         
-                                        Processor.Step.Depth,
-                // Show overlap offest
-                                        Processor.Step.OverlayOffset
-                // Show Mapped Depth Using RGB
-                                        // Processor.Step.PaintWhite,
-                                        // Processor.Step.MappedDepth
-                // Show the Color Labelling
-                //                         Processor.Step.PaintWhite,
-                //                         Processor.Step.ColorMatch
-                                       // Processor.Step.PaintWhite,
-                                       // Processor.Step.ColorMatch
-                // Denoise
-                //                        Processor.Step.Denoise
-            );
-
+                processors[1].updatePipeline(
+                    // Show the rgb image
+                    // Processor.Step.Color
+                    // Show the depth image                                         
+                                            Processor.Step.Depth
+                    // Show overlap offest
+                    //                        Processor.Step.OverlayOffset
+                    // Show Mapped Depth Using RGB
+                    // Processor.Step.PaintWhite,
+                    // Processor.Step.MappedDepth
+                    // Show the Color Labelling
+                    // Processor.Step.PaintWhite,
+                    // Processor.Step.ColorMatch
+                    // Denoise
+                    //                        Processor.Step.Denoise
+                );
+            }
+            else if (ProcessorMode == ProcessorModeFormat.Arun) { 
+                
+            }
             #endregion
 
             poller = new Thread(new ThreadStart(this.poll));

@@ -21,8 +21,8 @@ namespace TestModuleNamespace
             TestModule FeatureExtractionTest = new TestModule();
             FeatureExtractionTest.SetupFeatureExtraction();
             //FeatureExtractionTest.TestDisplay();
-            FeatureExtractionTest.TestGenerateFeatures();
-            //FeatureExtractionTest.TestGenerateOffset();
+            //FeatureExtractionTest.TestGenerateFeatures();
+            FeatureExtractionTest.TestGenerateOffset();
             Console.ReadKey();
         }
 
