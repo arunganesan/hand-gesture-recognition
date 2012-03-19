@@ -30,7 +30,7 @@ namespace FeatureExtractionLib
             Maize,  
             Blue, // Operate in near Kinect mode, use a large box and a large number of offset
             Abstraction, // Operate in default Kinect mode, use a large box and a large number of offset
-            //Add you favarite mode here.
+            BlueDefault
         };
 
         private ModeFormat Mode;
@@ -111,6 +111,16 @@ namespace FeatureExtractionLib
                     RandomGenerationMode = RandomGenerationModeFormat.Circular;
                     // 76 imgs
                     break;
+                case ModeFormat.BlueDefault:
+                    numOfOffsetPairs = 2000;
+                    uMin = 500;
+                    uMax = 40 * 2000;
+                    sampledNumberPerClass = 1000;
+                    UpperBound = 10000;
+                    KinectMode = KinectModeFormat.Default;
+                    traningFilename = "BlueDefault";
+                    RandomGenerationMode = RandomGenerationModeFormat.Circular;
+                    break;
                 case ModeFormat.Abstraction: // Operate in default Kinect mode, use a large box and a large number of offset
                     numOfOffsetPairs = 2000;
                     uMin = 2000;
@@ -121,6 +131,7 @@ namespace FeatureExtractionLib
                     traningFilename = "Abstraction";
                     RandomGenerationMode = RandomGenerationModeFormat.Default;
                     break;
+
             }
             traningFilename = "FeatureVector" + traningFilename + ".txt";
         }
@@ -303,7 +314,7 @@ namespace FeatureExtractionLib
                 int countDepthMinusOne = 0;
                 int countBackgounrdLabel = 0;
                 for (int i = 0; i < width * height; i++)
-                {                 
+                {
                     depth[i] = (short)int.Parse(parts[2 * i]);                  
                     label[i] = (byte)int.Parse(parts[2 * i + 1]);
                     if (depth[i] == -1)

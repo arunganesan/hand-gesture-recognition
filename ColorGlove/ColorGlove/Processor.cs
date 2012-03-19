@@ -59,7 +59,8 @@ namespace ColorGlove
         double[,] kMeans_clusters;
         int[] kMeans_assignments;
 
-        private RangeModeFormat RangeModeValue = RangeModeFormat.Near;
+        //private RangeModeFormat RangeModeValue = RangeModeFormat.Near;
+        private RangeModeFormat RangeModeValue = RangeModeFormat.Default;
         static private Dictionary<Tuple<byte, byte, byte>, byte> nearest_cache = new Dictionary<Tuple<byte, byte, byte>, byte>(); // It seems not necessary to save the mapped result as byte[], byte should be enough.
         private WriteableBitmap bitmap;
         private byte[] bitmapBits;
@@ -156,9 +157,8 @@ namespace ColorGlove
             // Setup FeatureExtraction Class
             //Default direcotry: "..\\..\\..\\Data";
             // To setup the mode, see README in the library
-            FeatureExtraction.ModeFormat MyMode = FeatureExtraction.ModeFormat.Blue;
-            Feature = new FeatureExtractionLib.FeatureExtraction(
-                                                                         MyMode);
+            FeatureExtraction.ModeFormat MyMode = FeatureExtraction.ModeFormat.BlueDefault;
+            Feature = new FeatureExtractionLib.FeatureExtraction(MyMode);
             Feature.ReadOffsetPairsFromStorage();
             //Feature.GenerateOffsetPairs(); // use this to test the offset pairs parameters setting
 
@@ -171,7 +171,6 @@ namespace ColorGlove
 
             image.MouseLeftButtonUp += image_click;
 
-            HandGestureValue = HandGestureFormat.OpenHand; // Which hand gesture;
             SetCentroidColorAndLabel();
             
             listOfTransformedPairPosition = new List<int[]>(); // remember to clear.
@@ -181,8 +180,8 @@ namespace ColorGlove
         private void SetCentroidColorAndLabel()
         {
             // First add label
-            //HandGestureValue = HandGestureFormat.CloseHand; // Which hand gesture;
-            HandGestureValue = HandGestureFormat.OpenHand;
+            HandGestureValue = HandGestureFormat.CloseHand; 
+            //HandGestureValue = HandGestureFormat.OpenHand;
             // Set which hand gesture to use in the contruct function
             targetLabel = (byte)HandGestureValue;  // numerical value
             Console.WriteLine("targetLabel: {0}", targetLabel);
@@ -222,7 +221,13 @@ namespace ColorGlove
             AddCentroid(153, 189, 206, backgroundLabel);
             AddCentroid(214, 207, 206, backgroundLabel);
             AddCentroid(122, 124, 130, backgroundLabel);
-
+            
+            
+            AddCentroid(159, 159, 166, backgroundLabel);
+            AddCentroid(56, 76, 126, backgroundLabel);
+            AddCentroid(79, 129, 166, backgroundLabel);
+            AddCentroid(69, 70, 82, backgroundLabel);
+            AddCentroid(188, 182, 193, backgroundLabel);
         }
 
         public void increaseRange()
@@ -248,8 +253,7 @@ namespace ColorGlove
                 kMeans_clusters[i, 1] = rand.Next(0, 255);
                 kMeans_clusters[i, 2] = rand.Next(0, 255);
             }
-
-
+            
             int width = x_1 - x_0;
             int height = y_1 - y_0;
 
@@ -485,37 +489,47 @@ namespace ColorGlove
 
         public void processAndSave()
         {
-            foreach (Step step in pipeline) process(step, depth, rgb);
-            bitmap.Dispatcher.Invoke(new Action(() =>
+            lock (bitmapBits)
             {
-                bitmap.WritePixels(new Int32Rect(0, 0, bitmap.PixelWidth, bitmap.PixelHeight),
-                    bitmapBits, bitmap.PixelWidth * sizeof(int), 0);
-            }));
+                // Prevent the rest of the application from updating bitmapBits while it is being written.
 
-            var directory = "..\\..\\..\\Data" + "\\" + HandGestureValue + RangeModeValue;  // assume the directory exist
-            TimeSpan t = (DateTime.UtcNow - new DateTime(1970, 1, 1));
-            string filename = t.TotalSeconds.ToString();
+                foreach (Step step in pipeline) process(step, depth, rgb);
 
-            //mapped depth
-
-            //sensor.MapDepthFrameToColorFrame(DepthImageFormat.Resolution640x480Fps30, depth, ColorImageFormat.RgbResolution640x480Fps30, mapped);
-            //int[] mapped_depth = Enumerable.Repeat(-1, 640 * 480).ToArray() ;
-            List<int[]> depthAndLabel = new List<int[]>(); // -1 means non-hand 
-            using (StreamWriter filestream = new StreamWriter(directory + "\\" + "depthLabel_" + filename + ".txt"))
-            {
-                for (int i = 0; i < depth.Length; i++)
+                bitmap.Dispatcher.Invoke(new Action(() =>
                 {
-                    int depthVal = depth[i] >> DepthImageFrame.PlayerIndexBitmaskWidth;
-                    byte label = depthLabel[i];                    
-                    depthAndLabel.Add(new int[] { depthVal, label });
-                }
-                /* Output file format: 
-                (depthVal, label) (depthVal, label) (depthVal, label) (depthVal, label) ...
-                 */
-                filestream.Write("({0},{1})", depthAndLabel[0][0], depthAndLabel[0][1]);
-                for (int i = 1; i < depthAndLabel.Count; i++) filestream.Write(" ({0},{1})", depthAndLabel[i][0], depthAndLabel[i][1]);
-            }
+                    bitmap.WritePixels(new Int32Rect(0, 0, bitmap.PixelWidth, bitmap.PixelHeight),
+                        bitmapBits, bitmap.PixelWidth * sizeof(int), 0);
+                }));
 
+                
+                var directory = "..\\..\\..\\Data" + "\\" + HandGestureValue + RangeModeValue;  // assume the directory exist
+                TimeSpan t = (DateTime.UtcNow - new DateTime(1970, 1, 1));
+                string filename = t.TotalSeconds.ToString();
+
+                //mapped depth  
+
+                //sensor.MapDepthFrameToColorFrame(DepthImageFormat.Resolution640x480Fps30, depth, ColorImageFormat.RgbResolution640x480Fps30, mapped);
+                //int[] mapped_depth = Enumerable.Repeat(-1, 640 * 480).ToArray() ;
+                List<int[]> depthAndLabel = new List<int[]>(); // -1 means non-hand 
+                using (StreamWriter filestream = new StreamWriter(directory + "\\" + "depthLabel_" + filename + ".txt"))
+                {
+                    for (int i = 0; i < depth.Length; i++)
+                    {
+                        int depthVal = depth[i] >> DepthImageFrame.PlayerIndexBitmaskWidth;
+                        byte label = depthLabel[i];
+                        depthAndLabel.Add(new int[] { depthVal, label });
+                    }
+                    /* Output file format: 
+                    (depthVal, label) (depthVal, label) (depthVal, label) (depthVal, label) ...
+                     */
+                    filestream.Write("({0},{1})", depthAndLabel[0][0], depthAndLabel[0][1]);
+                    for (int i = 1; i < depthAndLabel.Count; i++) filestream.Write(" ({0},{1})", depthAndLabel[i][0], depthAndLabel[i][1]);
+                }
+
+                // Also save the RGB, and depth image (can reconstruct the rest by re-applying pipeline)
+                Util.ObjectToFile(rgb, directory + "\\" + "rgb_" + filename + ".obj");
+                Util.ObjectToFile(depth, directory + "\\" + "depth_" + filename + ".obj");
+            }
             
         }
 
