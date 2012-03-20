@@ -35,54 +35,29 @@ namespace ColorGlove
 
     public class Manager
     {
-        private enum RangeModeFormat
-        {
-            Default = 0, // If you're using Kinect Xbox you should use Default in the KinectSetting region.
-            Near = 1,
-        };
-        private RangeModeFormat RangeModeValue;
-        private KinectSensor sensor;
-        private byte[] colorPixels;
-        private short[] depthPixels;
+        private KinectSensor sensor_;
+        private Tuple<byte[], short[]> data;
         private Processor[] processors;
-        private int DepthTimeout;
-        private int ColorTimeout;
         private enum ProcessorModeFormat { 
             Arun,
             Michael,
         }
         Thread poller;
+        DataFeed datafeed;
 
         public Manager(MainWindow parent)  // Construct function
         {
-            // Initialize Kinect, set near mode here
-            #region KinectSetting
-            //RangeModeValue = RangeModeFormat.Near; // If it's kinect for Xbox, set to Default.
-            RangeModeValue = RangeModeFormat.Default;
-            DepthTimeout = 1000; // Timeout for the next fram in ms 
-            ColorTimeout = 1000; // Timeout for the next fram in ms 
-            int lower = 100, upper = 1000; // thresholding parameters. Can be adjusted by Up/Down key.
-            #endregion
-
-            #region Create sensor
-            KinectSensor.KinectSensors.StatusChanged += (object sender, StatusChangedEventArgs e) =>
-            {
-                if (e.Sensor == sensor && e.Status != KinectStatus.Connected) setSensor(null);
-                else if ((sensor == null) && (e.Status == KinectStatus.Connected)) setSensor(e.Sensor);
-            };
-
-            foreach (var sensor in KinectSensor.KinectSensors)
-                if (sensor.Status == KinectStatus.Connected) setSensor(sensor);
-            #endregion
+            datafeed = new DataFeed(DataFeed.DataSource.Kinect);
+            sensor_ = datafeed.sensor();
 
             #region Create and arrange Images
             int total_processors = 2;
             processors = new Processor[total_processors];
             for (int i = 0; i < total_processors; i++)
             {
-                processors[i] = new Processor(this.sensor, this);
-                processors[i].lower = lower;
-                processors[i].upper = upper;
+                processors[i] = new Processor(this.sensor_, this);
+                processors[i].lower = 100;
+                processors[i].upper = 1000;
                 Image image = processors[i].getImage();
                 parent.mainContainer.Children.Add(image);
             }
@@ -133,28 +108,7 @@ namespace ColorGlove
             poller = new Thread(new ThreadStart(this.poll));
         }
 
-        private void setSensor(KinectSensor newSensor)
-        {
-            if (sensor != null) sensor.Stop();
-            sensor = newSensor;
-            if (sensor != null)
-            {
-                Debug.Assert(sensor.Status == KinectStatus.Connected, "This should only be called with Connected sensors.");
-                sensor.ColorStream.Enable(ColorImageFormat.RgbResolution640x480Fps30);
-                sensor.DepthStream.Enable(DepthImageFormat.Resolution640x480Fps30);
-
-                // Arun, you can change the mode back to default in line 57, which is the kinect setting region. So it would be easier to see there.
-
-                
-                if (RangeModeValue == RangeModeFormat.Near)
-                    sensor.DepthStream.Range = DepthRange.Near; // set near mode 
-
-                colorPixels = new byte[640 * 480 * 4];
-                depthPixels = new short[640 * 480];
-                sensor.Start();
-            }
-        }
-
+       
         public void start()
         {
             poller.Start();
@@ -200,15 +154,8 @@ namespace ColorGlove
         {
             while (true)
             {
-                using (var frame = sensor.DepthStream.OpenNextFrame(DepthTimeout))
-                    if (frame != null) frame.CopyPixelDataTo(depthPixels);
-
-                using (var frame = sensor.ColorStream.OpenNextFrame(ColorTimeout))
-                    if (frame != null) frame.CopyPixelDataTo(colorPixels);
-
-                // Start all processing simultaneously in separate threads
-                // XXX: For now, just send data to first processor
-                foreach (Processor p in processors) p.update(depthPixels, colorPixels);
+                data = datafeed.PullData();
+                foreach (Processor p in processors) p.update(data.Item2, data.Item1);
             }
         }
 
