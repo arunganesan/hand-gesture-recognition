@@ -65,7 +65,7 @@ namespace ColorGlove
 
             #region Processor configurations
 			
-            ProcessorModeFormat ProcessorMode= ProcessorModeFormat.Michael; // set he mode for processor here
+            ProcessorModeFormat ProcessorMode= ProcessorModeFormat.Arun; // set he mode for processor here
             if (ProcessorMode == ProcessorModeFormat.Michael)
             {
                 processors[0].updatePipeline(
@@ -100,8 +100,17 @@ namespace ColorGlove
                     //                        Processor.Step.Denoise
                 );
             }
-            else if (ProcessorMode == ProcessorModeFormat.Arun) { 
-                
+            else if (ProcessorMode == ProcessorModeFormat.Arun) {
+                processors[0].updatePipeline(
+                    Processor.Step.Crop,
+                    Processor.Step.Color
+                );
+
+                processors[1].updatePipeline(
+                    Processor.Step.PaintWhite,
+                    Processor.Step.Crop,
+                    Processor.Step.Depth
+                );
             }
             #endregion
 

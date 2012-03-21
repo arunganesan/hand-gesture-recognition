@@ -13,6 +13,7 @@ using System.Windows.Input;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.Diagnostics;
+using System.Drawing;
 using System.Drawing.Imaging;
 using Microsoft.Kinect;
 using FeatureExtractionLib;
@@ -45,7 +46,7 @@ namespace ColorGlove
         private byte[] bitmapBits;
         private byte[] tmpBuffer;
         private byte[] overlayBitmapBits;
-        private Image image;
+        private System.Windows.Controls.Image image;
         private Manager manager;
         public int lower, upper; // range for thresholding in show_mapped_depth(),  show_color_depth(). Set by the manager.
         public enum Step
@@ -90,10 +91,10 @@ namespace ColorGlove
         private const float DesiredMinHue = 198f - .5f, DesiredMaxHue = 214f + .5f,
                                   DesiredMinSat = 0.174f, DesiredMaxSat = 0.397f; // Used for hue dection
 
-        // Used for cropping.
-        int x_0 = 0, x_1 = 640, y_0 = 0, y_1 = 480;
-
-
+        private System.Drawing.Rectangle crop;
+        private int width, height;
+        private int colorStride, depthStride;
+        
         byte[] color = new byte[3];
         double[] tmp_point = new double[3];
         double[] tmp_point2 = new double[3];
@@ -122,12 +123,15 @@ namespace ColorGlove
             Debug.WriteLine("Start processor contruction");
             this.manager = manager;
             this.sensor = sensor;
-            image = new Image();
-            image.Width = 640;
-            image.Height = 480;
-            mapped = new ColorImagePoint[640 * 480];
-            depthLabel = new byte[640 * 480];
-
+            width = 640; height = 480;
+            colorStride = 4; depthStride = 1;
+            image = new System.Windows.Controls.Image();
+            image.Width = width;
+            image.Height = height;
+            mapped = new ColorImagePoint[width * height];
+            depthLabel = new byte[width * height];
+            crop = new System.Drawing.Rectangle(0, 0, width - 1, height - 1);
+            
             MinHueTarget = 360.0F;
             MaxHueTarget = 0.0F;
             MinSatTarget = 1F;
@@ -232,8 +236,8 @@ namespace ColorGlove
                 kMeans_clusters[i, 2] = rand.Next(0, 255);
             }
             
-            int width = x_1 - x_0;
-            int height = y_1 - y_0;
+            //int width = x_1 - x_0;
+            //int height = y_1 - y_0;
 
             kMeans_assignments = new int[width * height];
             double[] point = new double[3];
@@ -263,8 +267,9 @@ namespace ColorGlove
                 {
                     int y = i / width;
                     int x = i % width;
-                    int adjusted_y = y_0 + y;
-                    int adjusted_x = x_0 + x;
+                    int adjusted_y = y, adjusted_x = x;
+                    //int adjusted_y = y_0 + y;
+                    //int adjusted_x = x_0 + x;
                     int adjusted_i = adjusted_y * 640 + adjusted_x;
 
                     point[0] = rgb[adjusted_i * 4 + 2];
@@ -296,8 +301,9 @@ namespace ColorGlove
                 {
                     int y = i / width;
                     int x = i % width;
-                    int adjusted_y = y_0 + y;
-                    int adjusted_x = x_0 + x;
+                    int adjusted_y = y, adjusted_x = x;
+                    //int adjusted_y = y_0 + y;
+                    //int adjusted_x = x_0 + x;
                     int adjusted_i = adjusted_y * 640 + adjusted_x;
 
                     cluster_centers[kMeans_assignments[i], 0] += rgb[adjusted_i * 4 + 2];
@@ -358,7 +364,7 @@ namespace ColorGlove
             lock (centroidColor)
             {
                 clearCentroids();
-                Point click_position = e.GetPosition(image);
+                System.Windows.Point click_position = e.GetPosition(image);
                 int baseIndex = ((int)click_position.Y * 640 + (int)click_position.X);
                 
                 for (int i = 0; i < k; i++)
@@ -404,7 +410,7 @@ namespace ColorGlove
 
         private void image_click(object sender, MouseButtonEventArgs e)
         {
-            Point click_position = e.GetPosition(image);
+            System.Windows.Point click_position = e.GetPosition(image);
             int baseIndex = ((int)click_position.Y * 640 + (int)click_position.X) * 4;
             Console.WriteLine("(x,y): (" + click_position.X + ", " + click_position.Y + ") RGB: {" + bitmapBits[baseIndex + 2] + ", " + bitmapBits[baseIndex + 1] + ", " + bitmapBits[baseIndex] + "}");
             int depthIndex = (int)click_position.Y * 640 + (int)click_position.X;
@@ -528,7 +534,7 @@ namespace ColorGlove
             
         }
 
-        public Image getImage() { return image; }
+        public System.Windows.Controls.Image getImage() { return image; }
 
         public void updatePipeline(params Step[] steps)
         {
@@ -540,10 +546,10 @@ namespace ColorGlove
         {
             switch (step)
             {
-                case Step.Depth: ShowDepth(depth, rgb); break;
-                case Step.Color: show_color(depth, rgb); break;
-                case Step.Crop: crop_color(depth, rgb); break;
-                case Step.PaintWhite: paint_white(depth, rgb); break;
+                case Step.Depth: CopyDepth(); break;
+                case Step.Color: CopyColor(); break;
+                case Step.Crop: Crop(); break;
+                case Step.PaintWhite: PaintWhite(); break;
                 case Step.MappedDepth: show_mapped_depth(depth, rgb); break;
                 case Step.ColorMatch: show_color_match(depth, rgb); break;
                 case Step.ColorLabelingInRGB: ColorLabellingInRGB(rgb); break;
@@ -646,54 +652,43 @@ namespace ColorGlove
             Array.Copy(tmpBuffer, bitmapBits, tmpBuffer.Length);
         }
 
-        private void ShowDepth(short[] depth, byte[] rgb)
+        // Copies over the depth value to the buffer, normalized for the range of shorts.
+        private void CopyDepth()
         {
-            for (int i = 0; i < depth.Length; i++)
+            for (int x = crop.X; x < crop.Width + crop.X; x++)
             {
-                bitmapBits[4 * i] = bitmapBits[4 * i + 1] = bitmapBits[4 * i + 2] = (byte)(255 * (short.MaxValue - depth[i]) / short.MaxValue);
-            }
-        }
-
-        private void show_color(short[] depth, byte[] rgb)
-        {
-            bitmapBits = rgb;
-        }
-
-        private void crop_color(short[] depth, byte[] rgb)
-        {
-            //byte[] bitmapBits = new byte[(x_1 - x_0) * (y_1 - y_0) * 4];
-            //this.bitmap = new WriteableBitmap((x_1 - x_0), (y_1 - y_0), 96, 96, PixelFormats.Bgr32, null);
-            //image.Source = bitmap;
-
-            x_0 = 220; x_1 = 390; y_0 = 150; y_1 = 362;
-
-            for (int i = 0; i < depth.Length; i++)
-            {
-                //Console.WriteLine(_depthPixels[i]);
-                int max = 32767;
-
-                int y = i / 640;
-                int x = i % 640;
-
-
-                if (x >= x_0 && x < x_1 && y >= y_0 && y < y_1)
+                for (int y = crop.Y; y < crop.Height + crop.Y; y++)
                 {
-                    bitmapBits[4 * i] = rgb[4 * i];
-                    bitmapBits[4 * i + 1] = rgb[4 * i + 1];
-                    bitmapBits[4 * i + 2] = rgb[4 * i + 2];
-                    bitmapBits[4 * i + 3] = rgb[4 * i + 3];
-                }
-                else
-                {
-                    bitmapBits[4 * i] =
-                    bitmapBits[4 * i + 1] =
-                    bitmapBits[4 * i + 2] =
-                    bitmapBits[4 * i + 3] = 0;
+                    int idx = Util.toID(x, y, width, height, depthStride);
+                    bitmapBits[4 * idx] =
+                        bitmapBits[4 * idx + 1] =
+                        bitmapBits[4 * idx + 2] =
+                        bitmapBits[4 * idx + 3] = (byte)(255 * (short.MaxValue - depth[idx]) / short.MaxValue);
                 }
             }
         }
 
-        private void paint_white(short[] depth, byte[] rgb)
+        // Copies over the RGB value to the buffer.
+        private void CopyColor()
+        {
+            for (int x = crop.X; x < crop.Width + crop.X; x++) 
+            {
+                for (int y = crop.Y; y < crop.Height + crop.Y; y++)
+                {
+                    int idx = Util.toID(x, y, width, height, colorStride);
+                    Array.Copy(rgb, idx, bitmapBits, idx, colorStride);
+                }
+            }
+        }
+
+        // Adjusts the cropping parameters
+        private void Crop()
+        {
+            crop.X = 220; crop.Y = 150;
+            crop.Width = 170; crop.Height = 200;
+        }
+
+        private void PaintWhite()
         // make everything white except for something
         {
             //for (int i = 0; i < rgb.Length; i++) if (bitmapBits[i] != 0) bitmapBits[i] = 255; // Michael: why "if (bitmapBits[i] != 0)"
