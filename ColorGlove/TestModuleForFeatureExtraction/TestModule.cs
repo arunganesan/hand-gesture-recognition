@@ -9,10 +9,11 @@ namespace TestModuleNamespace
     class TestModule
     {
         private FeatureExtractionLib.FeatureExtraction Feature;
+        /*
         private int minOffset;
         private int maxOffset;
         private int NumofOffset;
-
+        */
         static void Main(string[] args)
         {
             Console.WriteLine(
@@ -21,8 +22,8 @@ namespace TestModuleNamespace
             TestModule FeatureExtractionTest = new TestModule();
             FeatureExtractionTest.SetupFeatureExtraction();
             //FeatureExtractionTest.TestDisplay();
-            //FeatureExtractionTest.TestGenerateFeatures();
-            FeatureExtractionTest.TestGenerateOffset();
+            FeatureExtractionTest.TestGenerateFeatures();
+            //FeatureExtractionTest.TestGenerateOffset();
             Console.ReadKey();
         }
 
