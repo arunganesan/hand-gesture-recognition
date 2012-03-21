@@ -108,7 +108,6 @@ namespace ColorGlove
             poller = new Thread(new ThreadStart(this.poll));
         }
 
-       
         public void start()
         {
             poller.Start();
@@ -126,7 +125,6 @@ namespace ColorGlove
             else poller.Suspend();
             //else poller.Resume();
         }
-
 
 
         public void saveImages()
