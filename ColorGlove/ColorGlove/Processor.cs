@@ -52,6 +52,7 @@ namespace ColorGlove
         public enum Step
         {
             PaintWhite,
+            PaintGreen,
             Color,
             Depth,
             Crop,
@@ -220,8 +221,39 @@ namespace ColorGlove
         public void decreaseRange()
         {
             upper -= 10;
+            Console.WriteLine("New upper is {0}", upper);
         }
 
+        // Finds nearest depth object and sets the upper bound to epsilon plus that.
+        public void AutoDetectRange()
+        {
+            int epsilon = 60;
+            int min = short.MaxValue;
+            int depthVal, idx;
+            for (int x = crop.X; x < crop.X + crop.Width; x++)
+            {
+                for (int y = crop.Y; y < crop.Y + crop.Height; y++)
+                {
+                    idx = Util.toID(x, y, width, height, depthStride);
+                    depthVal = depth[idx] >> DepthImageFrame.PlayerIndexBitmaskWidth;
+                    if (depthVal < min && depthVal > lower)
+                    {
+                        min = depthVal;
+                        Console.WriteLine("Setting min to {0}", min);
+                    }
+                }
+            }
+
+            upper = min + epsilon;
+        }
+
+        // Uses K-means to identify different colors in the image. Then pauses
+        // this processor until the user clicks on a color. That color is 
+        // chosen to be the target.
+        //
+        // XXX: Code is very ugly. And doesn't work with crop. And choosing
+        // just one color doesnt do a good job. Maybe sbhould also pick the 
+        // background colors somehow (right click?)
         public void kMeans()
         {
             // k = 5 seems to do well with background cleared out.
@@ -558,8 +590,9 @@ namespace ColorGlove
                 case Step.Color: CopyColor(); break;
                 case Step.Crop: Crop(); break;
                 case Step.PaintWhite: PaintWhite(); break;
+                case Step.PaintGreen: PaintGreen(); break;
                 case Step.MappedDepth: show_mapped_depth(depth, rgb); break;
-                case Step.ColorMatch: show_color_match(depth, rgb); break;
+                case Step.ColorMatch: MatchColors(); break;
                 case Step.ColorLabelingInRGB: ColorLabellingInRGB(rgb); break;
                 case Step.OverlayOffset: ShowOverlayOffset(); break;
                 case Step.Denoise: Denoise(); break;
@@ -696,12 +729,33 @@ namespace ColorGlove
             crop.Width = 170; crop.Height = 200;
         }
 
+        // Sets everything within the crop to white.
         private void PaintWhite()
-        // make everything white except for something
         {
-            //for (int i = 0; i < rgb.Length; i++) if (bitmapBits[i] != 0) bitmapBits[i] = 255; // Michael: why "if (bitmapBits[i] != 0)"
-            for (int i = 0; i < rgb.Length; i++) bitmapBits[i] = 255;
-            //Array.Clear(bitmapBits, 0, bitmapBits.Length);
+            for (int x = crop.X; x < crop.Width + crop.X; x++)
+            {
+                for (int y = crop.Y; y < crop.Height + crop.Y; y++)
+                {
+                    int idx = Util.toID(x, y, width, height, colorStride);
+                    bitmapBits[idx] = 
+                    bitmapBits[idx + 1] = 
+                    bitmapBits[idx + 2] = 255;
+                }
+            }
+        }
+
+        private void PaintGreen()
+        {
+            for (int x = crop.X; x < crop.Width + crop.X; x++)
+            {
+                for (int y = crop.Y; y < crop.Height + crop.Y; y++)
+                {
+                    int idx = Util.toID(x, y, width, height, colorStride);
+                    bitmapBits[idx] = 153;
+                    bitmapBits[idx + 1] = 204;
+                    bitmapBits[idx + 2] = 153;
+                }
+            }
         }
 
         private void show_mapped_depth(short[] depth, byte[] rgb)
@@ -726,7 +780,7 @@ namespace ColorGlove
             }
         }
 
-        private void show_color_match(short[] depth, byte[] rgb)  // Is it necessary to pass the arguments? Since they are alreay private members.
+        private void MatchColors()  // Is it necessary to pass the arguments? Since they are alreay private members.
         // Mainly for labelling.  Matches the rgb to the nearest color. The set of colors are in listed in the array "colors"
         {
             sensor.MapDepthFrameToColorFrame(DepthImageFormat.Resolution640x480Fps30, depth, ColorImageFormat.RgbResolution640x480Fps30, mapped);
@@ -739,7 +793,8 @@ namespace ColorGlove
                     ColorImagePoint point = mapped[i];
                     int baseIndex = (point.Y * 640 + point.X) * 4;
 
-                    if ((point.X >= 0 && point.X < 640) && (point.Y >= 0 && point.Y < 480) && bitmapBits[baseIndex] != 0)
+                    if (point.X > crop.X && point.X < (crop.X + crop.Width) &&
+                        point.Y > crop.Y && point.Y < (crop.Y + crop.Height))
                     {
                         rgb_tmp[0] = rgb[baseIndex + 2];
                         rgb_tmp[1] = rgb[baseIndex + 1];

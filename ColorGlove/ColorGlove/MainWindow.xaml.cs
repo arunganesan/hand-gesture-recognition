@@ -47,9 +47,11 @@ namespace ColorGlove
             else if (e.Key == Key.K)
                 m.kMeans();
             else if (e.Key == Key.Up)  // use up/down key to adjust range
-                m.increaseRange(); 
+                m.increaseRange();
             else if (e.Key == Key.Down)
                 m.decreaseRange();
+            else if (e.Key == Key.A)
+                m.AutoRange();
         }
     }
 

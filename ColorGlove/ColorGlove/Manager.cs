@@ -107,9 +107,9 @@ namespace ColorGlove
                 );
 
                 processors[1].updatePipeline(
-                    Processor.Step.PaintWhite,
                     Processor.Step.Crop,
-                    Processor.Step.Depth
+                    Processor.Step.PaintGreen,
+                    Processor.Step.ColorMatch
                 );
             }
             #endregion
@@ -144,6 +144,12 @@ namespace ColorGlove
             poller.Resume();
         }
 
+
+        public void AutoRange()
+        {
+            processors[0].AutoDetectRange();
+            processors[1].AutoDetectRange();
+        }
 
         public void increaseRange()
         {
