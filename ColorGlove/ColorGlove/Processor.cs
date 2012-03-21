@@ -92,9 +92,12 @@ namespace ColorGlove
         private const float DesiredMinHue = 198f - .5f, DesiredMaxHue = 214f + .5f,
                                   DesiredMinSat = 0.174f, DesiredMaxSat = 0.397f; // Used for hue dection
 
+        private static System.Drawing.Rectangle cropValues;
         private System.Drawing.Rectangle crop;
         private int width, height;
         private int colorStride, depthStride;
+        private System.Drawing.Point startDrag, endDrag;
+        private bool dragging = false;
         
         byte[] color = new byte[3];
         double[] tmp_point = new double[3];
@@ -131,8 +134,9 @@ namespace ColorGlove
             image.Height = height;
             mapped = new ColorImagePoint[width * height];
             depthLabel = new byte[width * height];
+            cropValues = new System.Drawing.Rectangle(220, 170, 150, 200);
             crop = new System.Drawing.Rectangle(0, 0, width - 1, height - 1);
-            
+
             MinHueTarget = 360.0F;
             MaxHueTarget = 0.0F;
             MinSatTarget = 1F;
@@ -155,12 +159,17 @@ namespace ColorGlove
             image.Source = bitmap;
 
             image.MouseLeftButtonUp += image_click;
+            image.MouseRightButtonDown += StartDrag;
+            image.MouseMove += Drag;
+            image.MouseRightButtonUp += EndDrag;
+
 
             SetCentroidColorAndLabel();
             
             listOfTransformedPairPosition = new List<int[]>(); // remember to clear.
             Debug.WriteLine("Pass processor setting");
         }
+
 
         private void SetCentroidColorAndLabel()
         {
@@ -520,6 +529,42 @@ namespace ColorGlove
              */
         }
 
+        private void StartDrag(object sender, MouseButtonEventArgs e)
+        {
+            System.Windows.Point click_position = e.GetPosition(image);
+            dragging = true;
+            startDrag.X = (int)click_position.X;
+            startDrag.Y = (int)click_position.Y;
+        }
+
+        private void Drag(object sender, MouseEventArgs e)
+        {
+            System.Windows.Point position = e.GetPosition(image);
+            if (dragging)
+            {
+                endDrag.X = (int)position.X;
+                endDrag.Y = (int)position.Y;
+
+                cropValues.X = Math.Min(startDrag.X, endDrag.X);
+                cropValues.Y = Math.Min(startDrag.Y, endDrag.Y);
+                cropValues.Width = Math.Abs(startDrag.X - endDrag.X);
+                cropValues.Height = Math.Abs(startDrag.Y - endDrag.Y);
+            }
+        }
+
+        private void EndDrag(object sender, MouseButtonEventArgs e)
+        {
+            System.Windows.Point click_position = e.GetPosition(image);
+            dragging = false;
+            endDrag.X = (int)click_position.X;
+            endDrag.Y = (int)click_position.Y;
+
+            cropValues.X = Math.Min(startDrag.X, endDrag.X);
+            cropValues.Y = Math.Min(startDrag.Y, endDrag.Y);
+            cropValues.Width = Math.Abs(startDrag.X - endDrag.X);
+            cropValues.Height = Math.Abs(startDrag.Y - endDrag.Y);
+        }
+
         public void processAndSave()
         {
             lock (bitmapBits)
@@ -725,8 +770,8 @@ namespace ColorGlove
         // Adjusts the cropping parameters
         private void Crop()
         {
-            crop.X = 220; crop.Y = 150;
-            crop.Width = 170; crop.Height = 200;
+            crop.X = cropValues.X; crop.Y = cropValues.Y;
+            crop.Width = cropValues.Width; crop.Height = cropValues.Height;
         }
 
         // Sets everything within the crop to white.

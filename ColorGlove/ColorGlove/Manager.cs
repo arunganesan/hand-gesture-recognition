@@ -102,11 +102,13 @@ namespace ColorGlove
             }
             else if (ProcessorMode == ProcessorModeFormat.Arun) {
                 processors[0].updatePipeline(
+                    Processor.Step.PaintWhite,
                     Processor.Step.Crop,
                     Processor.Step.Color
                 );
 
                 processors[1].updatePipeline(
+                    Processor.Step.PaintWhite,
                     Processor.Step.Crop,
                     Processor.Step.PaintGreen,
                     Processor.Step.ColorMatch
