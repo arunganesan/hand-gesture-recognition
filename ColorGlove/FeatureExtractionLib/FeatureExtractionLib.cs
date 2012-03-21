@@ -27,8 +27,9 @@ namespace FeatureExtractionLib
             * Call FeatureExtractionLib.FeatureExtraction.GenerateFeatureVectorViaImageFiles()     
         */
         public enum ModeFormat { 
-            Maize,  
+            Maize,              
             Blue, // Operate in near Kinect mode, use a large box and a large number of offset
+            //Blue149,
             Abstraction, // Operate in default Kinect mode, use a large box and a large number of offset
             BlueDefault
         };
@@ -99,7 +100,7 @@ namespace FeatureExtractionLib
                     KinectMode = KinectModeFormat.Near;
                     traningFilename = "Maize";
                     RandomGenerationMode = RandomGenerationModeFormat.Default;
-                    break;
+                    break;                
                 case ModeFormat.Blue:       
                     numOfOffsetPairs = 2000;
                     uMin = 500;
@@ -109,8 +110,21 @@ namespace FeatureExtractionLib
                     KinectMode = KinectModeFormat.Near;
                     traningFilename = "Blue";
                     RandomGenerationMode = RandomGenerationModeFormat.Circular;
-                    // 76 imgs
+                     
                     break;
+                /*
+                case ModeFormat.Blue149:
+                    numOfOffsetPairs = 2000;
+                    uMin = 500;
+                    uMax = 40 * 2000;
+                    sampledNumberPerClass = 1000;
+                    UpperBound = 10000;
+                    KinectMode = KinectModeFormat.Near;
+                    traningFilename = "Blue";
+                    RandomGenerationMode = RandomGenerationModeFormat.Circular;
+                    // 149 imgs
+                    break;
+                 */ 
                 case ModeFormat.BlueDefault:
                     numOfOffsetPairs = 2000;
                     uMin = 500;

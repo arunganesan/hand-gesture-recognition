@@ -1,30 +1,31 @@
-#You must ensure nmake.exe, cl.exe, link.exe are in system path.
-#VCVARS32.bat
-#Under dosbox prompt
-#nmake -f Makefile.win
+CXX ?= g++
+CC ?= gcc
+CFLAGS = -Wall -Wconversion -O3 -fPIC -fopenmp
+LIBS = blas/blas.a
+SHVER = 1
+#LIBS = -lblas
 
-##########################################
-CXXC = cl.exe
-CFLAGS = -nologo -O2 -EHsc -I. -D __WIN32__ -D _CRT_SECURE_NO_DEPRECATE
-TARGET = windows
+all: train predict
 
-all: $(TARGET)\train.exe $(TARGET)\predict.exe
+lib: linear.o tron.o blas/blas.a
+	$(CXX) -shared -dynamiclib linear.o tron.o blas/blas.a -o liblinear.so.$(SHVER)
 
-$(TARGET)\train.exe: tron.obj linear.obj train.c blas\*.c
-	$(CXX) $(CFLAGS) -Fe$(TARGET)\train.exe tron.obj linear.obj train.c blas\*.c
+train: tron.o linear.o train.c blas/blas.a
+	$(CXX) $(CFLAGS) -o train train.c tron.o linear.o $(LIBS)
 
-$(TARGET)\predict.exe: tron.obj linear.obj predict.c blas\*.c
-	$(CXX) $(CFLAGS) -Fe$(TARGET)\predict.exe tron.obj linear.obj predict.c blas\*.c
+predict: tron.o linear.o predict.c blas/blas.a
+	$(CXX) $(CFLAGS) -o predict predict.c tron.o linear.o $(LIBS)
 
-linear.obj: linear.cpp linear.h
-	$(CXX) $(CFLAGS) -c linear.cpp
+tron.o: tron.cpp tron.h
+	$(CXX) $(CFLAGS) -c -o tron.o tron.cpp
 
-tron.obj: tron.cpp tron.h
-	$(CXX) $(CFLAGS) -c tron.cpp
+linear.o: linear.cpp linear.h
+	$(CXX) $(CFLAGS) -c -o linear.o linear.cpp
 
-lib: linear.cpp linear.h linear.def tron.obj
-	$(CXX) $(CFLAGS) -LD linear.cpp tron.obj blas\*.c -Fe$(TARGET)\liblinear -link -DEF:linear.def 
+blas/blas.a:
+	cd blas; make OPTFLAGS='$(CFLAGS)' CC='$(CC)';
 
 clean:
-	 -erase /Q *.obj $(TARGET)\.
-
+	cd blas;	make clean
+	cd matlab;	make clean
+	rm -f *~ tron.o linear.o train predict liblinear.so.$(SHVER)

@@ -494,8 +494,15 @@ namespace ColorGlove
             {
                 // Prevent the rest of the application from updating bitmapBits while it is being written.
 
-                foreach (Step step in pipeline) process(step, depth, rgb);
 
+                /*
+            var directory = "..\\..\\..\\Data" + "\\" + HandGestureValue + RangeModeValue;  // assume the directory exist
+            TimeSpan t = (DateTime.UtcNow - new DateTime(1970, 1, 1));
+            string filename = t.TotalSeconds.ToString();
+                */
+            
+            // rgb
+                foreach (Step step in pipeline) process(step, depth, rgb);
                 bitmap.Dispatcher.Invoke(new Action(() =>
                 {
                     bitmap.WritePixels(new Int32Rect(0, 0, bitmap.PixelWidth, bitmap.PixelHeight),
@@ -520,9 +527,10 @@ namespace ColorGlove
                         byte label = depthLabel[i];
                         depthAndLabel.Add(new int[] { depthVal, label });
                     }
-                    /* Output file format: 
-                    (depthVal, label) (depthVal, label) (depthVal, label) (depthVal, label) ...
-                     */
+                    // Output file format: 
+                    //(depthVal, label) (depthVal, label) (depthVal, label) (depthVal, label) ...
+                    //
+            
                     filestream.Write("({0},{1})", depthAndLabel[0][0], depthAndLabel[0][1]);
                     for (int i = 1; i < depthAndLabel.Count; i++) filestream.Write(" ({0},{1})", depthAndLabel[i][0], depthAndLabel[i][1]);
                 }
