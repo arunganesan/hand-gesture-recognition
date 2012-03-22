@@ -230,7 +230,6 @@ namespace ColorGlove
         public void decreaseRange()
         {
             upper -= 10;
-            Console.WriteLine("New upper is {0}", upper);
         }
 
         // Finds nearest depth object and sets the upper bound to epsilon plus that.
@@ -248,7 +247,6 @@ namespace ColorGlove
                     if (depthVal < min && depthVal > lower)
                     {
                         min = depthVal;
-                        Console.WriteLine("Setting min to {0}", min);
                     }
                 }
             }
@@ -580,6 +578,7 @@ namespace ColorGlove
             
             // rgb
                 foreach (Step step in pipeline) process(step, depth, rgb);
+                
                 bitmap.Dispatcher.Invoke(new Action(() =>
                 {
                     bitmap.WritePixels(new Int32Rect(0, 0, bitmap.PixelWidth, bitmap.PixelHeight),
@@ -595,6 +594,10 @@ namespace ColorGlove
 
                 //sensor.MapDepthFrameToColorFrame(DepthImageFormat.Resolution640x480Fps30, depth, ColorImageFormat.RgbResolution640x480Fps30, mapped);
                 //int[] mapped_depth = Enumerable.Repeat(-1, 640 * 480).ToArray() ;
+
+                // Michael: Do we have to create this list? Can't we just write
+                //          the depth val and label directly to the file?
+
                 List<int[]> depthAndLabel = new List<int[]>(); // -1 means non-hand 
                 using (StreamWriter filestream = new StreamWriter(directory + "\\" + "depthLabel_" + filename + ".txt"))
                 {
@@ -604,6 +607,7 @@ namespace ColorGlove
                         byte label = depthLabel[i];
                         depthAndLabel.Add(new int[] { depthVal, label });
                     }
+
                     // Output file format: 
                     //(depthVal, label) (depthVal, label) (depthVal, label) (depthVal, label) ...
                     //
@@ -825,8 +829,8 @@ namespace ColorGlove
             }
         }
 
-        private void MatchColors()  // Is it necessary to pass the arguments? Since they are alreay private members.
         // Mainly for labelling.  Matches the rgb to the nearest color. The set of colors are in listed in the array "colors"
+        private void MatchColors()
         {
             sensor.MapDepthFrameToColorFrame(DepthImageFormat.Resolution640x480Fps30, depth, ColorImageFormat.RgbResolution640x480Fps30, mapped);
             Array.Clear(depthLabel, 0, depthLabel.Length);  // background label is 0. So can use Clear method.
