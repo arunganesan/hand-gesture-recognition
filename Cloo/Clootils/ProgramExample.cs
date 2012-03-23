@@ -55,16 +55,26 @@ namespace Clootils
         public void Run(ComputeContext context, TextWriter log)
         {
             this.log = log;
+                    try
+                {
+                    DateTime ExecutionStartTime; //Var will hold Execution Starting Time
+                    DateTime ExecutionStopTime;//Var will hold Execution Stopped Time
+                    TimeSpan ExecutionTime;//Var will count Total Execution Time-Our Main Hero
+                    ExecutionStartTime = DateTime.Now; //Gets the system Current date time expressed as local time
+                
+                    program = new ComputeProgram(context, clSource);
+                    program.Build(null, null, notify, IntPtr.Zero);
+                    //program.Build(null, null, null , IntPtr.Zero);
+                
+                    ExecutionStopTime = DateTime.Now;
+                    ExecutionTime = ExecutionStopTime - ExecutionStartTime;
+                    log.WriteLine("Use {0} ms", ExecutionTime.TotalMilliseconds.ToString());
+                }
+                catch (Exception e)
+                {
+                    log.WriteLine(e.ToString());
+                }
             
-            try
-            {
-                program = new ComputeProgram(context, clSource);
-                program.Build(null, null, notify, IntPtr.Zero);
-            }
-            catch (Exception e)
-            {
-                log.WriteLine(e.ToString());
-            }
         }
 
         private void notify(CLProgramHandle programHandle, IntPtr userDataPtr)

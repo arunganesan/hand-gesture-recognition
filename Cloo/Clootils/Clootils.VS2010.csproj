@@ -63,6 +63,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CL11Example.cs" />
+    <Compile Include="RuntimeExperiments.cs" />
     <Compile Include="CompareGPUCPU.cs" />
     <Compile Include="IExample.cs" />
     <Compile Include="ImageExample.cs" />
