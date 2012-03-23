@@ -30,6 +30,11 @@ namespace ColorGlove
             Near = 1,
         };
 
+        public enum TestModuleFormat { 
+            None,
+            Extract30FeacturesForEveryPixel,
+        };
+
         private bool paused = false;
         private delegate void PauseDelegate (MouseButtonEventArgs e);
         private PauseDelegate pauseDelegate;
@@ -39,8 +44,8 @@ namespace ColorGlove
         double[,] kMeans_clusters;
         int[] kMeans_assignments;
 
-        //private RangeModeFormat RangeModeValue = RangeModeFormat.Near;
         private RangeModeFormat RangeModeValue = RangeModeFormat.Default;
+        private TestModuleFormat TestModuleValue = TestModuleFormat.None;
         static private Dictionary<Tuple<byte, byte, byte>, byte> nearest_cache = new Dictionary<Tuple<byte, byte, byte>, byte>(); // It seems not necessary to save the mapped result as byte[], byte should be enough.
         private WriteableBitmap bitmap;
         private byte[] bitmapBits;
@@ -158,7 +163,7 @@ namespace ColorGlove
             overlayBitmapBits = new byte[640 * 480 * 4]; // overlay
             image.Source = bitmap;
 
-            image.MouseLeftButtonUp += image_click;
+            image.MouseLeftButtonUp += ImageClick;
             image.MouseRightButtonDown += StartDrag;
             image.MouseMove += Drag;
             image.MouseRightButtonUp += EndDrag;
@@ -170,6 +175,9 @@ namespace ColorGlove
             Debug.WriteLine("Pass processor setting");
         }
 
+        public void SetTestModule(TestModuleFormat setTestModuleValue){
+            TestModuleValue = setTestModuleValue;
+        }
 
         private void SetCentroidColorAndLabel()
         {
@@ -447,7 +455,7 @@ namespace ColorGlove
             paused = false;
         }
 
-        private void image_click(object sender, MouseButtonEventArgs e)
+        private void ImageClick(object sender, MouseButtonEventArgs e)
         {
             System.Windows.Point click_position = e.GetPosition(image);
             int baseIndex = ((int)click_position.Y * 640 + (int)click_position.X) * 4;
@@ -456,8 +464,12 @@ namespace ColorGlove
             int depthVal = depth[depthIndex] >> DepthImageFrame.PlayerIndexBitmaskWidth;
             // Show offsets pair 
             Console.WriteLine("depth: {0}, baseIndex: {1}", depthVal, depthIndex);
-
             
+            if (TestModuleValue == TestModuleFormat.Extract30FeacturesForEveryPixel)
+            {
+                GetAllFeatures( );
+            }
+
 
             // timer start
             DateTime ExecutionStartTime; //Var will hold Execution Starting Time
@@ -465,7 +477,6 @@ namespace ColorGlove
             TimeSpan ExecutionTime;//Var will count Total Execution Time-Our Main Hero
 
             ExecutionStartTime = DateTime.Now; //Gets the system Current date time expressed as local time
-
             //for (depthIndex = 0; depthIndex < depth.Length; depthIndex++) // test for looping through all pixels
             {
                 depthVal = depth[depthIndex];
@@ -525,6 +536,44 @@ namespace ColorGlove
             foreach (double feature in features) Console.Write(feature + " ");
             Console.WriteLine("]");
              */
+        }
+
+        private void GetAllFeatures() {
+            // timer start
+            DateTime ExecutionStartTime; //Var will hold Execution Starting Time
+            DateTime ExecutionStopTime;//Var will hold Execution Stopped Time
+            TimeSpan ExecutionTime;//Var will count Total Execution Time-Our Main Hero
+
+            ExecutionStartTime = DateTime.Now; //Gets the system Current date time expressed as local time
+            for (int depthIndex = 0; depthIndex < depth.Length; depthIndex++) // test for looping through all pixels
+            {
+                short depthVal = depth[depthIndex];
+                listOfTransformedPairPosition.Clear();
+                //Feature.GetAllTransformedPairs(depthIndex, depthVal, listOfTransformedPairPosition);
+                Feature.GetFirstNTransformedPairs(depthIndex, depthVal, listOfTransformedPairPosition, 33);
+                int bitmapIndex, X, Y;
+                //Array.Clear(overlayBitmapBits, 0, overlayBitmapBits.Length);
+                /*
+                for (int i = 0; i < listOfTransformedPairPosition.Count; i++)
+                {
+                    X = listOfTransformedPairPosition[i][0];
+                    Y = listOfTransformedPairPosition[i][1];
+                    if (X >= 0 && X < 640 && Y >= 0 && Y < 480)
+                    {
+                        bitmapIndex = (Y * 640 + X) * 4;                        
+                    }
+                    X = listOfTransformedPairPosition[i][2];
+                    Y = listOfTransformedPairPosition[i][3];
+                    if (X >= 0 && X < 640 && Y >= 0 && Y < 480)
+                    {
+                        bitmapIndex = (Y * 640 + X) * 4;                        
+                    }
+                }
+                */
+            }
+            ExecutionStopTime = DateTime.Now;
+            ExecutionTime = ExecutionStopTime - ExecutionStartTime;
+            Console.WriteLine("Use {0} ms for getting the 33 transformed points", ExecutionTime.TotalMilliseconds.ToString());
         }
 
         private void StartDrag(object sender, MouseButtonEventArgs e)

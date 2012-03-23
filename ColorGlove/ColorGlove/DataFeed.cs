@@ -10,7 +10,7 @@ namespace ColorGlove
 {
     class DataFeed
     {
-        private enum RangeModeFormat { Default, Near };
+        public enum RangeModeFormat { Default, Near };
         public enum DataSource { Kinect, File };
         private RangeModeFormat RangeModeValue;
         private DataSource source;
@@ -23,10 +23,10 @@ namespace ColorGlove
         private int DepthTimeout = 1000;
         private int ColorTimeout = 1000;
         
-        public DataFeed(DataSource source)
+        public DataFeed(DataSource source, RangeModeFormat setRangeModeValue)
         {
             this.source = source;
-            RangeModeValue = RangeModeFormat.Default;
+            RangeModeValue = setRangeModeValue;
             colorPixels = new byte[width * height * stride];
             depthPixels = new short[width * height];
             data = new Tuple<byte[], short[]>(colorPixels, depthPixels);
