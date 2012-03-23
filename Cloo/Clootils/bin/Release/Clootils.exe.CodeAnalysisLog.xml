@@ -1,0 +1,193 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml-stylesheet type="text/xsl" href="c:\program files (x86)\microsoft visual studio 10.0\team tools\static analysis tools\fxcop\Xml\CodeAnalysisReport.xsl"?>
+<FxCopReport Version="10.0">
+ <Targets>
+  <Target Name="C:\Users\Michael Zhang\Desktop\HandGestureRecognition\Cloo\Clootils\bin\Release\Clootils.exe">
+   <Modules>
+    <Module Name="clootils.exe">
+     <Namespaces>
+      <Namespace Name="Clootils">
+       <Types>
+        <Type Name="CL11Example" Kind="Class" Accessibility="Assembly" ExternallyVisible="False">
+         <Members>
+          <Member Name="#Run(Cloo.ComputeContext,System.IO.TextWriter)" Kind="Method" Static="False" Accessibility="Public" ExternallyVisible="False">
+           <Messages>
+            <Message TypeName="Dispose objects before losing scope" Category="Microsoft.Reliability" CheckId="CA2000" Status="Active" Created="2012-03-23 00:50:51Z" FixCategory="DependsOnFix">
+             <Issue Name="NonExceptionEdge" Certainty="75" Level="Warning" Path="C:\Users\Michael Zhang\Desktop\HandGestureRecognition\Cloo\Clootils" File="CL11Example.cs" Line="85">In method 'CL11Example.Run(ComputeContext, TextWriter)', call System.IDisposable.Dispose on object 'buffer' before all references to it are out of scope.</Issue>
+             <Issue Name="NonExceptionEdge" Certainty="75" Level="Warning" Path="C:\Users\Michael Zhang\Desktop\HandGestureRecognition\Cloo\Clootils" File="CL11Example.cs" Line="55">In method 'CL11Example.Run(ComputeContext, TextWriter)', call System.IDisposable.Dispose on object 'commands' before all references to it are out of scope.</Issue>
+            </Message>
+           </Messages>
+          </Member>
+         </Members>
+        </Type>
+        <Type Name="MainForm" Kind="Class" Accessibility="Public" ExternallyVisible="True">
+         <Members>
+          <Member Name="#buttonRunAll_Click(System.Object,System.EventArgs)" Kind="Method" Static="False" Accessibility="Private" ExternallyVisible="False">
+           <Messages>
+            <Message TypeName="Dispose objects before losing scope" Category="Microsoft.Reliability" CheckId="CA2000" Status="Active" Created="2012-03-23 00:50:51Z" FixCategory="DependsOnFix">
+             <Issue Name="ExceptionEdge" Certainty="75" Level="Warning" Path="C:\Users\Michael Zhang\Desktop\HandGestureRecognition\Cloo\Clootils" File="MainForm.cs" Line="140">In method 'MainForm.buttonRunAll_Click(object, EventArgs)', object 'log' is not disposed along all exception paths. Call System.IDisposable.Dispose on object 'log' before all references to it are out of scope.</Issue>
+             <Issue Name="NonExceptionEdge" Certainty="75" Level="Warning" Path="C:\Users\Michael Zhang\Desktop\HandGestureRecognition\Cloo\Clootils" File="MainForm.cs" Line="143">In method 'MainForm.buttonRunAll_Click(object, EventArgs)', call System.IDisposable.Dispose on object 'context' before all references to it are out of scope.</Issue>
+            </Message>
+           </Messages>
+          </Member>
+          <Member Name="#ParseLines(System.String)" Kind="Method" Static="False" Accessibility="Private" ExternallyVisible="False">
+           <Messages>
+            <Message TypeName="Dispose objects before losing scope" Category="Microsoft.Reliability" CheckId="CA2000" Status="Active" Created="2012-03-23 00:50:51Z" FixCategory="DependsOnFix">
+             <Issue Name="NonExceptionEdge" Certainty="75" Level="Warning" Path="C:\Users\Michael Zhang\Desktop\HandGestureRecognition\Cloo\Clootils" File="MainForm.cs" Line="112">In method 'MainForm.ParseLines(string)', call System.IDisposable.Dispose on object 'reader' before all references to it are out of scope.</Issue>
+            </Message>
+           </Messages>
+          </Member>
+         </Members>
+        </Type>
+        <Type Name="MappingExample" Kind="Class" Accessibility="Public" ExternallyVisible="True">
+         <Members>
+          <Member Name="#Run(Cloo.ComputeContext,System.IO.TextWriter)" Kind="Method" Static="False" Accessibility="Public" ExternallyVisible="True">
+           <Messages>
+            <Message TypeName="Dispose objects before losing scope" Category="Microsoft.Reliability" CheckId="CA2000" Status="Active" Created="2012-03-23 00:50:51Z" FixCategory="DependsOnFix">
+             <Issue Name="NonExceptionEdge" Certainty="75" Level="Warning" Path="C:\Users\Michael Zhang\Desktop\HandGestureRecognition\Cloo\Clootils" File="MappingExample.cs" Line="68">In method 'MappingExample.Run(ComputeContext, TextWriter)', call System.IDisposable.Dispose on object 'buffer' before all references to it are out of scope.</Issue>
+             <Issue Name="NonExceptionEdge" Certainty="75" Level="Warning" Path="C:\Users\Michael Zhang\Desktop\HandGestureRecognition\Cloo\Clootils" File="MappingExample.cs" Line="55">In method 'MappingExample.Run(ComputeContext, TextWriter)', call System.IDisposable.Dispose on object 'commands' before all references to it are out of scope.</Issue>
+            </Message>
+            <Message TypeName="DoNotIndirectlyExposeMethodsWithLinkDemands" Category="Microsoft.Security" CheckId="CA2122" Status="Active" Created="2012-03-23 00:50:51Z" FixCategory="NonBreaking">
+             <Issue Certainty="33" Level="CriticalError" Path="C:\Users\Michael Zhang\Desktop\HandGestureRecognition\Cloo\Clootils" File="MappingExample.cs" Line="55">'MappingExample.Run(ComputeContext, TextWriter)' calls into 'Marshal.ReadInt64(IntPtr)' which has a LinkDemand. By making this call, 'Marshal.ReadInt64(IntPtr)' is indirectly exposed to user code. Review the following call stack that might expose a way to circumvent security protection: &#xD;&#xA;   -&gt;'MappingExample.Run(ComputeContext, TextWriter)'&#xD;&#xA;   -&gt;'MappingExample.Run(ComputeContext, TextWriter)'</Issue>
+            </Message>
+           </Messages>
+          </Member>
+         </Members>
+        </Type>
+        <Type Name="MultipleKernelsExample" Kind="Class" Accessibility="Public" ExternallyVisible="True">
+         <Members>
+          <Member Name="#Run(Cloo.ComputeContext,System.IO.TextWriter)" Kind="Method" Static="False" Accessibility="Public" ExternallyVisible="True">
+           <Messages>
+            <Message TypeName="Dispose objects before losing scope" Category="Microsoft.Reliability" CheckId="CA2000" Status="Active" Created="2012-03-23 00:50:51Z" FixCategory="DependsOnFix">
+             <Issue Name="NonExceptionEdge" Certainty="75" Level="Warning" Path="C:\Users\Michael Zhang\Desktop\HandGestureRecognition\Cloo\Clootils" File="MultipleKernelsExample.cs" Line="63">In method 'MultipleKernelsExample.Run(ComputeContext, TextWriter)', call System.IDisposable.Dispose on object 'program' before all references to it are out of scope.</Issue>
+            </Message>
+           </Messages>
+          </Member>
+         </Members>
+        </Type>
+        <Type Name="Program" Kind="Class" Accessibility="Public" ExternallyVisible="True">
+         <Members>
+          <Member Name="#AllocConsole()" Kind="Method" Static="True" Accessibility="Private" ExternallyVisible="False">
+           <Messages>
+            <Message TypeName="MovePInvokesToNativeMethodsClass" Category="Microsoft.Design" CheckId="CA1060" Status="Active" Created="2012-03-23 00:50:51Z" FixCategory="Breaking">
+             <Issue Certainty="95" Level="CriticalWarning">Because it is a P/Invoke method, 'Program.AllocConsole()' should be defined in a class named NativeMethods, SafeNativeMethods, or UnsafeNativeMethods.</Issue>
+            </Message>
+           </Messages>
+          </Member>
+          <Member Name="#FreeConsole()" Kind="Method" Static="True" Accessibility="Private" ExternallyVisible="False">
+           <Messages>
+            <Message TypeName="MovePInvokesToNativeMethodsClass" Category="Microsoft.Design" CheckId="CA1060" Status="Active" Created="2012-03-23 00:50:51Z" FixCategory="Breaking">
+             <Issue Certainty="95" Level="CriticalWarning">Because it is a P/Invoke method, 'Program.FreeConsole()' should be defined in a class named NativeMethods, SafeNativeMethods, or UnsafeNativeMethods.</Issue>
+            </Message>
+           </Messages>
+          </Member>
+          <Member Name="#Main()" Kind="Method" Static="True" Accessibility="Public" ExternallyVisible="True">
+           <Messages>
+            <Message TypeName="DoNotIndirectlyExposeMethodsWithLinkDemands" Category="Microsoft.Security" CheckId="CA2122" Status="Active" Created="2012-03-23 00:50:51Z" FixCategory="NonBreaking">
+             <Issue Certainty="33" Level="CriticalError" Path="C:\Users\Michael Zhang\Desktop\HandGestureRecognition\Cloo\Clootils" File="Program.cs" Line="49">'Program.Main()' calls into 'Marshal.GetLastWin32Error()' which has a LinkDemand. By making this call, 'Marshal.GetLastWin32Error()' is indirectly exposed to user code. Review the following call stack that might expose a way to circumvent security protection: &#xD;&#xA;   -&gt;'Program.Main()'&#xD;&#xA;   -&gt;'Program.Main()'</Issue>
+            </Message>
+           </Messages>
+          </Member>
+         </Members>
+        </Type>
+        <Type Name="ProgramExample" Kind="Class" Accessibility="Assembly" ExternallyVisible="False">
+         <Messages>
+          <Message TypeName="TypesThatOwnDisposableFieldsShouldBeDisposable" Category="Microsoft.Design" CheckId="CA1001" Status="Active" Created="2012-03-23 00:50:51Z" FixCategory="NonBreaking">
+           <Issue Name="NonBreaking" Certainty="95" Level="CriticalError">Implement IDisposable on 'ProgramExample' because it creates members of the following IDisposable types: 'ComputeProgram'.</Issue>
+          </Message>
+         </Messages>
+        </Type>
+        <Type Name="VectorAddExample" Kind="Class" Accessibility="Assembly" ExternallyVisible="False">
+         <Messages>
+          <Message TypeName="TypesThatOwnDisposableFieldsShouldBeDisposable" Category="Microsoft.Design" CheckId="CA1001" Status="Active" Created="2012-03-23 00:50:51Z" FixCategory="NonBreaking">
+           <Issue Name="NonBreaking" Certainty="95" Level="CriticalError">Implement IDisposable on 'VectorAddExample' because it creates members of the following IDisposable types: 'ComputeProgram'.</Issue>
+          </Message>
+         </Messages>
+         <Members>
+          <Member Name="#Run(Cloo.ComputeContext,System.IO.TextWriter)" Kind="Method" Static="False" Accessibility="Public" ExternallyVisible="False">
+           <Messages>
+            <Message TypeName="Dispose objects before losing scope" Category="Microsoft.Reliability" CheckId="CA2000" Status="Active" Created="2012-03-23 00:50:51Z" FixCategory="DependsOnFix">
+             <Issue Name="NonExceptionEdge" Certainty="75" Level="Warning" Path="C:\Users\Michael Zhang\Desktop\HandGestureRecognition\Cloo\Clootils" File="VectorAddExample.cs" Line="86">In method 'VectorAddExample.Run(ComputeContext, TextWriter)', call System.IDisposable.Dispose on object 'a' before all references to it are out of scope.</Issue>
+             <Issue Name="NonExceptionEdge" Certainty="75" Level="Warning" Path="C:\Users\Michael Zhang\Desktop\HandGestureRecognition\Cloo\Clootils" File="VectorAddExample.cs" Line="87">In method 'VectorAddExample.Run(ComputeContext, TextWriter)', call System.IDisposable.Dispose on object 'b' before all references to it are out of scope.</Issue>
+             <Issue Name="NonExceptionEdge" Certainty="75" Level="Warning" Path="C:\Users\Michael Zhang\Desktop\HandGestureRecognition\Cloo\Clootils" File="VectorAddExample.cs" Line="90">In method 'VectorAddExample.Run(ComputeContext, TextWriter)', call System.IDisposable.Dispose on object 'c' before all references to it are out of scope.</Issue>
+             <Issue Name="NonExceptionEdge" Certainty="75" Level="Warning" Path="C:\Users\Michael Zhang\Desktop\HandGestureRecognition\Cloo\Clootils" File="VectorAddExample.cs" Line="108">In method 'VectorAddExample.Run(ComputeContext, TextWriter)', call System.IDisposable.Dispose on object 'commands' before all references to it are out of scope.</Issue>
+            </Message>
+           </Messages>
+          </Member>
+         </Members>
+        </Type>
+       </Types>
+      </Namespace>
+     </Namespaces>
+    </Module>
+   </Modules>
+  </Target>
+ </Targets>
+ <Rules>
+  <Rule TypeName="Dispose objects before losing scope" Category="Microsoft.Reliability" CheckId="CA2000">
+   <Name>Dispose objects before losing scope</Name>
+   <Description>If a disposable object is not explicitly disposed before all references to it are out of scope, the object will be disposed at some indeterminate time when the garbage collector runs the finalizer of the object. Because an exceptional event might occur that will prevent the finalizer of the object from running, the object should be explicitly disposed instead.</Description>
+   <Resolution Name="ExceptionEdge">In method {0}, object {1} is not disposed along all exception paths. Call System.IDisposable.Dispose on object {1} before all references to it are out of scope.</Resolution>
+   <Resolution Name="NonExceptionEdge">In method {0}, call System.IDisposable.Dispose on object {1} before all references to it are out of scope.</Resolution>
+   <Owner>RuleOwner</Owner>
+   <Url>http://msdn.microsoft.com/library/ms182289(VS.100).aspx</Url>
+   <Email />
+   <MessageLevel Certainty="75">Warning</MessageLevel>
+   <File Name="dataflowrules.dll" Version="10.0.0.0" />
+  </Rule>
+  <Rule TypeName="DoNotIndirectlyExposeMethodsWithLinkDemands" Category="Microsoft.Security" CheckId="CA2122">
+   <Name>Do not indirectly expose methods with link demands</Name>
+   <Description>Do not wrap a method protected by a LinkDemand with a method that does not perform a security check. A LinkDemand checks the permissions of the immediate caller rather than checking the permissions of all callers in the call stack. In this case, the permissions of the wrapper method will be checked. If the wrapper method does not, itself, check the permissions of callers higher in the call stack, malicious code might be able to execute the wrapped function even though it lacks permission to do so.</Description>
+   <Resolution Name="Default">{0} calls into {1} which has a LinkDemand. By making this call, {1} is indirectly exposed to user code. Review the following call stack that might expose a way to circumvent security protection: {2}</Resolution>
+   <Owner />
+   <Url>http://msdn.microsoft.com/library/ms182303(VS.100).aspx</Url>
+   <Email>[none]</Email>
+   <MessageLevel Certainty="33">CriticalError</MessageLevel>
+   <File Name="securityrules.dll" Version="10.0.0.0" />
+  </Rule>
+  <Rule TypeName="MovePInvokesToNativeMethodsClass" Category="Microsoft.Design" CheckId="CA1060">
+   <Name>Move P/Invokes to NativeMethods class</Name>
+   <Description>This type contains members with the DllImport attribute. Members with the DllImport attribute should be contained in classes named NativeMethods, SafeNativeMethods, or UnsafeNativeMethods.</Description>
+   <Resolution Name="Default">Because it is a P/Invoke method, {0} should be defined in a class named NativeMethods, SafeNativeMethods, or UnsafeNativeMethods.</Resolution>
+   <Owner />
+   <Url>http://msdn.microsoft.com/library/ms182161(VS.100).aspx</Url>
+   <Email>[none]</Email>
+   <MessageLevel Certainty="95">CriticalWarning</MessageLevel>
+   <File Name="designrules.dll" Version="10.0.0.0" />
+  </Rule>
+  <Rule TypeName="TypesThatOwnDisposableFieldsShouldBeDisposable" Category="Microsoft.Design" CheckId="CA1001">
+   <Name>Types that own disposable fields should be disposable</Name>
+   <Description>Types that declare disposable members should also implement IDisposable. If the type does not own any unmanaged resources, do not implement a finalizer on it.</Description>
+   <Resolution Name="NonBreaking">Implement IDisposable on {0} because it creates members of the following IDisposable types: {1}.</Resolution>
+   <Owner />
+   <Url>http://msdn.microsoft.com/library/ms182172(VS.100).aspx</Url>
+   <Email>[none]</Email>
+   <MessageLevel Certainty="95">CriticalError</MessageLevel>
+   <File Name="designrules.dll" Version="10.0.0.0" />
+  </Rule>
+ </Rules>
+ <Localized>
+  <String Key="Category">Category</String>
+  <String Key="Certainty">Certainty</String>
+  <String Key="CollapseAll">Collapse All</String>
+  <String Key="CheckId">Check Id</String>
+  <String Key="Error">Error</String>
+  <String Key="Errors">error(s)</String>
+  <String Key="ExpandAll">Expand All</String>
+  <String Key="Help">Help</String>
+  <String Key="Line">Line</String>
+  <String Key="Messages">message(s)</String>
+  <String Key="LocationNotStoredInPdb">[Location not stored in Pdb]</String>
+  <String Key="Project">Project</String>
+  <String Key="Resolution">Resolution</String>
+  <String Key="Rule">Rule</String>
+  <String Key="RuleFile">Rule File</String>
+  <String Key="RuleDescription">Rule Description</String>
+  <String Key="Source">Source</String>
+  <String Key="Status">Status</String>
+  <String Key="Target">Target</String>
+  <String Key="Warning">Warning</String>
+  <String Key="Warnings">warning(s)</String>
+  <String Key="ReportTitle">Code Analysis Report</String>
+ </Localized>
+</FxCopReport>

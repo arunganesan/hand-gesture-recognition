@@ -1,0 +1,7 @@
+C:\Users\Michael Zhang\Desktop\HandGestureRecognition\Cloo\Cloo\bin\Release\Cloo.dll.config
+C:\Users\Michael Zhang\Desktop\HandGestureRecognition\Cloo\Cloo\bin\Release\Cloo.dll
+C:\Users\Michael Zhang\Desktop\HandGestureRecognition\Cloo\Cloo\bin\Release\Cloo.pdb
+C:\Users\Michael Zhang\Desktop\HandGestureRecognition\Cloo\Cloo\bin\Release\Cloo.xml
+C:\Users\Michael Zhang\Desktop\HandGestureRecognition\Cloo\Cloo\obj\Release\ResolveAssemblyReference.cache
+C:\Users\Michael Zhang\Desktop\HandGestureRecognition\Cloo\Cloo\obj\Release\Cloo.dll
+C:\Users\Michael Zhang\Desktop\HandGestureRecognition\Cloo\Cloo\obj\Release\Cloo.pdb
