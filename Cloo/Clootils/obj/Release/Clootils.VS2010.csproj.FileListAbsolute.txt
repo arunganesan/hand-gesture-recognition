@@ -11,5 +11,3 @@ C:\Users\Michael Zhang\Desktop\HandGestureRecognition\Cloo\Clootils\obj\Release\
 C:\Users\Michael Zhang\Desktop\HandGestureRecognition\Cloo\Clootils\obj\Release\ResGen.write.1.tlog
 C:\Users\Michael Zhang\Desktop\HandGestureRecognition\Cloo\Clootils\obj\Release\Clootils.exe
 C:\Users\Michael Zhang\Desktop\HandGestureRecognition\Cloo\Clootils\obj\Release\Clootils.pdb
-C:\Users\Michael Zhang\Desktop\HandGestureRecognition\Cloo\Clootils\bin\Release\Clootils.exe.CodeAnalysisLog.xml
-C:\Users\Michael Zhang\Desktop\HandGestureRecognition\Cloo\Clootils\bin\Release\Clootils.exe.lastcodeanalysissucceeded

@@ -74,6 +74,7 @@
             this.checkedListExamples.Name = "checkedListExamples";
             this.checkedListExamples.Size = new System.Drawing.Size(173, 586);
             this.checkedListExamples.TabIndex = 0;
+            this.checkedListExamples.SelectedIndexChanged += new System.EventHandler(this.checkedListExamples_SelectedIndexChanged);
             // 
             // textBoxLog
             // 

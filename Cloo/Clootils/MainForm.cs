@@ -79,12 +79,14 @@ namespace Clootils
             exampleList.Add(new MappingExample());
             exampleList.Add(new ProgramExample());
             exampleList.Add(new MultipleKernelsExample());
+            exampleList.Add(new CompareGPUCPU());
             exampleList.Add(new VectorAddExample());
             exampleList.Add(new CL11Example());
+            
 
             checkedListExamples.CheckOnClick = true;
             foreach (IExample example in exampleList)
-                checkedListExamples.Items.Add(example.Name, true);
+                checkedListExamples.Items.Add(example.Name, false);
         }
 
         void checkedListDevices_ItemCheck(object sender, ItemCheckEventArgs e)
@@ -172,6 +174,11 @@ namespace Clootils
             checkedListDevices.Items.Clear();
             checkedListDevices.Items.AddRange(availableDevices);
             checkedListDevices.SetItemChecked(0, true);
+        }
+
+        private void checkedListExamples_SelectedIndexChanged(object sender, EventArgs e)
+        {
+
         }
     }
 }
