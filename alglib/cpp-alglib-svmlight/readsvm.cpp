@@ -24,6 +24,9 @@ void readsvmfile(double * container, int lines, int stride, char * filename) {
       
       sscanf(line.c_str(), "%d", &label);
       line = line.substr(line.find(' ') + 1);
+      
+      // XXX: Fix this for the general case.
+      if (label == -1) label = 0;
       container[(counter*stride) + stride - 1] = label; 
       
       while (!line.empty()) {
@@ -41,6 +44,7 @@ void readsvmfile(double * container, int lines, int stride, char * filename) {
 
         if (part.length() == line.length()) line = "";
         else line = line.substr(part.length() + 1);  
+       
       }
       
       //printf("Processed line %d\n", counter);
