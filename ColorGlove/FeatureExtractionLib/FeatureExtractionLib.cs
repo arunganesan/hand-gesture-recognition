@@ -280,6 +280,20 @@ namespace FeatureExtractionLib
             }
         }
 
+        public void GetFirstNTransformedPairs(int curPosition, int curDepth, List<int[]> listOfTransformedPairPosition, int N)
+        {
+            int CurX = curPosition % width, CurY = curPosition / width;
+            for (int i = 0; i < N; i++)
+            {
+                int uX = listOfOffsetPairs[i][0], uY = listOfOffsetPairs[i][1], vX = listOfOffsetPairs[i][2], vY = listOfOffsetPairs[i][3];
+                int newUX = HelperGetOffset(CurX, uX, curDepth);
+                int newUY = HelperGetOffset(CurY, uY, curDepth);
+                int newVX = HelperGetOffset(CurX, vX, curDepth);
+                int newVY = HelperGetOffset(CurY, vY, curDepth);
+                //listOfTransformedPairPosition.Add(new int[] { newUX, newUY, newVX, newVY });
+            }
+        }
+
         private int GetDepthByPoint(int X, int Y){
             if (X >= 0 && X < width && Y >= 0 && Y < height)
             {
