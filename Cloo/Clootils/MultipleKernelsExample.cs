@@ -62,7 +62,7 @@ namespace Clootils
             {
                 ComputeProgram program = new ComputeProgram(context, kernelSources);
                 program.Build(null, null, null, IntPtr.Zero);
-                log.WriteLine("Program successfully built.");
+                log.WriteLine("Program successfully built.");                
                 program.CreateAllKernels();
                 log.WriteLine("Kernels successfully created.");
             }

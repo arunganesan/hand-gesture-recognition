@@ -38,16 +38,15 @@ using Cloo;
 
 namespace Clootils
 {
-    class GetRunTimeExperiemnt : IExample
+    class GPUvsCPURuntimeExperiemnt : IExample
     {
         ComputeProgram program;
 
         string clProgramSource = @"
-kernel void CompareGPUCPU(
+kernel void RuntimeExperiment(
     global  read_only float* a,  
     global  read_only int *iterNum,
-    global  write_only float* c,
-    global constant maxIndex)
+    global  write_only float* c)
 {
     int index = get_global_id(0);    
     int i;
@@ -98,7 +97,8 @@ kernel void CompareGPUCPU(
 
                 // Create the arrays and fill them with random data.
                 int count = 640 * 480; // 
-                const int maxIndex = 640 * 480;
+                int repeatTimes = 100;
+                //const int maxIndex = 640 * 480;
                 int[] myIterNum =new int[1]{ 30};
                 float[] arrA = new float[count];
                 float[] arrB = new float[count];
@@ -133,13 +133,13 @@ kernel void CompareGPUCPU(
                 // Create and build the opencl program.
 
                 // Create the kernel function and set its arguments.
-                ComputeKernel kernel = program.CreateKernel("CompareGPUCPU");
+                ComputeKernel kernel = program.CreateKernel("RuntimeExperiment");
                 ComputeCommandQueue commands = new ComputeCommandQueue(context, context.Devices[0], ComputeCommandQueueFlags.None);
 
                 DateTime ExecutionStartTime; //Var will hold Execution Starting Time
                 DateTime ExecutionStopTime;//Var will hold Execution Stopped Time
                 TimeSpan ExecutionTime;//Var will count Total Execution Time-Our Main Hero
-                int repeatTimes = 100;
+                
                 List<int> ListIterNum = new List<int>();
 
                 if (ExperimentMode == ExperiementModeFormat.MultiIterNum)
@@ -173,7 +173,7 @@ kernel void CompareGPUCPU(
                             kernel.SetMemoryArgument(1, iterNum);
                             //kernel.SetMemoryArgument(2, c);
                             kernel.SetMemoryArgument(2, c);
-                            kernel.SetMemoryArgument(3, 
+                            //kernel.SetMemoryArgument(3, 
 
                             // Create the event wait list. An event list is not really needed for this example but it is important to see how it works.
                             // Note that events (like everything else) consume OpenCL resources and creating a lot of them may slow down execution.
@@ -186,8 +186,8 @@ kernel void CompareGPUCPU(
                             // Execute the kernel "count" times. After this call returns, "eventList" will contain an event associated with this command.
                             // If eventList == null or typeof(eventList) == ReadOnlyCollection<ComputeEventBase>, a new event will not be created.
                             //commands.Execute(kernel, null, new long[] { count }, null, eventList);
-                            commands.Execute(kernel, null, new long[] { count }, null, null);
-
+                            commands.Execute(kernel, null, new long[] { count }, null, null); // set the work-item size here.
+                             
                             // Read back the results. If the command-queue has out-of-order execution enabled (default is off), ReadFromBuffer 
                             // will not execute until any previous events in eventList (in our case only eventList[0]) are marked as complete 
                             // by OpenCL. By default the command-queue will execute the commands in the same order as they are issued from the host.

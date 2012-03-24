@@ -82,7 +82,7 @@ namespace Clootils
             exampleList.Add(new CompareGPUCPU());
             exampleList.Add(new VectorAddExample());
             exampleList.Add(new CL11Example());
-            exampleList.Add(new GetRunTimeExperiemnt());
+            exampleList.Add(new GPUvsCPURuntimeExperiemnt());
             
 
             checkedListExamples.CheckOnClick = true;
