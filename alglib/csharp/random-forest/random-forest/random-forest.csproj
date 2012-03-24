@@ -40,8 +40,20 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="alglibinternal.cs" />
+    <Compile Include="alglibmisc.cs" />
+    <Compile Include="ap.cs" />
     <Compile Include="dataanalysis.cs" />
+    <Compile Include="diffequations.cs" />
+    <Compile Include="fasttransforms.cs" />
+    <Compile Include="integration.cs" />
+    <Compile Include="interpolation.cs" />
+    <Compile Include="linalg.cs" />
+    <Compile Include="optimization.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="solvers.cs" />
+    <Compile Include="specialfunctions.cs" />
+    <Compile Include="statistics.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

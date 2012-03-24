@@ -1,1 +1,5 @@
 C:\Users\Michael Zhang\Desktop\HandGestureRecognition\alglib\csharp\random-forest\random-forest\obj\Debug\ResolveAssemblyReference.cache
+C:\Users\Michael Zhang\Desktop\HandGestureRecognition\alglib\csharp\random-forest\random-forest\bin\Debug\random-forest.dll
+C:\Users\Michael Zhang\Desktop\HandGestureRecognition\alglib\csharp\random-forest\random-forest\bin\Debug\random-forest.pdb
+C:\Users\Michael Zhang\Desktop\HandGestureRecognition\alglib\csharp\random-forest\random-forest\obj\Debug\random-forest.dll
+C:\Users\Michael Zhang\Desktop\HandGestureRecognition\alglib\csharp\random-forest\random-forest\obj\Debug\random-forest.pdb

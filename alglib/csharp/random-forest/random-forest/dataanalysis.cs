@@ -5288,8 +5288,8 @@ public partial class alglib
 
 
 
-
-        public const int innernodewidth = 3; // Michael takes note
+        // Const -Michael
+        public const int innernodewidth = 3; // -Michael takes note
         public const int leafnodewidth = 2; 
         public const int dfusestrongsplits = 1;
         public const int dfuseevs = 2;
@@ -5489,7 +5489,7 @@ public partial class alglib
             //
             // Allocate data, prepare header
             //
-            treesize = 1+innernodewidth*(samplesize-1)+leafnodewidth*samplesize; // -Michael takes note
+            treesize = 1+innernodewidth*(samplesize-1)+leafnodewidth*samplesize; // -Michael takes note: treesize= 5*samplesize - 2 = 5* r * Np -2. 
             permbuf = new int[npoints-1+1];
             bufs.treebuf = new double[treesize-1+1];
             bufs.idxbuf = new int[npoints-1+1];
