@@ -38,9 +38,10 @@ namespace FeatureExtractionLib
         private short[] depth; // one dimensional depth image
         private byte[] label; // one dimensional label image        
         private const string defaultDirectory = "..\\..\\..\\Data";
-        private string directory;
+        public string directory;
         private const int width = 640, height = 480;        
-        
+        private string RFModelFilePath;
+        private dforest.decisionforest decisionForest;
         private int uMin, uMax;
         // can try to generate circularly uniform offset pair
         private enum RandomGenerationModeFormat { 
@@ -110,7 +111,7 @@ namespace FeatureExtractionLib
                     KinectMode = KinectModeFormat.Near;
                     traningFilename = "Blue";
                     RandomGenerationMode = RandomGenerationModeFormat.Circular;
-                     
+                    RFModelFilePath = directory + "\\FeatureVectureBlue149.rf.model";
                     break;
                 /*
                 case ModeFormat.Blue149:
@@ -173,6 +174,16 @@ namespace FeatureExtractionLib
             return directory + "\\" + "Offset" + Mode + ".txt";
         }
 
+        private void LoadRFModel() {
+            decisionForest = new dforest.decisionforest();
+            alglib.serializer Serializer = new alglib.serializer();
+            Serializer.ustart_str(RFModelFilePath);
+            dforest.dfunserialize(Serializer, decisionForest);
+            Serializer.stop();
+            Console.WriteLine("Finish loading the RF model");
+        }
+
+        #region FileOperations
         public void ReadOffsetPairsFromStorage()
         {
             string filename = GetOffsetPairsFilename();
@@ -218,8 +229,11 @@ namespace FeatureExtractionLib
             }
             Console.WriteLine("Finish writing to file: {0}", filepath);            
         }
-
+        
+        #endregion
+        
         private void GetOnePairRandomOffset(int [] arrayInt)
+            /*Randomly genearte a pair of offset*/
         {
             if (RandomGenerationMode == RandomGenerationModeFormat.Default)
             {
@@ -307,14 +321,17 @@ namespace FeatureExtractionLib
                 return UpperBound;
         }
 
+        
+
         private void ExtractFeatureFromOneDepthPoint(int oneDimensionIndex)
-        {
+        {            
             List<int[]> aListOfOffsetPosition = new List<int[]>();
-            featureVector.Clear();
             GetAllTransformedPairs(oneDimensionIndex, depth[oneDimensionIndex], aListOfOffsetPosition);
             //Console.WriteLine("Feature vector: {0}", label[oneDimensionIndex]);
             outputFilestream.Write("{0}", label[oneDimensionIndex]);
             //Console.WriteLine("aListOfOffsetPosition.Count:{0}", aListOfOffsetPosition.Count);
+            featureVector.Clear();
+
             for (int i = 0; i < aListOfOffsetPosition.Count; i++)
             {
                 int uX = aListOfOffsetPosition[i][0], uY = aListOfOffsetPosition[i][1];
@@ -323,8 +340,8 @@ namespace FeatureExtractionLib
                 featureVector.Add(uDepth - vDepth);
                 //Console.Write(" {0}", uDepth - vDepth);
                 
-            }
-            for (int i=0; i< aListOfOffsetPosition.Count; i++)
+            }            
+            for (int i=0; i< featureVector.Count; i++)
                 if (featureVector[i]!=0) // only write non-zero feature, to utilize sparcity
                     outputFilestream.Write(" {0}:{1}", i + 1, featureVector[i]); //notice a plus sign here
             outputFilestream.WriteLine();
