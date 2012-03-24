@@ -14,17 +14,29 @@ namespace TestModuleNamespace
         private int maxOffset;
         private int NumofOffset;
         */
+
         static void Main(string[] args)
         {
             Console.WriteLine(
                 "Hello World");            
-            // test FeatureExtactionLib
+            
+
+
+            // Generate feature vector file 
+            /*
+            //############################
+
             TestModule FeatureExtractionTest = new TestModule();
             FeatureExtractionTest.SetupFeatureExtraction();
             //FeatureExtractionTest.TestDisplay();
             FeatureExtractionTest.TestGenerateFeatures();
             //FeatureExtractionTest.TestGenerateOffset();
+            
+            // end of generating feature vector file
+             */
+            
             Console.ReadKey();
+
         }
 
         public void SetupFeatureExtraction() {
