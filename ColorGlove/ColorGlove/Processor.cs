@@ -33,6 +33,7 @@ namespace ColorGlove
         public enum TestModuleFormat { 
             None,
             Extract30FeacturesForEveryPixel,
+            PredictOnePixel,
         };
 
         private bool paused = false;
@@ -151,7 +152,8 @@ namespace ColorGlove
             //Default direcotry: "..\\..\\..\\Data";
             // To setup the mode, see README in the library
 
-            FeatureExtraction.ModeFormat MyMode = FeatureExtraction.ModeFormat.BlueDefault;
+            //FeatureExtraction.ModeFormat MyMode = FeatureExtraction.ModeFormat.BlueDefault;
+            FeatureExtraction.ModeFormat MyMode = FeatureExtraction.ModeFormat.Blue;
             Feature = new FeatureExtractionLib.FeatureExtraction(MyMode);
             Feature.ReadOffsetPairsFromStorage();
             //Feature.GenerateOffsetPairs(); // use this to test the offset pairs parameters setting
@@ -470,13 +472,28 @@ namespace ColorGlove
                 GetAllFeatures( );
             }
 
+            if (TestModuleValue == TestModuleFormat.PredictOnePixel) {
+                // timer start
+                DateTime ExecutionStartTime; //Var will hold Execution Starting Time
+                DateTime ExecutionStopTime;//Var will hold Execution Stopped Time
+                TimeSpan ExecutionTime;//Var will count Total Execution Time-Our Main Hero
+
+                ExecutionStartTime = DateTime.Now; //Gets the system Current date time expressed as local time
+                double [] predictOutput = new double[0];
+                Feature.PredictOnePixel(depthIndex, depth, ref predictOutput); 
+                Console.WriteLine("background: {0}, open hand: {1}, close hand: {2}",predictOutput[0], predictOutput[1], predictOutput[2]);
+                ExecutionStopTime = DateTime.Now;
+                ExecutionTime = ExecutionStopTime - ExecutionStartTime;
+                Console.WriteLine("Use {0} ms for getting prediction", ExecutionTime.TotalMilliseconds.ToString());
+            }
 
             // timer start
+            /*
             DateTime ExecutionStartTime; //Var will hold Execution Starting Time
             DateTime ExecutionStopTime;//Var will hold Execution Stopped Time
             TimeSpan ExecutionTime;//Var will count Total Execution Time-Our Main Hero
-
             ExecutionStartTime = DateTime.Now; //Gets the system Current date time expressed as local time
+             */
             //for (depthIndex = 0; depthIndex < depth.Length; depthIndex++) // test for looping through all pixels
             {
                 depthVal = depth[depthIndex];
@@ -506,11 +523,13 @@ namespace ColorGlove
 
             if (paused) unPause(e);
             
+            /*
             ExecutionStopTime = DateTime.Now;
             ExecutionTime = ExecutionStopTime - ExecutionStartTime;
             Console.WriteLine("Use {0} ms for getting transformed points", ExecutionTime.TotalMilliseconds.ToString());
-            // timer off 
             
+            // timer off 
+            */
             // Print HSL
             /*
             System.Drawing.Color color = System.Drawing.Color.FromArgb(bitmapBits[baseIndex + 2], bitmapBits[baseIndex + 1], bitmapBits[baseIndex]);

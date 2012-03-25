@@ -91,7 +91,6 @@ kernel void RuntimeExperiment(
             CPUMode = CPUModeFormat.None;
             GPUMode = GPUModeFormat.Run;
             ExperimentMode = ExperiementModeFormat.OneIterNum;
-
             try
             {
 

@@ -84,7 +84,8 @@ namespace ColorGlove
 
 
                 //processors[0].updatePipeline(Processor.Step.ColorMatch);
-                processors[1].SetTestModule(Processor.TestModuleFormat.Extract30FeacturesForEveryPixel); // test how long it takes.
+                //processors[1].SetTestModule(Processor.TestModuleFormat.Extract30FeacturesForEveryPixel); // test how long it takes.
+                processors[1].SetTestModule(Processor.TestModuleFormat.PredictOnePixel); // test prediction on one pixel
                 processors[1].updatePipeline(
                     // Show the rgb image
                     // Processor.Step.Color

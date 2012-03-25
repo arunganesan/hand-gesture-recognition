@@ -37,6 +37,7 @@ namespace FeatureExtractionLib
         private ModeFormat Mode;
         private short[] depth; // one dimensional depth image
         private byte[] label; // one dimensional label image        
+        double[] RFfeatureVector; // for random forest 
         private const string defaultDirectory = "..\\..\\..\\Data";
         public string directory;
         private const int width = 640, height = 480;        
@@ -80,13 +81,16 @@ namespace FeatureExtractionLib
         // Construct fiunction
         {
             depth = new short[width * height];
+
             label = new byte[width * height];
             listOfTargetPosition = new List<int>();
             listOfBackgroundPosition = new List<int>();
             listOfOffsetPairs = new List<int[]>();            
             _r= new Random(); // used for random number generator                        
             SetDirectory(varDirectory);
-            SetMode(setMode);            
+            SetMode(setMode);
+            LoadRFModel();
+            RFfeatureVector = new double[numOfOffsetPairs];
         }
 
         private void SetMode(ModeFormat setMode) {
@@ -177,7 +181,8 @@ namespace FeatureExtractionLib
         private void LoadRFModel() {
             decisionForest = new dforest.decisionforest();
             alglib.serializer Serializer = new alglib.serializer();
-            Serializer.ustart_str(RFModelFilePath);
+            string modelFile = System.IO.File.ReadAllText(RFModelFilePath);
+            Serializer.ustart_str(modelFile);
             dforest.dfunserialize(Serializer, decisionForest);
             Serializer.stop();
             Console.WriteLine("Finish loading the RF model");
@@ -321,11 +326,32 @@ namespace FeatureExtractionLib
                 return UpperBound;
         }
 
-        
+        public void PredictOnePixel(int oneDimensionIndex, short[] depthArray, ref double[] predictOutput)
+        {
+            List<int[]> aListOfOffsetPosition = new List<int[]>();
+
+            depth = depthArray;
+            GetAllTransformedPairs(oneDimensionIndex, depth[oneDimensionIndex], aListOfOffsetPosition);
+            //Console.WriteLine("Feature vector: {0}", label[oneDimensionIndex]);          
+            //Console.WriteLine("aListOfOffsetPosition.Count:{0}", aListOfOffsetPosition.Count);            
+            for (int i = 0; i < aListOfOffsetPosition.Count; i++)
+            {
+                //int uX = aListOfOffsetPosition[i][0], uY = aListOfOffsetPosition[i][1];
+                int uDepth = GetDepthByPoint(aListOfOffsetPosition[i][0], aListOfOffsetPosition[i][1]);
+                int vDepth = GetDepthByPoint(aListOfOffsetPosition[i][2], aListOfOffsetPosition[i][3]);
+                RFfeatureVector[i] = (uDepth - vDepth);                
+            }            
+            dforest.dfprocess(decisionForest, RFfeatureVector, ref predictOutput);
+            Console.WriteLine("y[0]:{0}, y[1]:{1},y[2]:{2}", predictOutput[0], predictOutput[1], predictOutput[2]);
+        }
 
         private void ExtractFeatureFromOneDepthPoint(int oneDimensionIndex)
+            /*
+             * Extract feature vectors and write it a file
+             */
         {            
             List<int[]> aListOfOffsetPosition = new List<int[]>();
+
             GetAllTransformedPairs(oneDimensionIndex, depth[oneDimensionIndex], aListOfOffsetPosition);
             //Console.WriteLine("Feature vector: {0}", label[oneDimensionIndex]);
             outputFilestream.Write("{0}", label[oneDimensionIndex]);
@@ -334,7 +360,7 @@ namespace FeatureExtractionLib
 
             for (int i = 0; i < aListOfOffsetPosition.Count; i++)
             {
-                int uX = aListOfOffsetPosition[i][0], uY = aListOfOffsetPosition[i][1];
+                //int uX = aListOfOffsetPosition[i][0], uY = aListOfOffsetPosition[i][1];
                 int uDepth = GetDepthByPoint(aListOfOffsetPosition[i][0], aListOfOffsetPosition[i][1]);
                 int vDepth = GetDepthByPoint(aListOfOffsetPosition[i][2], aListOfOffsetPosition[i][3]);
                 featureVector.Add(uDepth - vDepth);

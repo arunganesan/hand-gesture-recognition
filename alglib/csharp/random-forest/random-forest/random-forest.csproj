@@ -54,6 +54,8 @@
     <Compile Include="solvers.cs" />
     <Compile Include="specialfunctions.cs" />
     <Compile Include="statistics.cs" />
+    <Compile Include="test_c.cs" />
+    <Compile Include="test_i.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
