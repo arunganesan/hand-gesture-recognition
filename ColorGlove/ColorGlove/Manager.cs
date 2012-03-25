@@ -85,14 +85,14 @@ namespace ColorGlove
 
                 //processors[0].updatePipeline(Processor.Step.ColorMatch);
                 //processors[1].SetTestModule(Processor.TestModuleFormat.Extract30FeacturesForEveryPixel); // test how long it takes.
-                processors[1].SetTestModule(Processor.TestModuleFormat.PredictOnePixel); // test prediction on one pixel
+                processors[1].SetTestModule(Processor.TestModuleFormat.PredictAllPixelsCPU); // test prediction on one pixel
                 processors[1].updatePipeline(
                     // Show the rgb image
                     // Processor.Step.Color
                     // Show the depth image                                         
-                                            Processor.Step.Depth
+                                            Processor.Step.Depth,
                     // Show overlap offest
-                    //                        Processor.Step.OverlayOffset
+                                            Processor.Step.OverlayOffset
                     // Show Mapped Depth Using RGB
                     // Processor.Step.PaintWhite,
                     // Processor.Step.MappedDepth
@@ -145,7 +145,7 @@ namespace ColorGlove
         {
             poller.Suspend();
             //foreach (Processor p in processors) p.processAndSave();
-            processors[0].processAndSave();
+            processors[0].ProcessAndSave();
             poller.Resume();
         }
 

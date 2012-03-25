@@ -33,7 +33,8 @@ namespace ColorGlove
         public enum TestModuleFormat { 
             None,
             Extract30FeacturesForEveryPixel,
-            PredictOnePixel,
+            PredictOnePixelCPU,
+            PredictAllPixelsCPU,
         };
 
         private bool paused = false;
@@ -152,7 +153,7 @@ namespace ColorGlove
             //Default direcotry: "..\\..\\..\\Data";
             // To setup the mode, see README in the library
 
-            //FeatureExtraction.ModeFormat MyMode = FeatureExtraction.ModeFormat.BlueDefault;
+            //FeatureExtraction.ModeFormat MyMode = FeatureExtraction.ModeFormat.BlueDefault; // Use dependent
             FeatureExtraction.ModeFormat MyMode = FeatureExtraction.ModeFormat.Blue;
             Feature = new FeatureExtractionLib.FeatureExtraction(MyMode);
             Feature.ReadOffsetPairsFromStorage();
@@ -463,7 +464,9 @@ namespace ColorGlove
             int baseIndex = ((int)click_position.Y * 640 + (int)click_position.X) * 4;
             Console.WriteLine("(x,y): (" + click_position.X + ", " + click_position.Y + ") RGB: {" + bitmapBits[baseIndex + 2] + ", " + bitmapBits[baseIndex + 1] + ", " + bitmapBits[baseIndex] + "}");
             int depthIndex = (int)click_position.Y * 640 + (int)click_position.X;
-            int depthVal = depth[depthIndex] >> DepthImageFrame.PlayerIndexBitmaskWidth;
+            for (int i = 0; i < depth.Length; i++)
+                depth[i] = (short)(depth[i] >> DepthImageFrame.PlayerIndexBitmaskWidth); // remember this
+            int depthVal= depth[depthIndex]; // >> DepthImageFrame.PlayerIndexBitmaskWidth;
             // Show offsets pair 
             Console.WriteLine("depth: {0}, baseIndex: {1}", depthVal, depthIndex);
             
@@ -472,16 +475,43 @@ namespace ColorGlove
                 GetAllFeatures( );
             }
 
-            if (TestModuleValue == TestModuleFormat.PredictOnePixel) {
+            if (TestModuleValue == TestModuleFormat.PredictOnePixelCPU) {
                 // timer start
                 DateTime ExecutionStartTime; //Var will hold Execution Starting Time
                 DateTime ExecutionStopTime;//Var will hold Execution Stopped Time
-                TimeSpan ExecutionTime;//Var will count Total Execution Time-Our Main Hero
-
+                TimeSpan ExecutionTime;//Var will count Total Execution Time-Our Main Hero                
                 ExecutionStartTime = DateTime.Now; //Gets the system Current date time expressed as local time
+                                
                 double [] predictOutput = new double[0];
+
                 Feature.PredictOnePixel(depthIndex, depth, ref predictOutput); 
                 Console.WriteLine("background: {0}, open hand: {1}, close hand: {2}",predictOutput[0], predictOutput[1], predictOutput[2]);
+                ExecutionStopTime = DateTime.Now;
+                ExecutionTime = ExecutionStopTime - ExecutionStartTime;
+                Console.WriteLine("Use {0} ms for getting prediction", ExecutionTime.TotalMilliseconds.ToString());
+            }
+
+            if (TestModuleValue == TestModuleFormat.PredictAllPixelsCPU) {
+                DateTime ExecutionStartTime; //Var will hold Execution Starting Time
+                DateTime ExecutionStopTime;//Var will hold Execution Stopped Time
+                TimeSpan ExecutionTime;//Var will count Total Execution Time-Our Main Hero                
+                ExecutionStartTime = DateTime.Now; //Gets the system Current date time expressed as local time
+
+                double[] predictOutput = new double[0];
+                for (depthIndex = 0; depthIndex < depth.Length; depthIndex++) {
+                    Feature.PredictOnePixel(depthIndex, depth, ref predictOutput);
+                    int predictLabel = 0;
+                    for (int i = 1; i < 3; i++)
+                        if (predictOutput[i] > predictOutput[predictLabel])
+                            predictLabel = i;
+                    int bitmapIndex = depthIndex * 4;
+                    if (predictLabel == 0)
+                        overlayBitmapBits[bitmapIndex + 2] = 255;
+                    else if (predictLabel == 1)
+                        overlayBitmapBits[bitmapIndex + 2] = 125;
+                    else if (predictLabel == 2)
+                        overlayBitmapBits[bitmapIndex + 2] = 0;
+                }
                 ExecutionStopTime = DateTime.Now;
                 ExecutionTime = ExecutionStopTime - ExecutionStartTime;
                 Console.WriteLine("Use {0} ms for getting prediction", ExecutionTime.TotalMilliseconds.ToString());
@@ -495,8 +525,10 @@ namespace ColorGlove
             ExecutionStartTime = DateTime.Now; //Gets the system Current date time expressed as local time
              */
             //for (depthIndex = 0; depthIndex < depth.Length; depthIndex++) // test for looping through all pixels
+            /*
             {
-                depthVal = depth[depthIndex];
+                //depthVal = depth[depthIndex];
+                depthVal = depth[depthIndex]; // >> DepthImageFrame.PlayerIndexBitmaskWidth;
                 listOfTransformedPairPosition.Clear();
                 Feature.GetAllTransformedPairs(depthIndex, depthVal, listOfTransformedPairPosition);
                 int bitmapIndex, X, Y;
@@ -520,7 +552,7 @@ namespace ColorGlove
                     }
                 }
             }
-
+            */
             if (paused) unPause(e);
             
             /*
@@ -631,7 +663,7 @@ namespace ColorGlove
             cropValues.Height = Math.Abs(startDrag.Y - endDrag.Y);
         }
 
-        public void processAndSave()
+        public void ProcessAndSave()
         {
             lock (bitmapBits)
             {
@@ -671,7 +703,7 @@ namespace ColorGlove
                 {
                     for (int i = 0; i < depth.Length; i++)
                     {
-                        int depthVal = depth[i] >> DepthImageFrame.PlayerIndexBitmaskWidth;
+                        int depthVal = depth[i] >> DepthImageFrame.PlayerIndexBitmaskWidth; // notice that the depth has been processed
                         byte label = depthLabel[i];
                         depthAndLabel.Add(new int[] { depthVal, label });
                     }

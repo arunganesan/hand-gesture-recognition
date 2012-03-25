@@ -342,7 +342,7 @@ namespace FeatureExtractionLib
                 RFfeatureVector[i] = (uDepth - vDepth);                
             }            
             dforest.dfprocess(decisionForest, RFfeatureVector, ref predictOutput);
-            Console.WriteLine("y[0]:{0}, y[1]:{1},y[2]:{2}", predictOutput[0], predictOutput[1], predictOutput[2]);
+            //Console.WriteLine("y[0]:{0}, y[1]:{1},y[2]:{2}", predictOutput[0], predictOutput[1], predictOutput[2]);
         }
 
         private void ExtractFeatureFromOneDepthPoint(int oneDimensionIndex)
