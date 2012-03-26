@@ -84,8 +84,8 @@ namespace ColorGlove
 
 
                 //processors[0].updatePipeline(Processor.Step.ColorMatch);
-                //processors[1].SetTestModule(Processor.TestModuleFormat.Extract30FeacturesForEveryPixel); // test how long it takes.
-                processors[1].SetTestModule(Processor.TestModuleFormat.PredictAllPixelsCPU); // test prediction on one pixel
+                //processors[1].SetTestModule(Processor.ShowExtractedFeatureFormat.PredictOnePixelCPU | Processor.ShowExtractedFeatureFormat.ShowTransformedForOnePixel); // 
+                processors[1].SetTestModule(Processor.ShowExtractedFeatureFormat.PredictAllPixelsCPU); // test prediction on one pixel
                 processors[1].updatePipeline(
                     // Show the rgb image
                     // Processor.Step.Color
@@ -146,6 +146,7 @@ namespace ColorGlove
             poller.Suspend();
             //foreach (Processor p in processors) p.processAndSave();
             processors[0].ProcessAndSave();
+            // use processor[0] to save the depth image
             poller.Resume();
         }
 
@@ -158,14 +159,14 @@ namespace ColorGlove
 
         public void increaseRange()
         {
-            processors[0].increaseRange();
-            processors[1].increaseRange();
+            processors[0].IncreaseRange();
+            processors[1].IncreaseRange();
         }
 
         public void decreaseRange()
         {
-            processors[0].decreaseRange();
-            processors[1].decreaseRange();
+            processors[0].DecreaseRange();
+            processors[1].DecreaseRange();
         }
 
         public void poll()

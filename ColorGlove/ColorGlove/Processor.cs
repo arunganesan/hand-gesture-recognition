@@ -30,29 +30,32 @@ namespace ColorGlove
             Near = 1,
         };
 
-        public enum TestModuleFormat { 
-            None,
-            Extract30FeacturesForEveryPixel,
-            PredictOnePixelCPU,
-            PredictAllPixelsCPU,
+        public enum ShowExtractedFeatureFormat { 
+            // use power of two to allow multiple selection
+            None = 1,
+            Extract30FeacturesForEveryPixel = 2,
+            PredictOnePixelCPU = 4,
+            PredictAllPixelsCPU = 8,
+            ShowTransformedForOnePixel = 16,
         };
 
         private bool paused = false;
         private delegate void PauseDelegate (MouseButtonEventArgs e);
         private PauseDelegate pauseDelegate;
-
+        
         // for Kmeans
         int k = 7;
         double[,] kMeans_clusters;
         int[] kMeans_assignments;
 
         private RangeModeFormat RangeModeValue = RangeModeFormat.Default;
-        private TestModuleFormat TestModuleValue = TestModuleFormat.None;
+        private ShowExtractedFeatureFormat ShowExtractedFeatureMode = ShowExtractedFeatureFormat.None;
         static private Dictionary<Tuple<byte, byte, byte>, byte> nearest_cache = new Dictionary<Tuple<byte, byte, byte>, byte>(); // It seems not necessary to save the mapped result as byte[], byte should be enough.
         private WriteableBitmap bitmap;
         private byte[] bitmapBits;
         private byte[] tmpBuffer;
         private byte[] overlayBitmapBits;
+        private bool overlayStart; 
         private System.Windows.Controls.Image image;
         private Manager manager;
         public int lower, upper; // range for thresholding in show_mapped_depth(),  show_color_depth(). Set by the manager.
@@ -143,6 +146,7 @@ namespace ColorGlove
             depthLabel = new byte[width * height];
             cropValues = new System.Drawing.Rectangle(220, 170, 150, 200);
             crop = new System.Drawing.Rectangle(0, 0, width - 1, height - 1);
+            overlayStart = false;
 
             MinHueTarget = 360.0F;
             MaxHueTarget = 0.0F;
@@ -153,7 +157,7 @@ namespace ColorGlove
             //Default direcotry: "..\\..\\..\\Data";
             // To setup the mode, see README in the library
 
-            //FeatureExtraction.ModeFormat MyMode = FeatureExtraction.ModeFormat.BlueDefault; // Use dependent
+            //FeatureExtraction.ModeFormat MyMode = FeatureExtraction.ModeFormat.BlueDefault; // User dependent. Notice that this is important
             FeatureExtraction.ModeFormat MyMode = FeatureExtraction.ModeFormat.Blue;
             Feature = new FeatureExtractionLib.FeatureExtraction(MyMode);
             Feature.ReadOffsetPairsFromStorage();
@@ -178,8 +182,8 @@ namespace ColorGlove
             Debug.WriteLine("Pass processor setting");
         }
 
-        public void SetTestModule(TestModuleFormat setTestModuleValue){
-            TestModuleValue = setTestModuleValue;
+        public void SetTestModule(ShowExtractedFeatureFormat setTestModuleValue){
+            ShowExtractedFeatureMode = setTestModuleValue;
         }
 
         private void SetCentroidColorAndLabel()
@@ -233,12 +237,12 @@ namespace ColorGlove
             
         }
 
-        public void increaseRange()
+        public void IncreaseRange()
         {
             upper += 10;
         }
 
-        public void decreaseRange()
+        public void DecreaseRange()
         {
             upper -= 10;
         }
@@ -470,12 +474,12 @@ namespace ColorGlove
             // Show offsets pair 
             Console.WriteLine("depth: {0}, baseIndex: {1}", depthVal, depthIndex);
             
-            if (TestModuleValue == TestModuleFormat.Extract30FeacturesForEveryPixel)
+            if ((ShowExtractedFeatureMode & ShowExtractedFeatureFormat.Extract30FeacturesForEveryPixel) == ShowExtractedFeatureFormat.Extract30FeacturesForEveryPixel )
             {
                 GetAllFeatures( );
             }
 
-            if (TestModuleValue == TestModuleFormat.PredictOnePixelCPU) {
+            if ((ShowExtractedFeatureMode & ShowExtractedFeatureFormat.PredictOnePixelCPU) == ShowExtractedFeatureFormat.PredictOnePixelCPU) {
                 // timer start
                 DateTime ExecutionStartTime; //Var will hold Execution Starting Time
                 DateTime ExecutionStopTime;//Var will hold Execution Stopped Time
@@ -491,43 +495,62 @@ namespace ColorGlove
                 Console.WriteLine("Use {0} ms for getting prediction", ExecutionTime.TotalMilliseconds.ToString());
             }
 
-            if (TestModuleValue == TestModuleFormat.PredictAllPixelsCPU) {
+            if ((ShowExtractedFeatureMode & ShowExtractedFeatureFormat.PredictAllPixelsCPU) == ShowExtractedFeatureFormat.PredictAllPixelsCPU) {
                 DateTime ExecutionStartTime; //Var will hold Execution Starting Time
                 DateTime ExecutionStopTime;//Var will hold Execution Stopped Time
                 TimeSpan ExecutionTime;//Var will count Total Execution Time-Our Main Hero                
                 ExecutionStartTime = DateTime.Now; //Gets the system Current date time expressed as local time
 
                 double[] predictOutput = new double[0];
+                
                 for (depthIndex = 0; depthIndex < depth.Length; depthIndex++) {
+                    int bitmapIndex = depthIndex * 4;                    
                     Feature.PredictOnePixel(depthIndex, depth, ref predictOutput);
-                    int predictLabel = 0;
+                    int predictLabel = 0;                    
                     for (int i = 1; i < 3; i++)
                         if (predictOutput[i] > predictOutput[predictLabel])
                             predictLabel = i;
-                    int bitmapIndex = depthIndex * 4;
+                    
                     if (predictLabel == 0)
+                    {
                         overlayBitmapBits[bitmapIndex + 2] = 255;
+                        overlayBitmapBits[bitmapIndex + 1] = 255;
+                        overlayBitmapBits[bitmapIndex + 0] = 255;
+                    }
                     else if (predictLabel == 1)
-                        overlayBitmapBits[bitmapIndex + 2] = 125;
+                    {
+                        overlayBitmapBits[bitmapIndex + 2] = 255;
+                        overlayBitmapBits[bitmapIndex + 1] = 0;
+                        overlayBitmapBits[bitmapIndex + 0] = 0;
+                    }
                     else if (predictLabel == 2)
+                    {
                         overlayBitmapBits[bitmapIndex + 2] = 0;
+                        overlayBitmapBits[bitmapIndex + 1] = 255;
+                        overlayBitmapBits[bitmapIndex + 0] = 0;
+                    }
+                    /* 
+                    overlayBitmapBits[bitmapIndex + 3] = 255;
+                    overlayBitmapBits[bitmapIndex + 2] = 0; // 255;
+                    overlayBitmapBits[bitmapIndex + 1] = 0; // 255;
+                    overlayBitmapBits[bitmapIndex + 0] = 255;
+                     */ 
                 }
+                //System.Threading.Thread.Sleep(1000);                
                 ExecutionStopTime = DateTime.Now;
                 ExecutionTime = ExecutionStopTime - ExecutionStartTime;
                 Console.WriteLine("Use {0} ms for getting prediction", ExecutionTime.TotalMilliseconds.ToString());
+                //updateHelper(); // update the current bitmap                
+                //paused = true; // to take a look
+                overlayStart = true;
             }
-
-            // timer start
-            /*
-            DateTime ExecutionStartTime; //Var will hold Execution Starting Time
-            DateTime ExecutionStopTime;//Var will hold Execution Stopped Time
-            TimeSpan ExecutionTime;//Var will count Total Execution Time-Our Main Hero
-            ExecutionStartTime = DateTime.Now; //Gets the system Current date time expressed as local time
-             */
-            //for (depthIndex = 0; depthIndex < depth.Length; depthIndex++) // test for looping through all pixels
-            /*
+            
+            if ((ShowExtractedFeatureMode & ShowExtractedFeatureFormat.ShowTransformedForOnePixel) == ShowExtractedFeatureFormat.ShowTransformedForOnePixel)
             {
-                //depthVal = depth[depthIndex];
+                DateTime ExecutionStartTime; //Var will hold Execution Starting Time
+                DateTime ExecutionStopTime;//Var will hold Execution Stopped Time
+                TimeSpan ExecutionTime;//Var will count Total Execution Time-Our Main Hero
+                ExecutionStartTime = DateTime.Now; //Gets the system Current date time expressed as local time             
                 depthVal = depth[depthIndex]; // >> DepthImageFrame.PlayerIndexBitmaskWidth;
                 listOfTransformedPairPosition.Clear();
                 Feature.GetAllTransformedPairs(depthIndex, depthVal, listOfTransformedPairPosition);
@@ -542,6 +565,7 @@ namespace ColorGlove
                     {
                         bitmapIndex = (Y * 640 + X) * 4;
                         overlayBitmapBits[bitmapIndex + 2] = 255;
+                        //bitmapBits[bitmapIndex + 2] = 255; // test
                     }
                     X = listOfTransformedPairPosition[i][2];
                     Y = listOfTransformedPairPosition[i][3];
@@ -549,19 +573,20 @@ namespace ColorGlove
                     {
                         bitmapIndex = (Y * 640 + X) * 4;
                         overlayBitmapBits[bitmapIndex + 2] = 255;
+                        //bitmapBits[bitmapIndex + 2] = 255; // test 
                     }
                 }
+                ExecutionStopTime = DateTime.Now;
+                ExecutionTime = ExecutionStopTime - ExecutionStartTime;
+                Console.WriteLine("Use {0} ms for getting transformed points", ExecutionTime.TotalMilliseconds.ToString());
+                updateHelper(); // update the current bitmap                
+                paused = true; // to take a look
             }
-            */
-            if (paused) unPause(e);
-            
-            /*
-            ExecutionStopTime = DateTime.Now;
-            ExecutionTime = ExecutionStopTime - ExecutionStartTime;
-            Console.WriteLine("Use {0} ms for getting transformed points", ExecutionTime.TotalMilliseconds.ToString());
-            
+             
+            //if (paused) unPause(e);  // Why this? -Michael
+                        
             // timer off 
-            */
+             
             // Print HSL
             /*
             System.Drawing.Color color = System.Drawing.Color.FromArgb(bitmapBits[baseIndex + 2], bitmapBits[baseIndex + 1], bitmapBits[baseIndex]);
@@ -980,11 +1005,22 @@ namespace ColorGlove
         }
 
         private void ShowOverlayOffset() {
-            for (int i = 0; i < bitmapBits.Length; i += 4) {
-                if (overlayBitmapBits[i + 2] == 255) {
-                    bitmapBits[i + 2] = 255;
-                    bitmapBits[i + 1] = 0;
-                    bitmapBits[i ] = 0;
+            if ((ShowExtractedFeatureMode & ShowExtractedFeatureFormat.PredictAllPixelsCPU) == ShowExtractedFeatureFormat.PredictAllPixelsCPU)
+            {
+                if (overlayStart)
+                    overlayBitmapBits.CopyTo(bitmapBits, 0);
+            }
+            else
+            {
+                for (int i = 0; i < bitmapBits.Length; i += 4)
+                {
+
+                    if (overlayBitmapBits[i + 2] == 255)
+                    {
+                        bitmapBits[i + 2] = 255;
+                        bitmapBits[i + 1] = 0;
+                        bitmapBits[i] = 0;
+                    }
                 }
             }
         }
