@@ -15,7 +15,7 @@ namespace FeatureExtractionLib
             OpenHand = 1,
             CloseHand = 2,
             One = 3,
-            Two = 4,
+            Fist = 4,
         };
         
         // Returns the XY position of the index.

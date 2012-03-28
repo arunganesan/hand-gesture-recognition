@@ -24,11 +24,11 @@ namespace TestModuleNamespace
             TestModule FeatureExtractionTest = new TestModule();
 
             FeatureExtractionTest.SetupFeatureExtraction();
-            FeatureExtractionTest.testDecisionForest();
+            //FeatureExtractionTest.testDecisionForest();
 
 
             // Generate feature vector file 
-            /*
+            
             //############################
 
            
@@ -38,8 +38,8 @@ namespace TestModuleNamespace
             //FeatureExtractionTest.TestGenerateOffset();
             
             // end of generating feature vector file
-             */
-            
+
+            Console.WriteLine("Generated features.");
             Console.ReadKey();
 
         }
@@ -81,8 +81,8 @@ namespace TestModuleNamespace
         public void SetupFeatureExtraction() {
             //Default direcotry: "..\\..\\..\\Data";
             // To setup the mode, see README in the library
-            FeatureExtraction.ModeFormat MyMode = FeatureExtraction.ModeFormat.Blue;            
-                        Feature = new FeatureExtraction(MyMode);                                                                                     
+            FeatureExtraction.ModeFormat MyMode = FeatureExtraction.ModeFormat.BlueDefault;
+            Feature = new FeatureExtraction(MyMode, "D:\\gr\\training\\blue\\");
         }
 
         private void TestGenerateFeatures()

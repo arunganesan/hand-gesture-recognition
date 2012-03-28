@@ -465,12 +465,12 @@ namespace FeatureExtractionLib
             //listOfTargetPosition.Shuffle();
             Shuffle(listOfTargetPosition);
             Shuffle(listOfBackgroundPosition);
-            for (int i = 0; i < numerPerClass; i++)
-            {
-                ExtractFeatureFromOneDepthPoint(listOfTargetPosition[i]);                
+
+            for (int i = 0; i < Math.Min(numerPerClass, listOfBackgroundPosition.Count); i++)
                 ExtractFeatureFromOneDepthPoint(listOfBackgroundPosition[i]);
-                //return; //debug
-            }
+
+            for (int i = 0; i < Math.Min(numerPerClass, listOfTargetPosition.Count); i++)
+                ExtractFeatureFromOneDepthPoint(listOfTargetPosition[i]);
         }
  
 

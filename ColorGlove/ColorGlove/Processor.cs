@@ -185,7 +185,7 @@ namespace ColorGlove
         private void SetCentroidColorAndLabel()
         {
             // First add label
-            HandGestureValue = Util.HandGestureFormat.CloseHand; 
+            HandGestureValue = Util.HandGestureFormat.Fist;
             //HandGestureValue = HandGestureFormat.OpenHand;
             // Set which hand gesture to use in the contruct function
             targetLabel = (byte)HandGestureValue;  // numerical value
@@ -706,8 +706,8 @@ namespace ColorGlove
                         bitmapBits, bitmap.PixelWidth * sizeof(int), 0);
                 }));
 
-                
-                var directory = "..\\..\\..\\Data" + "\\" + HandGestureValue + RangeModeValue;  // assume the directory exist
+                var directory = "D:\\gr\\training\\blue\\" + HandGestureValue;
+                //var directory = "..\\..\\..\\Data" + "\\" + HandGestureValue + RangeModeValue;  // assume the directory exist
                 TimeSpan t = (DateTime.UtcNow - new DateTime(1970, 1, 1));
                 string filename = t.TotalSeconds.ToString();
 
@@ -1063,8 +1063,6 @@ namespace ColorGlove
             {
                 Array.Copy(backgroundColor, point, 3);
             }
-
-
         }
 
 
