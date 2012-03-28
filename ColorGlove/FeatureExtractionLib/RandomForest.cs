@@ -1215,7 +1215,7 @@ namespace FeatureExtractionLib
 
         /*************************************************************************
         Builds one decision tree (internal recursive subroutine)
-
+        Michael: important subroutine
         Parameters:
             TreeBuf     -   large enough array, at least TreeSize
             IdxBuf      -   at least NPoints elements
