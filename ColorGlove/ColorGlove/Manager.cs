@@ -178,9 +178,7 @@ namespace ColorGlove
         }
 
 
-        public void kMeans()
-        {
-            processors[0].kMeans();
-        }
+        public void kMeans() { processors[0].kMeans(); }
+        public void Pool() { processors[1].Pool(); }
     }
 }

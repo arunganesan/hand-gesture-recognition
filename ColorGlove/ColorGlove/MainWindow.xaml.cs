@@ -52,6 +52,8 @@ namespace ColorGlove
                 m.decreaseRange();
             else if (e.Key == Key.A)
                 m.AutoRange();
+            else if (e.Key == Key.P)
+                m.Pool();
         }
     }
 }

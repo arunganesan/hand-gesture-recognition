@@ -626,6 +626,73 @@ namespace ColorGlove
              */
         }
 
+        public void Pool()
+        {
+            int expected_hands = 1;
+            
+            DateTime ExecutionStartTime; //Var will hold Execution Starting Time
+            DateTime ExecutionStopTime;//Var will hold Execution Stopped Time
+            TimeSpan ExecutionTime;//Var will count Total Execution Time-Our Main Hero                
+            ExecutionStartTime = DateTime.Now; //Gets the system Current date time expressed as local time
+            int depthIndex;
+            double[] predictOutput = new double[0];
+            List<Tuple<byte, byte, byte>> label_colors = Util.GiveMeNColors(Feature.num_classes_);
+
+            int[] label_counts = new int[Feature.num_classes_];
+            Array.Clear(label_counts, 0, label_counts.Length);
+
+            for (int y = crop.Y; y <= crop.Y + crop.Height; y++)
+            {
+                for (int x = crop.X; x <= crop.X + crop.Width; x++)
+                {
+                    if (x == crop.X) Console.WriteLine("Processing {0}% ({1}/{2})", (float)(y - crop.Y) / crop.Height * 100, (y - crop.Y), crop.Height);
+                    depthIndex = Util.toID(x, y, width, height, depthStride);
+
+                    int bitmapIndex = depthIndex * 4;
+                    Feature.PredictOnePixel(depthIndex, depth, ref predictOutput);
+                    int predictLabel = 0;
+
+                    for (int i = 1; i < Feature.num_classes_; i++)
+                        if (predictOutput[i] > predictOutput[predictLabel])
+                            predictLabel = i;
+
+                    label_counts[predictLabel]++;
+                    overlayBitmapBits[bitmapIndex + 2] = label_colors[predictLabel].Item1;
+                    overlayBitmapBits[bitmapIndex + 1] = label_colors[predictLabel].Item2;
+                    overlayBitmapBits[bitmapIndex + 0] = label_colors[predictLabel].Item3;
+                }
+            }
+
+            /* Courtesy of http://stackoverflow.com/questions/462699/how-do-i-get-the-index-of-the-highest-value-in-an-array-using-linq */
+            int max_index = -1;
+            int index = 0;
+            double max_value = 0;
+
+            int urgh = label_counts.Select(value =>
+            {
+                if ((max_index == -1 || value > max_value) && index != 0)
+                {
+                    max_index = index;
+                    max_value = value;
+                }
+                index++;
+                return max_index;
+            }).Last();
+
+            Console.WriteLine("Most common gesture is {0} (appears {1}/{2} times).", 
+                ((Util.HandGestureFormat)max_index).ToString(),
+                max_value, crop.Width * crop.Height);
+
+            //System.Threading.Thread.Sleep(1000);                
+            ExecutionStopTime = DateTime.Now;
+            ExecutionTime = ExecutionStopTime - ExecutionStartTime;
+            Console.WriteLine("Use {0} ms for getting prediction", ExecutionTime.TotalMilliseconds.ToString());
+            //updateHelper(); // update the current bitmap
+            overlayStart = true;
+            update(data);
+            Pause((PauseDelegate)HideOverlayDelegate);
+        }
+
         private void GetAllFeatures() {
             // timer start
             DateTime ExecutionStartTime; //Var will hold Execution Starting Time
