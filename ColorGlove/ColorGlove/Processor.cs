@@ -18,6 +18,7 @@ using System.Drawing.Imaging;
 using Microsoft.Kinect;
 using FeatureExtractionLib;
 using System.Runtime.Serialization.Formatters.Binary;
+using System.Threading;
 
 namespace ColorGlove
 {
@@ -53,6 +54,7 @@ namespace ColorGlove
         private ShowExtractedFeatureFormat ShowExtractedFeatureMode = ShowExtractedFeatureFormat.None;
         static private Dictionary<Tuple<byte, byte, byte>, byte> nearest_cache = new Dictionary<Tuple<byte, byte, byte>, byte>(); // It seems not necessary to save the mapped result as byte[], byte should be enough.
         private WriteableBitmap bitmap;
+        private Object bitmap_lock_ = new Object();
         private byte[] bitmapBits;
         private byte[] tmpBuffer;
         private byte[] overlayBitmapBits;
@@ -155,7 +157,7 @@ namespace ColorGlove
 
             //FeatureExtraction.ModeFormat MyMode = FeatureExtraction.ModeFormat.BlueDefault; // User dependent. Notice that this is important
             FeatureExtraction.ModeFormat MyMode = FeatureExtraction.ModeFormat.BlueDefault;
-            Feature = new FeatureExtractionLib.FeatureExtraction(MyMode);
+            Feature = new FeatureExtractionLib.FeatureExtraction(MyMode, "D:\\gr\\training\\blue");
             Feature.ReadOffsetPairsFromStorage();
             //Feature.GenerateOffsetPairs(); // use this to test the offset pairs parameters setting
 			
@@ -305,7 +307,7 @@ namespace ColorGlove
 
             double[] cluster_deltas = new double[k];
 
-            double delta = 10000, epsilon = 0.1;
+            double delta = 10000, epsilon = 1000;
 
             double minDistance = 10000;
             int minCluster = -1;
@@ -392,22 +394,22 @@ namespace ColorGlove
             }
             
             // Show all colors, wait for the user's click. 
-
             for (int i = 0; i < kMeans_assignments.Length; i++)
             {
-                bitmapBits[4 * i + 2] = (byte)kMeans_clusters[kMeans_assignments[i], 0];
-                bitmapBits[4 * i + 1] = (byte)kMeans_clusters[kMeans_assignments[i], 1];
-                bitmapBits[4 * i + 0] = (byte)kMeans_clusters[kMeans_assignments[i], 2];
+                overlayBitmapBits[4 * i + 2] = (byte)kMeans_clusters[kMeans_assignments[i], 0];
+                overlayBitmapBits[4 * i + 1] = (byte)kMeans_clusters[kMeans_assignments[i], 1];
+                overlayBitmapBits[4 * i + 0] = (byte)kMeans_clusters[kMeans_assignments[i], 2];
             }
 
-            Console.WriteLine("Done K-Means. Pausing for user click.");
             Processor.nearest_cache.Clear();
-
-            updateHelper();
-            pause(new PauseDelegate(this.updateKMeansCentroid));         
+            
+            Console.WriteLine("Done K-Means. Pausing for user click.");
+            overlayStart = true;
+            update(data);
+            Pause(new PauseDelegate(this.UpdateKMeansCentroid));
         }
 
-        private void updateKMeansCentroid(MouseButtonEventArgs e)
+        private void UpdateKMeansCentroid(MouseButtonEventArgs e)
         {
             Console.WriteLine("Click acquired.");
 
@@ -431,7 +433,11 @@ namespace ColorGlove
                     AddCentroid((byte)kMeans_clusters[i, 0], (byte)kMeans_clusters[i, 1], (byte)kMeans_clusters[i, 2], label);
                 }
             }
+
+            overlayStart = false;
         }
+
+        private void DummyPauseDelegate(MouseButtonEventArgs e) {}
 
         private void AddCentroid(byte R, byte G, byte B, byte label)  // a helper function for adding labled centroid
         {
@@ -445,13 +451,13 @@ namespace ColorGlove
             centroidLabel.Clear();
         }
 
-        private void pause(PauseDelegate func)
+        private void Pause(PauseDelegate func)
         {
             pauseDelegate = func;
             paused = true;
         }
 
-        private void unPause(MouseButtonEventArgs e)
+        private void UnPause(MouseButtonEventArgs e)
         {
             pauseDelegate(e);
             Console.WriteLine("Unpausing.");
@@ -460,6 +466,12 @@ namespace ColorGlove
 
         private void ImageClick(object sender, MouseButtonEventArgs e)
         {
+            if (paused)
+            {
+                UnPause(e);
+                return;
+            }
+
             System.Windows.Point click_position = e.GetPosition(image);
             int baseIndex = ((int)click_position.Y * 640 + (int)click_position.X) * 4;
             Console.WriteLine("(x,y): (" + click_position.X + ", " + click_position.Y + ") RGB: {" + bitmapBits[baseIndex + 2] + ", " + bitmapBits[baseIndex + 1] + ", " + bitmapBits[baseIndex] + "}");
@@ -498,46 +510,34 @@ namespace ColorGlove
                 ExecutionStartTime = DateTime.Now; //Gets the system Current date time expressed as local time
 
                 double[] predictOutput = new double[0];
-                
-                for (depthIndex = 0; depthIndex < depth.Length; depthIndex++) {
-                    int bitmapIndex = depthIndex * 4;                    
-                    Feature.PredictOnePixel(depthIndex, depth, ref predictOutput);
-                    int predictLabel = 0;                    
-                    for (int i = 1; i < 3; i++)
-                        if (predictOutput[i] > predictOutput[predictLabel])
-                            predictLabel = i;
-                    
-                    if (predictLabel == 0)
+                List<Tuple<byte, byte, byte>> label_colors = Util.GiveMeNColors(Feature.num_classes_);
+                for (int y = crop.Y; y <= crop.Y + crop.Height; y++)
+                {
+                    for (int x = crop.X; x <= crop.X + crop.Width; x++)
                     {
-                        overlayBitmapBits[bitmapIndex + 2] = 255;
-                        overlayBitmapBits[bitmapIndex + 1] = 255;
-                        overlayBitmapBits[bitmapIndex + 0] = 255;
+                        if (x == crop.X) Console.WriteLine("Processing {0}% ({1}/{2})", (float)(y - crop.Y) / crop.Height * 100, (y - crop.Y), crop.Height);
+                        depthIndex = Util.toID(x, y, width, height, depthStride);
+
+                        int bitmapIndex = depthIndex * 4;
+                        Feature.PredictOnePixel(depthIndex, depth, ref predictOutput);
+                        int predictLabel = 0;
+                        
+                        for (int i = 1; i < Feature.num_classes_; i++)
+                            if (predictOutput[i] > predictOutput[predictLabel])
+                                predictLabel = i;
+
+                        bitmapBits[bitmapIndex + 2] = label_colors[predictLabel].Item1;
+                        bitmapBits[bitmapIndex + 1] = label_colors[predictLabel].Item2;
+                        bitmapBits[bitmapIndex + 0] = label_colors[predictLabel].Item3;
                     }
-                    else if (predictLabel == 1)
-                    {
-                        overlayBitmapBits[bitmapIndex + 2] = 255;
-                        overlayBitmapBits[bitmapIndex + 1] = 0;
-                        overlayBitmapBits[bitmapIndex + 0] = 0;
-                    }
-                    else if (predictLabel == 2)
-                    {
-                        overlayBitmapBits[bitmapIndex + 2] = 0;
-                        overlayBitmapBits[bitmapIndex + 1] = 255;
-                        overlayBitmapBits[bitmapIndex + 0] = 0;
-                    }
-                    /* 
-                    overlayBitmapBits[bitmapIndex + 3] = 255;
-                    overlayBitmapBits[bitmapIndex + 2] = 0; // 255;
-                    overlayBitmapBits[bitmapIndex + 1] = 0; // 255;
-                    overlayBitmapBits[bitmapIndex + 0] = 255;
-                     */ 
                 }
+
                 //System.Threading.Thread.Sleep(1000);                
                 ExecutionStopTime = DateTime.Now;
                 ExecutionTime = ExecutionStopTime - ExecutionStartTime;
                 Console.WriteLine("Use {0} ms for getting prediction", ExecutionTime.TotalMilliseconds.ToString());
-                //updateHelper(); // update the current bitmap                
-                //paused = true; // to take a look
+                //updateHelper(); // update the current bitmap
+                Pause((PauseDelegate)DummyPauseDelegate);
                 overlayStart = true;
             }
             
@@ -579,7 +579,6 @@ namespace ColorGlove
                 paused = true; // to take a look
             }
              
-            //if (paused) unPause(e);  // Why this? -Michael
                         
             // timer off 
              
@@ -686,11 +685,9 @@ namespace ColorGlove
 
         public void ProcessAndSave()
         {
-            lock (bitmapBits)
+            lock (bitmap_lock_)
             {
                 // Prevent the rest of the application from updating bitmapBits while it is being written.
-
-
                 /*
             var directory = "..\\..\\..\\Data" + "\\" + HandGestureValue + RangeModeValue;  // assume the directory exist
             TimeSpan t = (DateTime.UtcNow - new DateTime(1970, 1, 1));
@@ -698,14 +695,7 @@ namespace ColorGlove
                 */
             
             // rgb
-                foreach (Step step in pipeline) process(step);
-                
-                bitmap.Dispatcher.Invoke(new Action(() =>
-                {
-                    bitmap.WritePixels(new Int32Rect(0, 0, bitmap.PixelWidth, bitmap.PixelHeight),
-                        bitmapBits, bitmap.PixelWidth * sizeof(int), 0);
-                }));
-
+                update(data);
                 var directory = "D:\\gr\\training\\blue\\" + HandGestureValue;
                 //var directory = "..\\..\\..\\Data" + "\\" + HandGestureValue + RangeModeValue;  // assume the directory exist
                 TimeSpan t = (DateTime.UtcNow - new DateTime(1970, 1, 1));
@@ -873,9 +863,9 @@ namespace ColorGlove
                 {
                     int idx = Util.toID(x, y, width, height, depthStride);
                     bitmapBits[4 * idx] =
-                        bitmapBits[4 * idx + 1] =
-                        bitmapBits[4 * idx + 2] =
-                        bitmapBits[4 * idx + 3] = (byte)(255 * (short.MaxValue - depth[idx]) / short.MaxValue);
+                    bitmapBits[4 * idx + 1] =
+                    bitmapBits[4 * idx + 2] =
+                    bitmapBits[4 * idx + 3] = (byte)(255 * (short.MaxValue - depth[idx]) / short.MaxValue);
                 }
             }
         }
@@ -1003,23 +993,10 @@ namespace ColorGlove
         }
 
         private void ShowOverlayOffset() {
-            if ((ShowExtractedFeatureMode & ShowExtractedFeatureFormat.PredictAllPixelsCPU) == ShowExtractedFeatureFormat.PredictAllPixelsCPU)
+            if (overlayStart)
             {
-                if (overlayStart)
-                    overlayBitmapBits.CopyTo(bitmapBits, 0);
-            }
-            else
-            {
-                for (int i = 0; i < bitmapBits.Length; i += 4)
-                {
-
-                    if (overlayBitmapBits[i + 2] == 255)
-                    {
-                        bitmapBits[i + 2] = 255;
-                        bitmapBits[i + 1] = 0;
-                        bitmapBits[i] = 0;
-                    }
-                }
+                Console.WriteLine("Overlay enabled. Drawing overlay.");
+                overlayBitmapBits.CopyTo(bitmapBits, 0);
             }
         }
 
@@ -1027,6 +1004,7 @@ namespace ColorGlove
 
         private void updateHelper()
         {
+            Console.WriteLine("Thread {0} about to dispatch.", Thread.CurrentThread.ManagedThreadId);
             bitmap.Dispatcher.Invoke(new Action(() =>
             {
                 bitmap.WritePixels(new Int32Rect(0, 0, bitmap.PixelWidth, bitmap.PixelHeight),
@@ -1037,13 +1015,31 @@ namespace ColorGlove
         public void update(KinectData data)
         {
             if (paused) return;
+            
             this.data = data;
             this.depth = data.depth();
             this.rgb = data.color();
-            //Array.Clear(bitmapBits, 0, bitmapBits.Length); // Zero-all the bitmapBits                    
-            foreach (Step step in pipeline) process(step);
-            updateHelper();
+            
+            Console.WriteLine("Thread {0} trying to lock bitmapBits.", Thread.CurrentThread.ManagedThreadId);
+            lock (bitmap_lock_)
+            {
+                Console.WriteLine("Thread {0} locked bitmapBits.", Thread.CurrentThread.ManagedThreadId);
+                foreach (Step step in pipeline)
+                {
+                    Console.WriteLine("Thread {0} processing step {1}", Thread.CurrentThread.ManagedThreadId, step.ToString());
+                    process(step);
+                }
 
+                Console.WriteLine("Thread {0} calling updateHelper.", Thread.CurrentThread.ManagedThreadId);
+                Console.WriteLine("Thread {0} releasing lock bitmapBits.", Thread.CurrentThread.ManagedThreadId);
+            }
+            
+            // The helper always runs in the MainThread anyway (dispatch). If 
+            // this is inside the critical section, and the main thread sleeps
+            // because of it, then it wont wake up and dipatch and will 
+            // deadlock in a strage way!
+            updateHelper();
+            //Thread.Sleep(5000);
         }
 
         #region Color matching
@@ -1064,7 +1060,6 @@ namespace ColorGlove
                 Array.Copy(backgroundColor, point, 3);
             }
         }
-
 
         byte nearest_color(byte[] point)
         {
@@ -1103,8 +1098,6 @@ namespace ColorGlove
             Array.Copy(labelColor[minColorLabel], point, 3);
             return minColorLabel;
         }
-
-
 
         double euc_distance(double[] point, double[] point2)
         {

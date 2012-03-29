@@ -34,7 +34,7 @@ namespace TestModuleNamespace
            
             
             //FeatureExtractionTest.TestDisplay();
-            FeatureExtractionTest.TestGenerateFeatures();
+            //FeatureExtractionTest.TestGenerateFeatures();
             //FeatureExtractionTest.TestGenerateOffset();
             
             // end of generating feature vector file
@@ -45,7 +45,8 @@ namespace TestModuleNamespace
         }
 
         public void testDecisionForest() {
-            string modelFilePath = Feature.directory + "\\FeatureVectureBlue149.rf.model";
+            //string modelFilePath = Feature.directory + "\\FeatureVectureBlue149.rf.model";
+            string modelFilePath = Feature.RFModelFilePath;
             Console.WriteLine("Model file path {0}", modelFilePath);
             string modelFile=System.IO.File.ReadAllText(modelFilePath);
             dforest.decisionforest decisionForest= new dforest.decisionforest();

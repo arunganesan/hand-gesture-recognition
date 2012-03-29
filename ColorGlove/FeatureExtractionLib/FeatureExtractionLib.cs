@@ -41,9 +41,10 @@ namespace FeatureExtractionLib
         private const string defaultDirectory = "..\\..\\..\\Data";
         public string directory;
         private const int width = 640, height = 480;        
-        private string RFModelFilePath;
+        public string RFModelFilePath;
         private dforest.decisionforest decisionForest;
         private int uMin, uMax;
+        public int num_classes_;
         // can try to generate circularly uniform offset pair
         private enum RandomGenerationModeFormat { 
             Default, // which is a box
@@ -84,8 +85,8 @@ namespace FeatureExtractionLib
             _r= new Random(); // used for random number generator                        
             SetDirectory(varDirectory);
             SetMode(setMode);
-            //LoadRFModel();
-            //RFfeatureVector = new double[numOfOffsetPairs];
+            LoadRFModel();
+            RFfeatureVector = new double[numOfOffsetPairs];
         }
 
         private void SetMode(ModeFormat setMode) {
@@ -111,6 +112,7 @@ namespace FeatureExtractionLib
                     traningFilename = "Blue";
                     RandomGenerationMode = RandomGenerationModeFormat.Circular;
                     RFModelFilePath = directory + "\\FeatureVectureBlue149.rf.model";
+                    num_classes_ = 3;
                     break;
                 /*
                 case ModeFormat.Blue149:
@@ -134,6 +136,8 @@ namespace FeatureExtractionLib
                     KinectMode = KinectModeFormat.Default;
                     traningFilename = "BlueDefault";
                     RandomGenerationMode = RandomGenerationModeFormat.Circular;
+                    RFModelFilePath = directory + "\\FeatureVectorBlueDefault.400.rf.model";
+                    num_classes_ = 5;
                     break;
                 case ModeFormat.Abstraction: // Operate in default Kinect mode, use a large box and a large number of offset
                     numOfOffsetPairs = 2000;
@@ -145,8 +149,8 @@ namespace FeatureExtractionLib
                     traningFilename = "Abstraction";
                     RandomGenerationMode = RandomGenerationModeFormat.Default;
                     break;
-
             }
+
             traningFilename = "FeatureVector" + traningFilename + ".txt";
         }
         
@@ -174,6 +178,7 @@ namespace FeatureExtractionLib
         }
 
         private void LoadRFModel() {
+            return;
             decisionForest = new dforest.decisionforest();
             alglib.serializer Serializer = new alglib.serializer();
             string modelFile = System.IO.File.ReadAllText(RFModelFilePath);
