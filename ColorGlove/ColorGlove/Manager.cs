@@ -1,16 +1,4 @@
-﻿/*
-using System;
-using System.IO;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Windows.Controls;
-using System.Windows.Input;
-using System.Threading;
-using System.Diagnostics;
-using Microsoft.Kinect;
-*/
-using System;
+﻿using System;
 using System.IO;
 using System.Collections.Generic;
 using System.Linq;
@@ -36,7 +24,7 @@ namespace ColorGlove
     public class Manager
     {
         private KinectSensor sensor_;
-        private Tuple<byte[], short[]> data;
+        private KinectData data;
         private Processor[] processors;
         private enum ProcessorModeFormat { 
             Arun,
@@ -44,7 +32,7 @@ namespace ColorGlove
         }
         Thread poller;
         DataFeed datafeed;
-        ProcessorModeFormat ProcessorMode = ProcessorModeFormat.Michael; // set the mode for processor here
+        ProcessorModeFormat ProcessorMode = ProcessorModeFormat.Arun; // set the mode for processor here
 
         public Manager(MainWindow parent)  // Construct function
         {
@@ -107,15 +95,17 @@ namespace ColorGlove
                 processors[0].updatePipeline(
                     Processor.Step.PaintWhite,
                     Processor.Step.Crop,
-                    Processor.Step.Color
-                );
-
-                processors[1].updatePipeline(
-                    Processor.Step.PaintWhite,
-                    Processor.Step.Crop,
                     Processor.Step.PaintGreen,
                     Processor.Step.ColorMatch
                 );
+            
+                processors[1].updatePipeline(
+                   Processor.Step.PaintWhite,
+                   Processor.Step.Crop,
+                   Processor.Step.Color
+                );
+
+            
             }
             #endregion
 
@@ -173,8 +163,8 @@ namespace ColorGlove
         {
             while (true)
             {
-                data = datafeed.PullData();
-                foreach (Processor p in processors) p.update(data.Item2, data.Item1);
+                data = datafeed.PullData(); 
+                foreach (Processor p in processors) p.update(data);
             }
         }
 

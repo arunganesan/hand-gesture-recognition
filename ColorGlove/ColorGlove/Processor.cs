@@ -17,6 +17,7 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using Microsoft.Kinect;
 using FeatureExtractionLib;
+using System.Runtime.Serialization.Formatters.Binary;
 
 namespace ColorGlove
 {
@@ -73,14 +74,7 @@ namespace ColorGlove
             Denoise,
         };
 
-
-        public enum HandGestureFormat
-        {
-            OpenHand = 1,
-            CloseHand = 2,
-        };
-
-        private HandGestureFormat HandGestureValue;
+        private FeatureExtractionLib.Util.HandGestureFormat HandGestureValue;
         /*
         public enum TestNewFeatureFormat { 
             Default,
@@ -93,6 +87,8 @@ namespace ColorGlove
         */
         private short[] depth;
         private byte[] rgb;
+        private KinectData data;
+
         private byte[] rgb_tmp = new byte[3];
         private ColorImagePoint[] mapped;
         private byte[] depthLabel;
@@ -158,7 +154,7 @@ namespace ColorGlove
             // To setup the mode, see README in the library
 
             //FeatureExtraction.ModeFormat MyMode = FeatureExtraction.ModeFormat.BlueDefault; // User dependent. Notice that this is important
-            FeatureExtraction.ModeFormat MyMode = FeatureExtraction.ModeFormat.Blue;
+            FeatureExtraction.ModeFormat MyMode = FeatureExtraction.ModeFormat.BlueDefault;
             Feature = new FeatureExtractionLib.FeatureExtraction(MyMode);
             Feature.ReadOffsetPairsFromStorage();
             //Feature.GenerateOffsetPairs(); // use this to test the offset pairs parameters setting
@@ -189,7 +185,7 @@ namespace ColorGlove
         private void SetCentroidColorAndLabel()
         {
             // First add label
-            HandGestureValue = HandGestureFormat.CloseHand; 
+            HandGestureValue = Util.HandGestureFormat.Fist;
             //HandGestureValue = HandGestureFormat.OpenHand;
             // Set which hand gesture to use in the contruct function
             targetLabel = (byte)HandGestureValue;  // numerical value
@@ -253,9 +249,9 @@ namespace ColorGlove
             int epsilon = 60;
             int min = short.MaxValue;
             int depthVal, idx;
-            for (int x = crop.X; x < crop.X + crop.Width; x++)
+            for (int x = crop.X; x <= crop.X + crop.Width; x++)
             {
-                for (int y = crop.Y; y < crop.Y + crop.Height; y++)
+                for (int y = crop.Y; y <= crop.Y + crop.Height; y++)
                 {
                     idx = Util.toID(x, y, width, height, depthStride);
                     depthVal = depth[idx] >> DepthImageFrame.PlayerIndexBitmaskWidth;
@@ -702,7 +698,7 @@ namespace ColorGlove
                 */
             
             // rgb
-                foreach (Step step in pipeline) process(step, depth, rgb);
+                foreach (Step step in pipeline) process(step);
                 
                 bitmap.Dispatcher.Invoke(new Action(() =>
                 {
@@ -710,8 +706,8 @@ namespace ColorGlove
                         bitmapBits, bitmap.PixelWidth * sizeof(int), 0);
                 }));
 
-                
-                var directory = "..\\..\\..\\Data" + "\\" + HandGestureValue + RangeModeValue;  // assume the directory exist
+                var directory = "D:\\gr\\training\\blue\\" + HandGestureValue;
+                //var directory = "..\\..\\..\\Data" + "\\" + HandGestureValue + RangeModeValue;  // assume the directory exist
                 TimeSpan t = (DateTime.UtcNow - new DateTime(1970, 1, 1));
                 string filename = t.TotalSeconds.ToString();
 
@@ -741,11 +737,12 @@ namespace ColorGlove
                     for (int i = 1; i < depthAndLabel.Count; i++) filestream.Write(" ({0},{1})", depthAndLabel[i][0], depthAndLabel[i][1]);
                 }
 
-                // Also save the RGB, and depth image (can reconstruct the rest by re-applying pipeline)
-                Util.ObjectToFile(rgb, directory + "\\" + "rgb_" + filename + ".obj");
-                Util.ObjectToFile(depth, directory + "\\" + "depth_" + filename + ".obj");
+                // Save the Kinect Data
+                Stream stream = File.Open(directory + "\\data_" + filename + ".obj", FileMode.Create);
+                BinaryFormatter bformatter = new BinaryFormatter();
+                bformatter.Serialize(stream, data);
+                stream.Close();
             }
-            
         }
 
         public System.Windows.Controls.Image getImage() { return image; }
@@ -756,7 +753,7 @@ namespace ColorGlove
             for (int i = 0; i < steps.Length; i++) pipeline[i] = steps[i];
         }
 
-        private void process(Step step, short[] depth, byte[] rgb)
+        private void process(Step step)
         {
             switch (step)
             {
@@ -765,9 +762,9 @@ namespace ColorGlove
                 case Step.Crop: Crop(); break;
                 case Step.PaintWhite: PaintWhite(); break;
                 case Step.PaintGreen: PaintGreen(); break;
-                case Step.MappedDepth: show_mapped_depth(depth, rgb); break;
+                case Step.MappedDepth: show_mapped_depth(); break;
                 case Step.ColorMatch: MatchColors(); break;
-                case Step.ColorLabelingInRGB: ColorLabellingInRGB(rgb); break;
+                case Step.ColorLabelingInRGB: ColorLabellingInRGB(); break;
                 case Step.OverlayOffset: ShowOverlayOffset(); break;
                 case Step.Denoise: Denoise(); break;
             }
@@ -870,9 +867,9 @@ namespace ColorGlove
         // Copies over the depth value to the buffer, normalized for the range of shorts.
         private void CopyDepth()
         {
-            for (int x = crop.X; x < crop.Width + crop.X; x++)
+            for (int x = crop.X; x <= crop.Width + crop.X; x++)
             {
-                for (int y = crop.Y; y < crop.Height + crop.Y; y++)
+                for (int y = crop.Y; y <= crop.Height + crop.Y; y++)
                 {
                     int idx = Util.toID(x, y, width, height, depthStride);
                     bitmapBits[4 * idx] =
@@ -886,9 +883,9 @@ namespace ColorGlove
         // Copies over the RGB value to the buffer.
         private void CopyColor()
         {
-            for (int x = crop.X; x < crop.Width + crop.X; x++) 
+            for (int x = crop.X; x <= crop.Width + crop.X; x++) 
             {
-                for (int y = crop.Y; y < crop.Height + crop.Y; y++)
+                for (int y = crop.Y; y <= crop.Height + crop.Y; y++)
                 {
                     int idx = Util.toID(x, y, width, height, colorStride);
                     Array.Copy(rgb, idx, bitmapBits, idx, colorStride);
@@ -906,9 +903,9 @@ namespace ColorGlove
         // Sets everything within the crop to white.
         private void PaintWhite()
         {
-            for (int x = crop.X; x < crop.Width + crop.X; x++)
+            for (int x = crop.X; x <= crop.Width + crop.X; x++)
             {
-                for (int y = crop.Y; y < crop.Height + crop.Y; y++)
+                for (int y = crop.Y; y <= crop.Height + crop.Y; y++)
                 {
                     int idx = Util.toID(x, y, width, height, colorStride);
                     bitmapBits[idx] = 
@@ -920,9 +917,9 @@ namespace ColorGlove
 
         private void PaintGreen()
         {
-            for (int x = crop.X; x < crop.Width + crop.X; x++)
+            for (int x = crop.X; x <= crop.Width + crop.X; x++)
             {
-                for (int y = crop.Y; y < crop.Height + crop.Y; y++)
+                for (int y = crop.Y; y <= crop.Height + crop.Y; y++)
                 {
                     int idx = Util.toID(x, y, width, height, colorStride);
                     bitmapBits[idx] = 153;
@@ -932,7 +929,7 @@ namespace ColorGlove
             }
         }
 
-        private void show_mapped_depth(short[] depth, byte[] rgb)
+        private void show_mapped_depth()
         {
             //ColorImagePoint[] mapped = new ColorImagePoint[depth.Length];
             sensor.MapDepthFrameToColorFrame(DepthImageFormat.Resolution640x480Fps30, depth, ColorImageFormat.RgbResolution640x480Fps30, mapped);
@@ -967,8 +964,8 @@ namespace ColorGlove
                     ColorImagePoint point = mapped[i];
                     int baseIndex = (point.Y * 640 + point.X) * 4;
 
-                    if (point.X > crop.X && point.X < (crop.X + crop.Width) &&
-                        point.Y > crop.Y && point.Y < (crop.Y + crop.Height))
+                    if (point.X > crop.X && point.X <= (crop.X + crop.Width) &&
+                        point.Y > crop.Y && point.Y <= (crop.Y + crop.Height))
                     {
                         rgb_tmp[0] = rgb[baseIndex + 2];
                         rgb_tmp[1] = rgb[baseIndex + 1];
@@ -985,9 +982,10 @@ namespace ColorGlove
             }
         }
 
-        private void ColorLabellingInRGB(byte[] bgr)
         // Label the RGB image without involving depth image
+        private void ColorLabellingInRGB()
         {
+            byte[] bgr = rgb;
             byte[] rgb_tmp = new byte[3];
             for (int i = 0; i < bgr.Length; i += 4)
             {
@@ -1036,13 +1034,14 @@ namespace ColorGlove
             }));
         }
 
-        public void update(short[] depth, byte[] rgb)
+        public void update(KinectData data)
         {
             if (paused) return;
-            this.depth = depth;
-            this.rgb = rgb;
+            this.data = data;
+            this.depth = data.depth();
+            this.rgb = data.color();
             //Array.Clear(bitmapBits, 0, bitmapBits.Length); // Zero-all the bitmapBits                    
-            foreach (Step step in pipeline) process(step, depth, rgb);
+            foreach (Step step in pipeline) process(step);
             updateHelper();
 
         }
@@ -1064,8 +1063,6 @@ namespace ColorGlove
             {
                 Array.Copy(backgroundColor, point, 3);
             }
-
-
         }
 
 

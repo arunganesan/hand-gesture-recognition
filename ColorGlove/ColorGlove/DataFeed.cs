@@ -15,7 +15,7 @@ namespace ColorGlove
         private RangeModeFormat RangeModeValue;
         private DataSource source;
         private KinectSensor sensor_;
-        Tuple<byte[], short[]> data;
+        KinectData data;
         private byte[] colorPixels;
         private short[] depthPixels;
         private int width = 640, height = 480, stride = 4;
@@ -29,7 +29,7 @@ namespace ColorGlove
             RangeModeValue = setRangeModeValue;
             colorPixels = new byte[width * height * stride];
             depthPixels = new short[width * height];
-            data = new Tuple<byte[], short[]>(colorPixels, depthPixels);
+            data = new KinectData();
 
             // Create the Kinect sensor anyway. Need for mapping depth to image.
             KinectSensor.KinectSensors.StatusChanged += (object sender, StatusChangedEventArgs e) =>
@@ -64,15 +64,15 @@ namespace ColorGlove
 
         public KinectSensor sensor() { return sensor_; }
 
-        public Tuple<byte[], short[]> PullData()
+        public KinectData PullData()
         {
             using (var frame = sensor_.DepthStream.OpenNextFrame(DepthTimeout))
                 if (frame != null) 
-                    frame.CopyPixelDataTo(data.Item2);
+                    frame.CopyPixelDataTo(data.depth());
 
             using (var frame = sensor_.ColorStream.OpenNextFrame(ColorTimeout))
                 if (frame != null) 
-                    frame.CopyPixelDataTo(data.Item1);
+                    frame.CopyPixelDataTo(data.color());
 
             return data;
         }

@@ -59,45 +59,58 @@ void readsvmfile(double * container, int lines, int stride, char * filename) {
 }
 
 int main () {
+  int main () {
   cout << "Welcome." << endl;
 
   alglib::dfreport rep;
   alglib::decisionforest df;
-  alglib::ae_int_t info; 
-  
+  alglib::ae_int_t info;
+
   cout << "Created forest, and report." << endl;
-  
+
   cout << "Creating containers." << endl;
   int features = 2000;
-  int num_train = 238035;
-  int num_test = 59964;
-  //int features = 2000, num_train = 238035, num_test = 59964;
-  double * _train = new double [num_train*(features + 1)];
-  double * _test = new double [num_test*(features + 1)];
-  
+
+
+  //int num_train = 121722;
+  //int num_test = 30276;
+  //char * training_file = "FeatureVectorBlue73.txt.train";
+  //char * test_file = "FeatureVectorBlue73.txt.test";
+
+  //int num_train = 238035;
+  //int num_test = 59964;
+  //char * training_file = "FeatureVectorBlue149.txt.train";
+  //char * test_file = "FeatureVectorBlue149.txt.test";
+
+
+  int num_train = ;
+  int num_test = ;
+  char * training_file = "FeatureVectorBlueDefault.400.txt.train";
+  char * test_file = "FeatureVectorBlueDefault.400.txt.test";
+
   cout << "Reading in SVM files." << endl;
-  readsvmfile(_train, num_train, features + 1, "FeatureVectorBlue149.txt.train");
-  readsvmfile(_test, num_test, features + 1, "FeatureVectorBlue149.txt.test");
-  
+  double * _train = new double [num_train*(features + 1)];
   alglib::real_2d_array train;
-  alglib::real_2d_array test;
-  
-  cout << "Copying over to ALGLIB data structure." << endl;
+  readsvmfile(_train, num_train, features + 1, training_file);
   train.setcontent(num_train, features + 1, _train);
+  delete [] _train;
+
+  double * _test = new double [num_test*(features + 1)];
+  alglib::real_2d_array test;
+  readsvmfile(_test, num_test, features + 1, test_file);
   test.setcontent(num_test, features + 1, _test);
+  delete [] _test;
 
   cout << "Training." << endl;
-  alglib::dfbuildrandomdecisionforest(train, num_train, features, 3, 3, 1, info, df, rep); 
-  
-  
-  //cout << "DF has n classes: " << df->nclasses << endl; 
-  
+  alglib::dfbuildrandomdecisionforest(train, num_train, features, 3, 3, 0.66, info, df, rep);
+
+
+  //cout << "DF has n classes: " << df->nclasses << endl;
 
 
   cout << "Testing." << endl;
   double error = alglib::dfavgrelerror(df, test, num_test);
   printf("Average error is %f\n", error);
-  
   
   string serialized;
   alglib::dfserialize(df, serialized);

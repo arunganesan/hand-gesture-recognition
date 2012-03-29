@@ -69,12 +69,7 @@ namespace FeatureExtractionLib
             Near = 1,
         };
         private KinectModeFormat KinectMode;
-        public enum HandGestureFormat
-        {
-            Background = 0,
-            OpenHand = 1,
-            CloseHand = 2,
-        };
+        
         //private HandGestureFormat HandGestureValue;
 
         public FeatureExtraction(ModeFormat setMode= ModeFormat.Maize, string varDirectory = defaultDirectory)
@@ -89,8 +84,8 @@ namespace FeatureExtractionLib
             _r= new Random(); // used for random number generator                        
             SetDirectory(varDirectory);
             SetMode(setMode);
-            LoadRFModel();
-            RFfeatureVector = new double[numOfOffsetPairs];
+            //LoadRFModel();
+            //RFfeatureVector = new double[numOfOffsetPairs];
         }
 
         private void SetMode(ModeFormat setMode) {
@@ -404,12 +399,12 @@ namespace FeatureExtractionLib
         public void GenerateFeatureVectorViaImageFiles()
         {
 
-            Array values = Enum.GetValues(typeof(HandGestureFormat));
+            Array values = Enum.GetValues(typeof(Util.HandGestureFormat));
             outputFilestream = new StreamWriter(directory + "\\" + traningFilename);         
-            foreach (HandGestureFormat val in values) // go through each directory
+            foreach (Util.HandGestureFormat val in values) // go through each directory
             {
                 //Console.WriteLine ("{0}: {1}", Enum.GetName(typeof(HandGestureFormat), val), val);
-                if (val == HandGestureFormat.Background)
+                if (val == Util.HandGestureFormat.Background)
                     continue;
                 string subdirectory = directory + "\\" + val + KinectMode;
                 Console.WriteLine("Current directoray: {0}", subdirectory);
@@ -458,7 +453,7 @@ namespace FeatureExtractionLib
             listOfTargetPosition.Clear();
             for (int i = 0; i < depth.Length; i++)
             {
-                if (label[i] == (byte)HandGestureFormat.Background)
+                if (label[i] == (byte)Util.HandGestureFormat.Background)
                 {
                     listOfBackgroundPosition.Add(i);
                 }
@@ -470,19 +465,19 @@ namespace FeatureExtractionLib
             //listOfTargetPosition.Shuffle();
             Shuffle(listOfTargetPosition);
             Shuffle(listOfBackgroundPosition);
-            for (int i = 0; i < numerPerClass; i++)
-            {
-                ExtractFeatureFromOneDepthPoint(listOfTargetPosition[i]);                
+
+            for (int i = 0; i < Math.Min(numerPerClass, listOfBackgroundPosition.Count); i++)
                 ExtractFeatureFromOneDepthPoint(listOfBackgroundPosition[i]);
-                //return; //debug
-            }
+
+            for (int i = 0; i < Math.Min(numerPerClass, listOfTargetPosition.Count); i++)
+                ExtractFeatureFromOneDepthPoint(listOfTargetPosition[i]);
         }
  
 
         public void testEnum()
         {
-            Array values = Enum.GetValues(typeof(HandGestureFormat));
-            foreach (HandGestureFormat val in values)
+            Array values = Enum.GetValues(typeof(Util.HandGestureFormat));
+            foreach (Util.HandGestureFormat val in values)
             {
                 Console.WriteLine("Name: {0}, numerical value: {1}", val, (byte)val);
             }
