@@ -99,16 +99,14 @@ namespace ColorGlove
                     Processor.Step.OverlayOffset
                 );
 
-                processors[1].updatePipeline();
                 
-                /*
                 processors[1].SetTestModule(Processor.ShowExtractedFeatureFormat.PredictAllPixelsCPU);
                 processors[1].updatePipeline(
                     Processor.Step.PaintGreen,
                     Processor.Step.Crop,
                     Processor.Step.Depth,
                     Processor.Step.OverlayOffset);
-                */
+                
                  
                 /*processors[1].SetTestModule(Processor.ShowExtractedFeatureFormat.ShowTransformedForOnePixel);
                 processors[1].updatePipeline(

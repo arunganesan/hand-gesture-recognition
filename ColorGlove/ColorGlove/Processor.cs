@@ -162,7 +162,7 @@ namespace ColorGlove
             Feature.ReadOffsetPairsFromStorage();
             //Feature.GenerateOffsetPairs(); // use this to test the offset pairs parameters setting
 			
-            //classifier = new Classifier();
+            
             this.bitmap = new WriteableBitmap(640, 480, 96, 96, PixelFormats.Bgr32, null);
             this.bitmapBits = new byte[640 * 480 * 4];
             tmpBuffer = new byte[640 * 480 * 4];
@@ -271,10 +271,6 @@ namespace ColorGlove
         // Uses K-means to identify different colors in the image. Then pauses
         // this processor until the user clicks on a color. That color is 
         // chosen to be the target.
-        //
-        // XXX: Code is very ugly. And doesn't work with crop. And choosing
-        // just one color doesnt do a good job. Maybe sbhould also pick the 
-        // background colors somehow (right click?)
         public void kMeans()
         {
             // k = 5 seems to do well with background cleared out.
@@ -457,6 +453,8 @@ namespace ColorGlove
 
         private void DummyPauseDelegate(MouseButtonEventArgs e) {}
 
+        private void HideOverlayDelegate(MouseButtonEventArgs e) { overlayStart = false; }
+
         private void AddCentroid(byte R, byte G, byte B, byte label)  // a helper function for adding labled centroid
         {
             centroidColor.Add(new byte[] { R, G, B });
@@ -544,9 +542,9 @@ namespace ColorGlove
                             if (predictOutput[i] > predictOutput[predictLabel])
                                 predictLabel = i;
 
-                        bitmapBits[bitmapIndex + 2] = label_colors[predictLabel].Item1;
-                        bitmapBits[bitmapIndex + 1] = label_colors[predictLabel].Item2;
-                        bitmapBits[bitmapIndex + 0] = label_colors[predictLabel].Item3;
+                        overlayBitmapBits[bitmapIndex + 2] = label_colors[predictLabel].Item1;
+                        overlayBitmapBits[bitmapIndex + 1] = label_colors[predictLabel].Item2;
+                        overlayBitmapBits[bitmapIndex + 0] = label_colors[predictLabel].Item3;
                     }
                 }
 
@@ -555,8 +553,9 @@ namespace ColorGlove
                 ExecutionTime = ExecutionStopTime - ExecutionStartTime;
                 Console.WriteLine("Use {0} ms for getting prediction", ExecutionTime.TotalMilliseconds.ToString());
                 //updateHelper(); // update the current bitmap
-                Pause((PauseDelegate)DummyPauseDelegate);
-                overlayStart = true;
+                overlayStart = true; 
+                update(data);
+                Pause((PauseDelegate)HideOverlayDelegate);
             }
             
             if ((ShowExtractedFeatureMode & ShowExtractedFeatureFormat.ShowTransformedForOnePixel) == ShowExtractedFeatureFormat.ShowTransformedForOnePixel)
@@ -1042,7 +1041,6 @@ namespace ColorGlove
             
             // The helper always runs in the MainThread anyway (dispatch). If 
             // this is inside the critical section, and the main thread sleeps
-            // because of it, then it wont wake up and dipatch and will 
             // deadlock in a strage way!
             updateHelper();
             //Thread.Sleep(5000);

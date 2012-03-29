@@ -85,8 +85,8 @@ namespace FeatureExtractionLib
             _r= new Random(); // used for random number generator                        
             SetDirectory(varDirectory);
             SetMode(setMode);
-            //LoadRFModel();
-            //RFfeatureVector = new double[numOfOffsetPairs];
+            LoadRFModel();
+            RFfeatureVector = new double[numOfOffsetPairs];
         }
 
         private void SetMode(ModeFormat setMode) {
@@ -136,6 +136,7 @@ namespace FeatureExtractionLib
                     KinectMode = KinectModeFormat.Default;
                     traningFilename = "BlueDefault";
                     RandomGenerationMode = RandomGenerationModeFormat.Circular;
+                    RFModelFilePath = directory + "\\FeatureVectorBlueDefault.400.rf.model";
                     num_classes_ = 5;
                     break;
                 case ModeFormat.Abstraction: // Operate in default Kinect mode, use a large box and a large number of offset
