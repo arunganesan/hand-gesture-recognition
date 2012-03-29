@@ -34,13 +34,14 @@ namespace FeatureExtractionLib
             BlueDefault
         };
 
+        public int num_classes_;
         private ModeFormat Mode;
         private short[] depth; // one dimensional depth image
         private byte[] label; // one dimensional label image        
         double[] RFfeatureVector; // for random forest 
         private const string defaultDirectory = "..\\..\\..\\Data";
         public string directory;
-        private const int width = 640, height = 480;        
+        private const int width = 640, height = 480; 
         private string RFModelFilePath;
         private dforest.decisionforest decisionForest;
         private int uMin, uMax;
@@ -111,6 +112,7 @@ namespace FeatureExtractionLib
                     traningFilename = "Blue";
                     RandomGenerationMode = RandomGenerationModeFormat.Circular;
                     RFModelFilePath = directory + "\\FeatureVectureBlue149.rf.model";
+                    num_classes_ = 3;
                     break;
                 /*
                 case ModeFormat.Blue149:
@@ -134,6 +136,7 @@ namespace FeatureExtractionLib
                     KinectMode = KinectModeFormat.Default;
                     traningFilename = "BlueDefault";
                     RandomGenerationMode = RandomGenerationModeFormat.Circular;
+                    num_classes_ = 5;
                     break;
                 case ModeFormat.Abstraction: // Operate in default Kinect mode, use a large box and a large number of offset
                     numOfOffsetPairs = 2000;

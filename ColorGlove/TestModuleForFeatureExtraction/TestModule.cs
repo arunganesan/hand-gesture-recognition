@@ -42,8 +42,6 @@ namespace TestModuleNamespace
 
             // Test GPU
             FeatureExtractionTest.TestReduceDepthViaGPU();
-
-            
             Console.ReadKey();
 
         }

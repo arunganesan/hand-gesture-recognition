@@ -292,7 +292,7 @@ namespace ColorGlove
             //int width = x_1 - x_0;
             //int height = y_1 - y_0;
 
-            kMeans_assignments = new int[width * height];
+            kMeans_assignments = new int[crop.Width * crop.Height];
             double[] point = new double[3];
 
             int [] cluster_count = Enumerable.Repeat((int)0, k).ToArray();
@@ -308,7 +308,7 @@ namespace ColorGlove
 
             double[] cluster_deltas = new double[k];
 
-            double delta = 10000, epsilon = 1000;
+            double delta = 10000, epsilon = 0.1;
 
             double minDistance = 10000;
             int minCluster = -1;
@@ -318,12 +318,14 @@ namespace ColorGlove
                 // Step 1: label each point as a cluster
                 for (int i = 0; i < kMeans_assignments.Length; i++)
                 {
-                    int y = i / width;
-                    int x = i % width;
-                    int adjusted_y = y, adjusted_x = x;
+                    System.Drawing.Point crop_point = Util.toXY(i, crop.Width, crop.Height, 1);
+                    int adjusted_i = Util.toID(crop.X + crop_point.X, crop.Y + crop_point.Y, width, height, 1);
+                    //int y = i / width;
+                    //int x = i % width;
+                    //int adjusted_y = y, adjusted_x = x;
                     //int adjusted_y = y_0 + y;
                     //int adjusted_x = x_0 + x;
-                    int adjusted_i = adjusted_y * 640 + adjusted_x;
+                    //int adjusted_i = adjusted_y * 640 + adjusted_x;
 
                     point[0] = rgb[adjusted_i * 4 + 2];
                     point[1] = rgb[adjusted_i * 4 + 1];
@@ -352,12 +354,14 @@ namespace ColorGlove
                 // Step 2: update the cluster center values
                 for (int i = 0; i < kMeans_assignments.Length; i++)
                 {
-                    int y = i / width;
-                    int x = i % width;
-                    int adjusted_y = y, adjusted_x = x;
+                    System.Drawing.Point crop_point = Util.toXY(i, crop.Width, crop.Height, 1);
+                    int adjusted_i = Util.toID(crop.X + crop_point.X, crop.Y + crop_point.Y, width, height, 1);
+                    //int y = i / width;
+                    //int x = i % width;
+                    //int adjusted_y = y, adjusted_x = x;
                     //int adjusted_y = y_0 + y;
                     //int adjusted_x = x_0 + x;
-                    int adjusted_i = adjusted_y * 640 + adjusted_x;
+                    //int adjusted_i = adjusted_y * 640 + adjusted_x;
 
                     cluster_centers[kMeans_assignments[i], 0] += rgb[adjusted_i * 4 + 2];
                     cluster_centers[kMeans_assignments[i], 1] += rgb[adjusted_i * 4 + 1];
@@ -397,9 +401,12 @@ namespace ColorGlove
             // Show all colors, wait for the user's click. 
             for (int i = 0; i < kMeans_assignments.Length; i++)
             {
-                overlayBitmapBits[4 * i + 2] = (byte)kMeans_clusters[kMeans_assignments[i], 0];
-                overlayBitmapBits[4 * i + 1] = (byte)kMeans_clusters[kMeans_assignments[i], 1];
-                overlayBitmapBits[4 * i + 0] = (byte)kMeans_clusters[kMeans_assignments[i], 2];
+                System.Drawing.Point crop_point = Util.toXY(i, crop.Width, crop.Height, 1);
+                int adjusted_i = Util.toID(crop.X + crop_point.X, crop.Y + crop_point.Y, width, height, 1);
+
+                overlayBitmapBits[4 * adjusted_i + 2] = (byte)kMeans_clusters[kMeans_assignments[i], 0];
+                overlayBitmapBits[4 * adjusted_i + 1] = (byte)kMeans_clusters[kMeans_assignments[i], 1];
+                overlayBitmapBits[4 * adjusted_i + 0] = (byte)kMeans_clusters[kMeans_assignments[i], 2];
             }
 
             Processor.nearest_cache.Clear();
@@ -418,7 +425,17 @@ namespace ColorGlove
             {
                 clearCentroids();
                 System.Windows.Point click_position = e.GetPosition(image);
-                int baseIndex = ((int)click_position.Y * 640 + (int)click_position.X);
+                if (click_position.Y <= crop.Y ||
+                    click_position.Y >= crop.Height + crop.Y ||
+                    click_position.X <= crop.X ||
+                    click_position.X >= crop.Width + crop.X)
+                {
+                    Console.WriteLine("Clicked outside of crop region. Using random point.");
+                    click_position.X = crop.X + 1;
+                    click_position.Y = crop.Y + 1;
+                }
+
+                int baseIndex = Util.toID((int)click_position.X - crop.X, (int)click_position.Y - crop.Y, crop.Width, crop.Height, 1);
                 
                 for (int i = 0; i < k; i++)
                 {
@@ -1005,7 +1022,7 @@ namespace ColorGlove
 
         private void updateHelper()
         {
-            Console.WriteLine("Thread {0} about to dispatch.", Thread.CurrentThread.ManagedThreadId);
+            //Console.WriteLine("Thread {0} about to dispatch.", Thread.CurrentThread.ManagedThreadId);
             bitmap.Dispatcher.Invoke(new Action(() =>
             {
                 bitmap.WritePixels(new Int32Rect(0, 0, bitmap.PixelWidth, bitmap.PixelHeight),
@@ -1021,19 +1038,7 @@ namespace ColorGlove
             this.depth = data.depth();
             this.rgb = data.color();
             
-            Console.WriteLine("Thread {0} trying to lock bitmapBits.", Thread.CurrentThread.ManagedThreadId);
-            lock (bitmap_lock_)
-            {
-                Console.WriteLine("Thread {0} locked bitmapBits.", Thread.CurrentThread.ManagedThreadId);
-                foreach (Step step in pipeline)
-                {
-                    Console.WriteLine("Thread {0} processing step {1}", Thread.CurrentThread.ManagedThreadId, step.ToString());
-                    process(step);
-                }
-
-                Console.WriteLine("Thread {0} calling updateHelper.", Thread.CurrentThread.ManagedThreadId);
-                Console.WriteLine("Thread {0} releasing lock bitmapBits.", Thread.CurrentThread.ManagedThreadId);
-            }
+            lock (bitmap_lock_) foreach (Step step in pipeline) process(step);
             
             // The helper always runs in the MainThread anyway (dispatch). If 
             // this is inside the critical section, and the main thread sleeps
