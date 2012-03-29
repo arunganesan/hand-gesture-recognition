@@ -10,6 +10,7 @@ namespace TestModuleNamespace
     {
         private FeatureExtraction Feature;
         private GPUCompute myGPU;
+        dforest.decisionforest decisionForest = new dforest.decisionforest();
         //private GPU myGPU;
         
         //private FeatureExtractionLib.GPU myGPU;
@@ -40,34 +41,85 @@ namespace TestModuleNamespace
              */ 
             // ##########################
 
-            // Test GPU
-            FeatureExtractionTest.TestReduceDepthViaGPU();
+            // Test simple case for GPU
+            /* #################### */
+            //FeatureExtractionTest.TestReduceDepthViaGPU();
+            /* ###################### */          
 
-            
+            // Test loading trained random forest to GPU
+            // ############################
+            FeatureExtractionTest.LoadTrainedRFModelToGPU();
+            // ############################
             Console.ReadKey();
 
         }
 
-        public void TestReduceDepthViaGPU() {
+        public void LoadTrainedRFModelToGPU() {
+            LoadRFModel();
+            Console.WriteLine("Tree size: {0}", decisionForest.trees.Length);
+            Console.WriteLine("trees[0]:{0}", decisionForest.trees[0]);
+            int treeSize = (int)(decisionForest.trees[0]/3);
+            int index = 1;
+            Console.WriteLine("Number of variable: {0}", decisionForest.nvars);
+            Console.WriteLine("ntress: {0}", decisionForest.ntrees);
+            Console.WriteLine("nclasses: {0}", decisionForest.nclasses);
+            /*
+            for (int i=0; i<50; i++)
+                Console.WriteLine("trees[{0}]: {1}", i, decisionForest.trees[i]);
+           
+             */ 
+            // tree format
+            /*
+             *   trees[0]: total size.
+             *   trees[K+0]       -   variable number        (-1 for leaf mode, K starts from 1)
+             *   trees[K+1]       -   threshold              (class/value for leaf node)
+             *   trees[K+2]       -   ">=" branch index      (absent for leaf node)
+             * 
+             */
+
+            
+            index = 2;
+            while (true)
+            {
+                
+                if (decisionForest.trees[index] > 32767) 
+                    Console.WriteLine("Out of short bound, trees[{0}]: {1}, variable: {2}", index, decisionForest.trees[index], decisionForest.trees[index-1]);
+                index += 3;
+                if (index >= treeSize)
+                    break;
+            }
+            
+        }
+
+        public void TestReduceDepthViaGPU()
+        {
             int count = 640 * 480;
             short[] BeforeDepth = new short[count];
             short[] AfterDepth = new short[count];
+            short[] Trees = new short[count];
             myGPU = new GPUCompute();
             const int maxTmp = 10000;
             DateTime ExecutionStartTime; //Var will hold Execution Starting Time
             DateTime ExecutionStopTime;//Var will hold Execution Stopped Time
             TimeSpan ExecutionTime;//Var will count Total Execution Time-Our Main Hero
             ExecutionStartTime = DateTime.Now; //Gets the system Current date time expressed as local time
-            
+
+            for (int i = 0; i < count; i++)
+                Trees[i] = (short)(i % 4445);
+
+            myGPU.LoadTrees(Trees);
+
+            bool testSuccess = true;
             for (int tmp = 0; tmp < maxTmp; tmp++)
             {
                 for (int i = 0; i < count; i++)
                     BeforeDepth[i] = (short)((i + tmp) % 256);
                 myGPU.AddDepthPerPixel(BeforeDepth, AfterDepth);
                 //Console.WriteLine("Before[0]: {0}, Before[{1}]: {2}; After[0]: {3}, After[{1}]: {4}", BeforeDepth[0], count, BeforeDepth[count-1], AfterDepth[0], AfterDepth[count-1]);
-                if (BeforeDepth[0] != AfterDepth[0]+1 || BeforeDepth[count - 1] != AfterDepth[count - 1]+1)
+                if (BeforeDepth[0] != AfterDepth[0]-Trees[0] || BeforeDepth[count - 1] != AfterDepth[count - 1] - Trees[count-1])
                 {
-                    Console.WriteLine("Some thing wrong. Before[0]: {0}, Before[{1}]: {2}; After[0]: {3}, After[{1}]: {4}", BeforeDepth[0], count, BeforeDepth[count - 1], AfterDepth[0], AfterDepth[count - 1]);
+                    Console.WriteLine("Something went wrong. Before[0]: {0}, Before[{1}]: {2}; After[0]: {3}, After[{1}]: {4}", BeforeDepth[0], count, BeforeDepth[count - 1], AfterDepth[0], AfterDepth[count - 1]);
+                    testSuccess = false;
                 }
             }
 
@@ -75,19 +127,27 @@ namespace TestModuleNamespace
             ExecutionTime = ExecutionStopTime - ExecutionStartTime;
             double perTaskTime = ExecutionTime.TotalMilliseconds / maxTmp;            
             Console.WriteLine("Use {0} ms using GPU", perTaskTime);
+            if (testSuccess)
+                Console.WriteLine(" Success!");
+            
         }
 
-        public void testDecisionForest()
-        {
+        private void LoadRFModel() {
             string modelFilePath = Feature.directory + "\\FeatureVectureBlue149.rf.model";
             Console.WriteLine("Model file path {0}", modelFilePath);
-            string modelFile=System.IO.File.ReadAllText(modelFilePath);
-            dforest.decisionforest decisionForest= new dforest.decisionforest();
+            string modelFile = System.IO.File.ReadAllText(modelFilePath);            
             alglib.serializer Serializer = new alglib.serializer();
             Serializer.ustart_str(modelFile);
             dforest.dfunserialize(Serializer, decisionForest);
             Serializer.stop();
             Console.WriteLine("Finish loading the RF model");
+        }
+
+        public void testDecisionForest()
+        {
+            LoadRFModel();
+
+            
 
             /*
             string featureFilePath = Feature.directory + "\\FeatureVectorBlue149.txt";
@@ -116,7 +176,8 @@ namespace TestModuleNamespace
             //Default direcotry: "..\\..\\..\\Data";
             // To setup the mode, see README in the library
             FeatureExtraction.ModeFormat MyMode = FeatureExtraction.ModeFormat.BlueDefault;
-            Feature = new FeatureExtraction(MyMode, "D:\\gr\\training\\blue\\");
+            //Feature = new FeatureExtraction(MyMode, "D:\\gr\\training\\blue\\");
+            Feature = new FeatureExtraction(MyMode);
         }
 
         private void TestGenerateFeatures()

@@ -1009,7 +1009,7 @@ namespace ColorGlove
                 if (overlayStart)
                     overlayBitmapBits.CopyTo(bitmapBits, 0);
             }
-            else
+            else 
             {
                 for (int i = 0; i < bitmapBits.Length; i += 4)
                 {

@@ -44,7 +44,6 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Dummy.cs" />
     <Compile Include="FeatureExtractionLib.cs" />
     <Compile Include="GPU.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
