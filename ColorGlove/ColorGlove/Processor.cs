@@ -74,6 +74,7 @@ namespace ColorGlove
             Denoise,
         };
 
+        //private FeatureExtractionLib.Util.HandGestureFormat HandGestureValue;
         private FeatureExtractionLib.Util.HandGestureFormat HandGestureValue;
         /*
         public enum TestNewFeatureFormat { 

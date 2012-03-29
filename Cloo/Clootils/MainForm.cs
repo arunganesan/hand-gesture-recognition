@@ -93,7 +93,10 @@ namespace Clootils
         void checkedListDevices_ItemCheck(object sender, ItemCheckEventArgs e)
         {
             if (e.NewValue == CheckState.Checked)
+            {
+                Console.WriteLine("platform.Devices[e.Index]: {0}, e.Index: {1}", platform.Devices[e.Index], e.Index);
                 devices.Add(platform.Devices[e.Index]);
+            }
             else
                 devices.Remove(platform.Devices[e.Index]);
         }
@@ -169,6 +172,7 @@ namespace Clootils
         {
             devices.Clear();
             platform = ComputePlatform.Platforms[comboBoxPlatform.SelectedIndex];
+            Console.WriteLine("comboBoxPlatform.SelectedIndex: {0}", comboBoxPlatform.SelectedIndex);
             object[] availableDevices = new object[platform.Devices.Count];
             for (int i = 0; i < availableDevices.Length; i++)
                 availableDevices[i] = platform.Devices[i].Name;

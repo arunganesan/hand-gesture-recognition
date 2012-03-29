@@ -8,7 +8,6 @@ namespace FeatureExtractionLib
 {
     public class Util
     {
-
         public enum HandGestureFormat
         {
             Background = 0,

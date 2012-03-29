@@ -5,12 +5,7 @@ using System.Text;
 
 
 namespace FeatureExtractionLib
-{
-    class RandomForest
-    {
-
-    }
-
+{    
     public class dforest
     {
         public class decisionforest

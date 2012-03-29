@@ -9,7 +9,10 @@ namespace TestModuleNamespace
     class TestModule
     {
         private FeatureExtraction Feature;
+        private GPUCompute myGPU;
+        //private GPU myGPU;
         
+        //private FeatureExtractionLib.GPU myGPU;
         /*
         private int minOffset;
         private int maxOffset;
@@ -24,27 +27,58 @@ namespace TestModuleNamespace
             TestModule FeatureExtractionTest = new TestModule();
 
             FeatureExtractionTest.SetupFeatureExtraction();
+            // Test Random Forest
+            // ##################
             //FeatureExtractionTest.testDecisionForest();
 
+            // ################
+            // Generate feature vector file             
+            //############################            
+            /* 
+                FeatureExtractionTest.TestGenerateFeatures();                        
+                Console.WriteLine("Generated features.");
+             */ 
+            // ##########################
 
-            // Generate feature vector file 
-            
-            //############################
+            // Test GPU
+            FeatureExtractionTest.TestReduceDepthViaGPU();
 
-           
             
-            //FeatureExtractionTest.TestDisplay();
-            FeatureExtractionTest.TestGenerateFeatures();
-            //FeatureExtractionTest.TestGenerateOffset();
-            
-            // end of generating feature vector file
-
-            Console.WriteLine("Generated features.");
             Console.ReadKey();
 
         }
 
-        public void testDecisionForest() {
+        public void TestReduceDepthViaGPU() {
+            int count = 640 * 480;
+            short[] BeforeDepth = new short[count];
+            short[] AfterDepth = new short[count];
+            myGPU = new GPUCompute();
+            const int maxTmp = 10000;
+            DateTime ExecutionStartTime; //Var will hold Execution Starting Time
+            DateTime ExecutionStopTime;//Var will hold Execution Stopped Time
+            TimeSpan ExecutionTime;//Var will count Total Execution Time-Our Main Hero
+            ExecutionStartTime = DateTime.Now; //Gets the system Current date time expressed as local time
+            
+            for (int tmp = 0; tmp < maxTmp; tmp++)
+            {
+                for (int i = 0; i < count; i++)
+                    BeforeDepth[i] = (short)((i + tmp) % 256);
+                myGPU.AddDepthPerPixel(BeforeDepth, AfterDepth);
+                //Console.WriteLine("Before[0]: {0}, Before[{1}]: {2}; After[0]: {3}, After[{1}]: {4}", BeforeDepth[0], count, BeforeDepth[count-1], AfterDepth[0], AfterDepth[count-1]);
+                if (BeforeDepth[0] != AfterDepth[0]+1 || BeforeDepth[count - 1] != AfterDepth[count - 1]+1)
+                {
+                    Console.WriteLine("Some thing wrong. Before[0]: {0}, Before[{1}]: {2}; After[0]: {3}, After[{1}]: {4}", BeforeDepth[0], count, BeforeDepth[count - 1], AfterDepth[0], AfterDepth[count - 1]);
+                }
+            }
+
+            ExecutionStopTime = DateTime.Now;
+            ExecutionTime = ExecutionStopTime - ExecutionStartTime;
+            double perTaskTime = ExecutionTime.TotalMilliseconds / maxTmp;            
+            Console.WriteLine("Use {0} ms using GPU", perTaskTime);
+        }
+
+        public void testDecisionForest()
+        {
             string modelFilePath = Feature.directory + "\\FeatureVectureBlue149.rf.model";
             Console.WriteLine("Model file path {0}", modelFilePath);
             string modelFile=System.IO.File.ReadAllText(modelFilePath);
