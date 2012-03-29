@@ -163,8 +163,6 @@ kernel void RuntimeExperiment(
                         ExecutionStartTime = DateTime.Now; //Gets the system Current date time expressed as local time
                         ComputeBuffer<int> iterNum = new ComputeBuffer<int>(context, ComputeMemoryFlags.ReadOnly | ComputeMemoryFlags.CopyHostPointer, myIterNum);
 
-
-
                         for (int repeatCounter = 0; repeatCounter < repeatTimes; repeatCounter++)
                         {
                             kernel.SetMemoryArgument(0, a);
