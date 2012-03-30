@@ -92,10 +92,11 @@ namespace ColorGlove
                 );
             }
             else if (ProcessorMode == ProcessorModeFormat.Arun) {
+                processors[0].SetTestModule(Processor.ShowExtractedFeatureFormat.ShowTransformedForOnePixel); 
                 processors[0].updatePipeline(
                     Processor.Step.PaintWhite,
                     Processor.Step.Crop,
-                    Processor.Step.Color,
+                    Processor.Step.Depth,
                     Processor.Step.OverlayOffset
                 );
 
