@@ -11,11 +11,12 @@ namespace FeatureExtractionLib
         private ComputeProgram program;
         private string clProgramSource = @"
 kernel void ReduceDepth(
-    global  read_only short* a,      
+    global  read_only short* a, 
+    global  read_only int* trees,     
     global  write_only short* c)
 {
     int index = get_global_id(0);    
-    c[index] = a[index] - 1;
+    c[index] = a[index] + (short) (trees[index]);
 }
 ";
         private ComputeKernel kernel;
@@ -24,6 +25,7 @@ kernel void ReduceDepth(
 
         private ComputeBuffer<short> a;
         private ComputeBuffer<short> c;
+        private ComputeBuffer<int> trees;
         private int count;
         public GPUCompute() 
         // Constructor function
@@ -43,18 +45,25 @@ kernel void ReduceDepth(
 
             count = 640 * 480;
             a = new ComputeBuffer<short>(context, ComputeMemoryFlags.ReadOnly, count);
-            c = new ComputeBuffer<short>(context, ComputeMemoryFlags.WriteOnly, count);            
+            
+            c = new ComputeBuffer<short>(context, ComputeMemoryFlags.WriteOnly, count);
+
+            kernel.SetMemoryArgument(0, a);            
+            kernel.SetMemoryArgument(2, c);
+        }
+
+        public void LoadTrees(int[] toLoadTrees) {
+            trees = new ComputeBuffer<int>(context, ComputeMemoryFlags.ReadOnly, toLoadTrees.Length);
+            kernel.SetMemoryArgument(1, trees);
+            commands.WriteToBuffer(toLoadTrees, trees, true, null);
         }
 
         public void AddDepthPerPixel( short [] BeforeDepth, short [] AfterDepth)
         {
-            commands.WriteToBuffer(BeforeDepth, a, true, null);
-            kernel.SetMemoryArgument(0, a);                                                        
-            kernel.SetMemoryArgument(1, c);
+            commands.WriteToBuffer(BeforeDepth, a, true, null);            
             commands.Execute(kernel, null, new long[] { BeforeDepth.Length }, null, null); // set the work-item size here.
+            commands.Finish();
             commands.ReadFromBuffer(c, ref AfterDepth, true, null);
-            //commands.Finish();
-
             
         }
     }
