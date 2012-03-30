@@ -39,7 +39,7 @@ namespace TestModuleNamespace
             // Generate feature vector file             
             //############################            
             /* 
-                FeatureExtractionTest.TestGenerateFeatures();                        
+                FeatureExtractionTest.TestGenerateFeatures();                   
                 Console.WriteLine("Generated features.");
              */ 
             // ##########################

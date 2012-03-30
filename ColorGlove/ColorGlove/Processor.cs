@@ -57,7 +57,10 @@ namespace ColorGlove
         private Object bitmap_lock_ = new Object();
         private byte[] bitmapBits;
         private byte[] tmpBuffer;
-        private byte[] overlayBitmapBits;
+        private int[] overlayBitmapBits;
+        private readonly int kNoOverlay = -1;
+        private int[] kEmptyOverlay;
+
         private bool overlayStart; 
         private System.Windows.Controls.Image image;
         private Manager manager;
@@ -127,7 +130,7 @@ namespace ColorGlove
         byte targetLabel, backgroundLabel;
 
 
-        FeatureExtractionLib.FeatureExtraction Feature;
+        private static FeatureExtractionLib.FeatureExtraction Feature = null;
         List<int[]> listOfTransformedPairPosition;
         
 
@@ -143,9 +146,17 @@ namespace ColorGlove
             image.Height = height;
             mapped = new ColorImagePoint[width * height];
             depthLabel = new byte[width * height];
-            cropValues = new System.Drawing.Rectangle(220, 170, 150, 200);
+
+            cropValues = new System.Drawing.Rectangle(
+                Properties.Settings.Default.CropOffset.X,
+                Properties.Settings.Default.CropOffset.Y,
+                Properties.Settings.Default.CropSize.Width,
+                Properties.Settings.Default.CropSize.Height);
+
             crop = new System.Drawing.Rectangle(0, 0, width - 1, height - 1);
             overlayStart = false;
+            kEmptyOverlay = new int[width * height * 4];
+            for (int i = 0; i < kEmptyOverlay.Length; i++) kEmptyOverlay[i] = kNoOverlay;
 
             MinHueTarget = 360.0F;
             MaxHueTarget = 0.0F;
@@ -158,15 +169,19 @@ namespace ColorGlove
 
             //FeatureExtraction.ModeFormat MyMode = FeatureExtraction.ModeFormat.BlueDefault; // User dependent. Notice that this is important
             FeatureExtraction.ModeFormat MyMode = FeatureExtraction.ModeFormat.BlueDefault;
-            Feature = new FeatureExtractionLib.FeatureExtraction(MyMode, "D:\\gr\\training\\blue");
-            Feature.ReadOffsetPairsFromStorage();
+            if (Feature == null)
+            {
+                Feature = new FeatureExtractionLib.FeatureExtraction(MyMode, "D:\\gr\\training\\blue");
+                Feature.ReadOffsetPairsFromStorage();
+            }
+
             //Feature.GenerateOffsetPairs(); // use this to test the offset pairs parameters setting
 			
             
             this.bitmap = new WriteableBitmap(640, 480, 96, 96, PixelFormats.Bgr32, null);
             this.bitmapBits = new byte[640 * 480 * 4];
             tmpBuffer = new byte[640 * 480 * 4];
-            overlayBitmapBits = new byte[640 * 480 * 4]; // overlay
+            overlayBitmapBits = new int[640 * 480 * 4]; // overlay
             image.Source = bitmap;
 
             image.MouseLeftButtonUp += ImageClick;
@@ -284,7 +299,7 @@ namespace ColorGlove
                 kMeans_clusters[i, 1] = rand.Next(0, 255);
                 kMeans_clusters[i, 2] = rand.Next(0, 255);
             }
-            
+
             //int width = x_1 - x_0;
             //int height = y_1 - y_0;
 
@@ -400,9 +415,9 @@ namespace ColorGlove
                 System.Drawing.Point crop_point = Util.toXY(i, crop.Width, crop.Height, 1);
                 int adjusted_i = Util.toID(crop.X + crop_point.X, crop.Y + crop_point.Y, width, height, 1);
 
-                overlayBitmapBits[4 * adjusted_i + 2] = (byte)kMeans_clusters[kMeans_assignments[i], 0];
-                overlayBitmapBits[4 * adjusted_i + 1] = (byte)kMeans_clusters[kMeans_assignments[i], 1];
-                overlayBitmapBits[4 * adjusted_i + 0] = (byte)kMeans_clusters[kMeans_assignments[i], 2];
+                overlayBitmapBits[4 * adjusted_i + 2] = (int)kMeans_clusters[kMeans_assignments[i], 0];
+                overlayBitmapBits[4 * adjusted_i + 1] = (int)kMeans_clusters[kMeans_assignments[i], 1];
+                overlayBitmapBits[4 * adjusted_i + 0] = (int)kMeans_clusters[kMeans_assignments[i], 2];
             }
 
             Processor.nearest_cache.Clear();
@@ -473,11 +488,16 @@ namespace ColorGlove
             paused = true;
         }
 
-        private void UnPause(MouseButtonEventArgs e)
+        private void UnPause(MouseButtonEventArgs e = null)
         {
             pauseDelegate(e);
             Console.WriteLine("Unpausing.");
             paused = false;
+        }
+
+        private void ResetOverlay()
+        {
+            kEmptyOverlay.CopyTo(overlayBitmapBits, 0);
         }
 
         private void ImageClick(object sender, MouseButtonEventArgs e)
@@ -527,6 +547,8 @@ namespace ColorGlove
 
                 double[] predictOutput = new double[0];
                 List<Tuple<byte, byte, byte>> label_colors = Util.GiveMeNColors(Feature.num_classes_);
+                ResetOverlay();
+
                 for (int y = crop.Y; y <= crop.Y + crop.Height; y++)
                 {
                     for (int x = crop.X; x <= crop.X + crop.Width; x++)
@@ -542,9 +564,9 @@ namespace ColorGlove
                             if (predictOutput[i] > predictOutput[predictLabel])
                                 predictLabel = i;
 
-                        overlayBitmapBits[bitmapIndex + 2] = label_colors[predictLabel].Item1;
-                        overlayBitmapBits[bitmapIndex + 1] = label_colors[predictLabel].Item2;
-                        overlayBitmapBits[bitmapIndex + 0] = label_colors[predictLabel].Item3;
+                        overlayBitmapBits[bitmapIndex + 2] = (int)label_colors[predictLabel].Item1;
+                        overlayBitmapBits[bitmapIndex + 1] = (int)label_colors[predictLabel].Item2;
+                        overlayBitmapBits[bitmapIndex + 0] = (int)label_colors[predictLabel].Item3;
                     }
                 }
 
@@ -552,7 +574,7 @@ namespace ColorGlove
                 ExecutionStopTime = DateTime.Now;
                 ExecutionTime = ExecutionStopTime - ExecutionStartTime;
                 Console.WriteLine("Use {0} ms for getting prediction", ExecutionTime.TotalMilliseconds.ToString());
-                //updateHelper(); // update the current bitmap
+                
                 overlayStart = true; 
                 update(data);
                 Pause((PauseDelegate)HideOverlayDelegate);
@@ -568,8 +590,11 @@ namespace ColorGlove
                 listOfTransformedPairPosition.Clear();
                 Feature.GetAllTransformedPairs(depthIndex, depthVal, listOfTransformedPairPosition);
                 int bitmapIndex, X, Y;
-                Array.Clear(overlayBitmapBits, 0, overlayBitmapBits.Length);
 
+                ResetOverlay();
+                //Array.Clear(overlayBitmapBits, 0, overlayBitmapBits.Length);
+                //bitmapBits.CopyTo(overlayBitmapBits, 0);
+                
                 for (int i = 0; i < listOfTransformedPairPosition.Count; i++)
                 {
                     X = listOfTransformedPairPosition[i][0];
@@ -577,6 +602,10 @@ namespace ColorGlove
                     if (X >= 0 && X < 640 && Y >= 0 && Y < 480)
                     {
                         bitmapIndex = (Y * 640 + X) * 4;
+                        overlayBitmapBits[bitmapIndex + 0] =
+                        overlayBitmapBits[bitmapIndex + 1] =
+                        overlayBitmapBits[bitmapIndex + 3] =
+                        0;
                         overlayBitmapBits[bitmapIndex + 2] = 255;
                         //bitmapBits[bitmapIndex + 2] = 255; // test
                     }
@@ -585,15 +614,19 @@ namespace ColorGlove
                     if (X >= 0 && X < 640 && Y >= 0 && Y < 480)
                     {
                         bitmapIndex = (Y * 640 + X) * 4;
+                        overlayBitmapBits[bitmapIndex + 0] =
+                        overlayBitmapBits[bitmapIndex + 1] =
+                        overlayBitmapBits[bitmapIndex + 3] =
+                        0;
                         overlayBitmapBits[bitmapIndex + 2] = 255;
-                        //bitmapBits[bitmapIndex + 2] = 255; // test 
                     }
                 }
+
                 ExecutionStopTime = DateTime.Now;
                 ExecutionTime = ExecutionStopTime - ExecutionStartTime;
                 Console.WriteLine("Use {0} ms for getting transformed points", ExecutionTime.TotalMilliseconds.ToString());
-                updateHelper(); // update the current bitmap                
-                paused = true; // to take a look
+
+                overlayStart = true;
             }
              
                         
@@ -628,6 +661,8 @@ namespace ColorGlove
 
         public void Pool()
         {
+            if (paused) UnPause();
+
             int expected_hands = 1;
             
             DateTime ExecutionStartTime; //Var will hold Execution Starting Time
@@ -691,6 +726,13 @@ namespace ColorGlove
             overlayStart = true;
             update(data);
             Pause((PauseDelegate)HideOverlayDelegate);
+        }
+
+        public void UpdateCropSettings()
+        {
+            Properties.Settings.Default.CropOffset = cropValues.Location;
+            Properties.Settings.Default.CropSize = cropValues.Size;
+            Properties.Settings.Default.Save();
         }
 
         private void GetAllFeatures() {
@@ -765,6 +807,8 @@ namespace ColorGlove
             cropValues.Y = Math.Min(startDrag.Y, endDrag.Y);
             cropValues.Width = Math.Abs(startDrag.X - endDrag.X);
             cropValues.Height = Math.Abs(startDrag.Y - endDrag.Y);
+            UpdateCropSettings();
+            //Console.WriteLine("New crop values are {0}", cropValues);
         }
 
         public void ProcessAndSave()
@@ -839,7 +883,7 @@ namespace ColorGlove
                 case Step.MappedDepth: show_mapped_depth(); break;
                 case Step.ColorMatch: MatchColors(); break;
                 case Step.ColorLabelingInRGB: ColorLabellingInRGB(); break;
-                case Step.OverlayOffset: ShowOverlayOffset(); break;
+                case Step.OverlayOffset: ShowOverlay(); break;
                 case Step.Denoise: Denoise(); break;
             }
         }
@@ -1076,25 +1120,21 @@ namespace ColorGlove
             }
         }
 
-        private void ShowOverlayOffset() {
+        private void ShowOverlay() {
             if (overlayStart)
             {
-                    overlayBitmapBits.CopyTo(bitmapBits, 0);
-            }
-            else 
-            {
-                for (int i = 0; i < bitmapBits.Length; i += 4)
+                //Console.WriteLine("Overlay enabled. Drawing overlay.");
+                for (int x = crop.X; x <= crop.Width + crop.X; x++)
                 {
-
-                    if (overlayBitmapBits[i + 2] == 255)
+                    for (int y = crop.Y; y <= crop.Height + crop.Y; y++)
                     {
-                        bitmapBits[i + 2] = 255;
-                        bitmapBits[i + 1] = 0;
-                        bitmapBits[i] = 0;
+                        int idx = Util.toID(x, y, width, height, colorStride);
+                        if (overlayBitmapBits[idx] != kNoOverlay) bitmapBits[idx] = (byte)overlayBitmapBits[idx];
+                        if (overlayBitmapBits[idx + 1] != kNoOverlay) bitmapBits[idx + 1] = (byte)overlayBitmapBits[idx + 1];
+                        if (overlayBitmapBits[idx + 2] != kNoOverlay) bitmapBits[idx + 2] = (byte)overlayBitmapBits[idx + 2];
+                        if (overlayBitmapBits[idx + 3] != kNoOverlay) bitmapBits[idx + 3] = (byte)overlayBitmapBits[idx + 3];
                     }
                 }
-                Console.WriteLine("Overlay enabled. Drawing overlay.");
-                overlayBitmapBits.CopyTo(bitmapBits, 0);
             }
         }
 
@@ -1112,14 +1152,16 @@ namespace ColorGlove
 
         public void update(KinectData data)
         {
-            if (paused) return;
-            
-            this.data = data;
-            this.depth = data.depth();
-            this.rgb = data.color();
-            
-            lock (bitmap_lock_) foreach (Step step in pipeline) process(step);
-            
+            lock (bitmap_lock_)
+            {
+                if (paused) return;
+
+                this.data = data;
+                this.depth = data.depth();
+                this.rgb = data.color();
+
+                foreach (Step step in pipeline) process(step);
+            }
             // The helper always runs in the MainThread anyway (dispatch). If 
             // this is inside the critical section, and the main thread sleeps
             // deadlock in a strage way!
