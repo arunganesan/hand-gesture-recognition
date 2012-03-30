@@ -325,6 +325,9 @@ namespace FeatureExtractionLib
                 return UpperBound;
         }
 
+        /* 
+         * Output: RFfeaturevector (global double)
+         */
         public void PredictOnePixel(int oneDimensionIndex, short[] depthArray, ref double[] predictOutput)
         {
             List<int[]> aListOfOffsetPosition = new List<int[]>();
@@ -343,11 +346,11 @@ namespace FeatureExtractionLib
             dforest.dfprocess(decisionForest, RFfeatureVector, ref predictOutput);
             //Console.WriteLine("y[0]:{0}, y[1]:{1},y[2]:{2}", predictOutput[0], predictOutput[1], predictOutput[2]);
         }
-
+		
+		/*
+         * Extract feature vectors and write it a file
+         */
         private void ExtractFeatureFromOneDepthPoint(int oneDimensionIndex)
-            /*
-             * Extract feature vectors and write it a file
-             */
         {            
             List<int[]> aListOfOffsetPosition = new List<int[]>();
 
