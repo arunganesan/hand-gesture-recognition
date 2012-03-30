@@ -12,11 +12,11 @@ namespace FeatureExtractionLib
         private string clProgramSource = @"
 kernel void ReduceDepth(
     global  read_only short* a, 
-    global  read_only short* trees,     
+    global  read_only int* trees,     
     global  write_only short* c)
 {
     int index = get_global_id(0);    
-    c[index] = a[index] + trees[index];
+    c[index] = a[index] + (short) (trees[index]);
 }
 ";
         private ComputeKernel kernel;
@@ -25,7 +25,7 @@ kernel void ReduceDepth(
 
         private ComputeBuffer<short> a;
         private ComputeBuffer<short> c;
-        private ComputeBuffer<short> trees;
+        private ComputeBuffer<int> trees;
         private int count;
         public GPUCompute() 
         // Constructor function
@@ -45,15 +45,16 @@ kernel void ReduceDepth(
 
             count = 640 * 480;
             a = new ComputeBuffer<short>(context, ComputeMemoryFlags.ReadOnly, count);
-            trees = new ComputeBuffer<short>(context, ComputeMemoryFlags.ReadOnly, count);
+            
             c = new ComputeBuffer<short>(context, ComputeMemoryFlags.WriteOnly, count);
 
-            kernel.SetMemoryArgument(0, a);
-            kernel.SetMemoryArgument(1, trees);
+            kernel.SetMemoryArgument(0, a);            
             kernel.SetMemoryArgument(2, c);
         }
 
-        public void LoadTrees(short[] toLoadTrees) {
+        public void LoadTrees(int[] toLoadTrees) {
+            trees = new ComputeBuffer<int>(context, ComputeMemoryFlags.ReadOnly, toLoadTrees.Length);
+            kernel.SetMemoryArgument(1, trees);
             commands.WriteToBuffer(toLoadTrees, trees, true, null);
         }
 

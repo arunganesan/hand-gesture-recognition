@@ -9,8 +9,9 @@ namespace TestModuleNamespace
     class TestModule
     {
         private FeatureExtraction Feature;
-        private GPUCompute myGPU;
+        private GPUCompute myGPU = new GPUCompute();
         dforest.decisionforest decisionForest = new dforest.decisionforest();
+        private int[] treesInt; // random forest in int type. (faster in GPU)
         //private GPU myGPU;
         
         //private FeatureExtractionLib.GPU myGPU;
@@ -43,31 +44,88 @@ namespace TestModuleNamespace
 
             // Test simple case for GPU
             /* #################### */
-            //FeatureExtractionTest.TestReduceDepthViaGPU();
+            FeatureExtractionTest.TestReduceDepthViaGPU();
             /* ###################### */          
 
             // Test loading trained random forest to GPU
             // ############################
-            FeatureExtractionTest.LoadTrainedRFModelToGPU();
+            //FeatureExtractionTest.LoadTrainedRFModelToGPU();
             // ############################
             Console.ReadKey();
 
         }
 
+        private void TraverseTree(double[] tree, int index, int off, int [] treeInt) {
+            if ((double)(tree[index]) != (double)(-1))
+            {
+                if (tree[index + 1] > 32767)
+                {
+                    Console.WriteLine("Some thing not good! Feature: {0}, Threshold: {1}", tree[index], tree[index + 1]);
+                }
+                treeInt[index] = (int)tree[index];
+                treeInt[index + 1] = (int)Math.Ceiling(tree[index + 1]);
+                treeInt[index + 2] = (int)tree[index + 2];
+                TraverseTree(tree, index + 3, off, treeInt);
+                TraverseTree(tree, off + (int)(tree[index + 2]), off, treeInt);
+            }
+            else {
+                treeInt[index] = (int)tree[index];
+                treeInt[index + 1] = (int)tree[index + 1];
+            }
+
+        }
+
         public void LoadTrainedRFModelToGPU() {
             LoadRFModel();
-            Console.WriteLine("Tree size: {0}", decisionForest.trees.Length);
-            Console.WriteLine("trees[0]:{0}", decisionForest.trees[0]);
-            int treeSize = (int)(decisionForest.trees[0]/3);
-            int index = 1;
+            Console.WriteLine("Total tree size: {0}", decisionForest.trees.Length);            
+            int treeSize = (int)(decisionForest.trees.Length/3);
+            Console.WriteLine("single tree size:{0}", treeSize);             
             Console.WriteLine("Number of variable: {0}", decisionForest.nvars);
             Console.WriteLine("ntress: {0}", decisionForest.ntrees);
             Console.WriteLine("nclasses: {0}", decisionForest.nclasses);
-            /*
-            for (int i=0; i<50; i++)
+             
+            // display a very few of the tree
+            /* ######################
+            for (int i=0; i<10; i++)
                 Console.WriteLine("trees[{0}]: {1}", i, decisionForest.trees[i]);
-           
-             */ 
+            Console.WriteLine("Second tree size: trees[trees[0]]: {0}", decisionForest.trees[(int) (decisionForest.trees[0])]);
+            // ######################
+            */ 
+            
+            // test round...
+            /* ###################
+            Console.WriteLine("round(1.5):{0}", Math.Round(1.5));
+            Console.WriteLine("round(-1.5):{0}", Math.Round(-1.5));
+            Console.WriteLine("Celling(1.5):{0}", Math.Ceiling(1.5));
+            Console.WriteLine("Ceiling(-1.5):{0}", Math.Ceiling(-1.5));
+            */
+            // ###################
+            
+            // turn the trees from double to int by using ceiling.
+            int off = 0;
+            treesInt = new int[decisionForest.trees.Length];
+            for (int i = 0; i < decisionForest.ntrees; i++)
+            {
+                treesInt[off] = (int) (decisionForest.trees[off]);
+                Console.WriteLine("Tree {0}", i + 1);
+                TraverseTree(decisionForest.trees, off+1, off, treesInt);
+                off = off +   (int) (decisionForest.trees[off]) ;
+            }
+            Console.WriteLine("Finish going through all threshold");
+            // the above isn't necessary. One can just scan the tree array...
+
+            // test if tressInt and decisionForest.trees are the same
+            Random _r= new Random();
+            for (int i = 0; i < decisionForest.trees.Length; i++) { 
+                //int index= _r.Next(decisionForest.trees.Length);
+                if ( Math.Ceiling(decisionForest.trees[i]) != treesInt[i]  )
+                    //Console.WriteLine("trees[{0}]:{1}, treesInt[{0}]:{2}", index, decisionForest.trees[index], treesInt[index]);
+                    Console.WriteLine("Something wrong! trees[{0}]:{1}, treesInt[{0}]:{2}", i, decisionForest.trees[i], treesInt[i]);
+            }
+
+            myGPU.LoadTrees(treesInt);
+
+            Console.WriteLine("Successfuly load the tree to GPU");
             // tree format
             /*
              *   trees[0]: total size.
@@ -77,7 +135,7 @@ namespace TestModuleNamespace
              * 
              */
 
-            
+            /*
             index = 2;
             while (true)
             {
@@ -88,6 +146,7 @@ namespace TestModuleNamespace
                 if (index >= treeSize)
                     break;
             }
+             */ 
             
         }
 
@@ -96,18 +155,19 @@ namespace TestModuleNamespace
             int count = 640 * 480;
             short[] BeforeDepth = new short[count];
             short[] AfterDepth = new short[count];
-            short[] Trees = new short[count];
-            myGPU = new GPUCompute();
-            const int maxTmp = 10000;
+            
+            LoadTrainedRFModelToGPU();            
+            const int maxTmp = 1000;
             DateTime ExecutionStartTime; //Var will hold Execution Starting Time
             DateTime ExecutionStopTime;//Var will hold Execution Stopped Time
             TimeSpan ExecutionTime;//Var will count Total Execution Time-Our Main Hero
             ExecutionStartTime = DateTime.Now; //Gets the system Current date time expressed as local time
 
+            /*
             for (int i = 0; i < count; i++)
                 Trees[i] = (short)(i % 4445);
-
-            myGPU.LoadTrees(Trees);
+            */
+            //myGPU.LoadTrees(Trees);
 
             bool testSuccess = true;
             for (int tmp = 0; tmp < maxTmp; tmp++)
@@ -116,9 +176,11 @@ namespace TestModuleNamespace
                     BeforeDepth[i] = (short)((i + tmp) % 256);
                 myGPU.AddDepthPerPixel(BeforeDepth, AfterDepth);
                 //Console.WriteLine("Before[0]: {0}, Before[{1}]: {2}; After[0]: {3}, After[{1}]: {4}", BeforeDepth[0], count, BeforeDepth[count-1], AfterDepth[0], AfterDepth[count-1]);
-                if (BeforeDepth[0] != AfterDepth[0]-Trees[0] || BeforeDepth[count - 1] != AfterDepth[count - 1] - Trees[count-1])
+                if (BeforeDepth[0] != AfterDepth[0]-(short) (treesInt[0]) || BeforeDepth[count - 1] != AfterDepth[count - 1] - (short) (treesInt[count-1]))
                 {
-                    Console.WriteLine("Something went wrong. Before[0]: {0}, Before[{1}]: {2}; After[0]: {3}, After[{1}]: {4}", BeforeDepth[0], count, BeforeDepth[count - 1], AfterDepth[0], AfterDepth[count - 1]);
+                    //Console.WriteLine("Something went wrong. Before[0]: {0}, Before[{1}]: {2}; After[0]: {3}, After[{1}]: {4}", BeforeDepth[0], count, BeforeDepth[count - 1], AfterDepth[0], AfterDepth[count - 1]);
+                    Console.WriteLine("Somethign wrong. treesInt[0]:{0} Before[0]: {1}, After[0]: {2};", (short) (treesInt[0]), BeforeDepth[0], AfterDepth[0]);
+                    Console.WriteLine("Somethign wrong. treesInt[{0}]:{1} Before[{0}]: {2}, After[{0}]: {3};", count-1, (short) (treesInt[count-1]), BeforeDepth[count-1], AfterDepth[count-1]);
                     testSuccess = false;
                 }
             }
@@ -128,7 +190,7 @@ namespace TestModuleNamespace
             double perTaskTime = ExecutionTime.TotalMilliseconds / maxTmp;            
             Console.WriteLine("Use {0} ms using GPU", perTaskTime);
             if (testSuccess)
-                Console.WriteLine(" Success!");
+                Console.WriteLine(" Success test add depth using the tree!");
             
         }
 
