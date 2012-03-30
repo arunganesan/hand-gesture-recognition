@@ -534,7 +534,7 @@ namespace ColorGlove
                                 
                 double [] predictOutput = new double[0];
 
-                Feature.PredictOnePixel(depthIndex, depth, ref predictOutput); 
+                Feature.PredictOnePixelCPU(depthIndex, depth, ref predictOutput); 
                 Console.WriteLine("background: {0}, open hand: {1}, close hand: {2}",predictOutput[0], predictOutput[1], predictOutput[2]);
                 ExecutionStopTime = DateTime.Now;
                 ExecutionTime = ExecutionStopTime - ExecutionStartTime;
@@ -559,10 +559,11 @@ namespace ColorGlove
                         depthIndex = Util.toID(x, y, width, height, depthStride);
 
                         int bitmapIndex = depthIndex * 4;
-                        Feature.PredictOnePixel(depthIndex, depth, ref predictOutput);
-                        
+                        //Feature.PredictOnePixel(depthIndex, depth, ref predictOutput);
+                        Feature.PredictOnePixelCPU(depthIndex, depth, ref predictOutput);
                         int predictLabel = 0;
-                        for (int i = 1; i < Feature.num_classes_; i++)
+						
+						for (int i = 1; i < Feature.num_classes_; i++)
                             if (predictOutput[i] > predictOutput[predictLabel])
                                 predictLabel = i;
 
@@ -689,7 +690,7 @@ namespace ColorGlove
                     depthIndex = Util.toID(x, y, width, height, depthStride);
 
                     int bitmapIndex = depthIndex * 4;
-                    Feature.PredictOnePixel(depthIndex, depth, ref predictOutput);
+                    Feature.PredictOnePixelCPU(depthIndex, depth, ref predictOutput);
                     int predictLabel = 0;
 
                     for (int i = 1; i < Feature.num_classes_; i++)
