@@ -401,6 +401,11 @@ namespace FeatureExtractionLib
             //Console.WriteLine("y[0]:{0}, y[1]:{1},y[2]:{2}", predictOutput[0], predictOutput[1], predictOutput[2]);
         }
 
+        // use GPU to predict the whole using per-pixel classification
+        public void PredictGPU(short[] depth, ref float[] predict_output) {
+            myGPU_.Predict(depth, ref predict_output);
+        }
+
         public void ConviencePredictFeatureVectorGPU(short[] feature_vector, ref float[] predict_output) 
         {
             myGPU_.PredictFeatureVector(feature_vector, ref predict_output);    
