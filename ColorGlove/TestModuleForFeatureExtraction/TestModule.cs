@@ -45,6 +45,7 @@ namespace TestModuleNamespace
             // Test simple case for GPU
             /* #################### */
             FeatureExtractionTest.TestReduceDepthViaGPU();
+
             /* ###################### */          
 
             // Test loading trained random forest to GPU
