@@ -138,7 +138,7 @@ kernel void ReduceDepth(
             commands.Finish();
             //predict_output = new float[3];
             commands.ReadFromBuffer(y, ref predict_output, true, null);
-            Console.WriteLine("internal GPU output: y[0]: {0}, y[1]: {1}, y[2]:{2}", predict_output[0], predict_output[1], predict_output[2]);
+            //Console.WriteLine("internal GPU output: y[0]: {0}, y[1]: {1}, y[2]:{2}", predict_output[0], predict_output[1], predict_output[2]);
         }
 
         public void AddDepthPerPixel( short [] BeforeDepth, short [] AfterDepth)

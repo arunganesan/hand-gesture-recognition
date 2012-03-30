@@ -217,15 +217,24 @@ namespace TestModuleNamespace
             // Use CPU first
             LoadRFModel();            
             double[] y=new double[3];
-            dforest.dfprocess(decisionForest, X,  ref y);
-            Console.WriteLine("Use CPU background: {0}, open hand: {1}, close hand: {2}",y[0], y[1], y[2]);
-            // Then use GPU
-            float[] predict_output = new float[3];
-            short[] X_short = new short[X.Length];
-            for (int i = 0; i < X.Length; i++)
-                X_short[i] = (short)X[i];
-            Feature.ConviencePredictFeatureVectorGPU(X_short, ref predict_output);
-            Console.WriteLine("Use GPU background: {0}, open hand: {1}, close hand: {2}", predict_output[0], predict_output[1], predict_output[2]);
+
+            for (int tmp = 0; tmp < 2; tmp++)
+            {
+                if (tmp == 1)
+                {
+                    for (int j = 0; j < X.Length-1; j++)
+                        X[j] = X[j + 1];
+                }
+                dforest.dfprocess(decisionForest, X, ref y);
+                Console.WriteLine("Use CPU background: {0}, open hand: {1}, close hand: {2}", y[0], y[1], y[2]);
+                // Then use GPU
+                float[] predict_output = new float[3];
+                short[] X_short = new short[X.Length];
+                for (int i = 0; i < X.Length; i++)
+                    X_short[i] = (short)X[i];
+                Feature.ConviencePredictFeatureVectorGPU(X_short, ref predict_output);
+                Console.WriteLine("Use GPU background: {0}, open hand: {1}, close hand: {2}", predict_output[0], predict_output[1], predict_output[2]);
+            }
         }
 
         public void SetupFeatureExtraction() {
