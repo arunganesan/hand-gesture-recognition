@@ -376,10 +376,10 @@ namespace FeatureExtractionLib
                 return UpperBound;
         }
 
-        private void GetFeatureVectorsFromOneDepthPoint(int oneDimensionIndex, short[] depthArray)
         /* 
          * Output: RFfeaturevector (global double)
          */
+        private void GetFeatureVectorsFromOneDepthPoint(int oneDimensionIndex, short[] depthArray)
         {
             List<int[]> aListOfOffsetPosition = new List<int[]>();
             GetAllTransformedPairs(oneDimensionIndex, depthArray[oneDimensionIndex], aListOfOffsetPosition);

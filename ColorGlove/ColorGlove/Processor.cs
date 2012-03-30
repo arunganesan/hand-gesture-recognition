@@ -67,6 +67,8 @@ namespace ColorGlove
         private System.Windows.Controls.Image image;
         private Manager manager;
         public int lower, upper; // range for thresholding in show_mapped_depth(),  show_color_depth(). Set by the manager.
+        
+        
         public enum Step
         {
             PaintWhite,
@@ -79,7 +81,11 @@ namespace ColorGlove
             ColorLabelingInRGB,
             OverlayOffset,
             Denoise,
+            PredictOnPress,
         };
+
+        // *OnPress counters
+        bool predict_on_press_ = false;
 
         //private FeatureExtractionLib.Util.HandGestureFormat HandGestureValue;
         private FeatureExtractionLib.Util.HandGestureFormat HandGestureValue;
@@ -170,6 +176,7 @@ namespace ColorGlove
             // To setup the mode, see README in the library
 
             //FeatureExtraction.ModeFormat MyMode = FeatureExtraction.ModeFormat.BlueDefault; // User dependent. Notice that this is important
+            
             FeatureExtraction.ModeFormat MyMode = FeatureExtraction.ModeFormat.BlueDefault;
             if (Feature == null)
             {
@@ -253,15 +260,9 @@ namespace ColorGlove
             
         }
 
-        public void IncreaseRange()
-        {
-            upper += 10;
-        }
+        public void IncreaseRange() { upper += 10; }
 
-        public void DecreaseRange()
-        {
-            upper -= 10;
-        }
+        public void DecreaseRange() { upper -= 10; }
 
         // Finds nearest depth object and sets the upper bound to epsilon plus that.
         public void AutoDetectRange()
@@ -516,8 +517,10 @@ namespace ColorGlove
             int depthIndex = (int)click_position.Y * 640 + (int)click_position.X;
             for (int i = 0; i < depth.Length; i++)
                 depth[i] = (short)(depth[i] >> DepthImageFrame.PlayerIndexBitmaskWidth); // remember this
+
             int depthVal= depth[depthIndex]; // >> DepthImageFrame.PlayerIndexBitmaskWidth;
-            // Show offsets pair 
+            
+            // Show offsets pair
             Console.WriteLine("depth: {0}, baseIndex: {1}", depthVal, depthIndex);
             
             if ((ShowExtractedFeatureMode & ShowExtractedFeatureFormat.Extract30FeacturesForEveryPixel) == ShowExtractedFeatureFormat.Extract30FeacturesForEveryPixel )
@@ -542,10 +545,10 @@ namespace ColorGlove
             }
 
             if ((ShowExtractedFeatureMode & ShowExtractedFeatureFormat.PredictAllPixelsCPU) == ShowExtractedFeatureFormat.PredictAllPixelsCPU) {
-                DateTime ExecutionStartTime; //Var will hold Execution Starting Time
-                DateTime ExecutionStopTime;//Var will hold Execution Stopped Time
-                TimeSpan ExecutionTime;//Var will count Total Execution Time-Our Main Hero                
-                ExecutionStartTime = DateTime.Now; //Gets the system Current date time expressed as local time
+                DateTime ExecutionStartTime; 
+                DateTime ExecutionStopTime;
+                TimeSpan ExecutionTime;              
+                ExecutionStartTime = DateTime.Now;
 
                 double[] predictOutput = new double[0];
                 List<Tuple<byte, byte, byte>> label_colors = Util.GiveMeNColors(Feature.num_classes_);
@@ -664,74 +667,8 @@ namespace ColorGlove
 
         public void Pool()
         {
-            //if (paused) UnPause();
-
-            int expected_hands = 1;
-            
-            for (int i = 0; i < depth.Length; i++)
-                depth[i] = (short)(depth[i] >> DepthImageFrame.PlayerIndexBitmaskWidth); // remember this
-
-            DateTime ExecutionStartTime; //Var will hold Execution Starting Time
-            DateTime ExecutionStopTime;//Var will hold Execution Stopped Time
-            TimeSpan ExecutionTime;//Var will count Total Execution Time-Our Main Hero                
-            ExecutionStartTime = DateTime.Now; //Gets the system Current date time expressed as local time
-            int depthIndex;
-            double[] predictOutput = new double[0];
-            List<Tuple<byte, byte, byte>> label_colors = Util.GiveMeNColors(Feature.num_classes_);
-
-            int[] label_counts = new int[Feature.num_classes_];
-            Array.Clear(label_counts, 0, label_counts.Length);
-
-            for (int y = crop.Y; y <= crop.Y + crop.Height; y++)
-            {
-                for (int x = crop.X; x <= crop.X + crop.Width; x++)
-                {
-                    if (x == crop.X) Console.WriteLine("Processing {0}% ({1}/{2})", (float)(y - crop.Y) / crop.Height * 100, (y - crop.Y), crop.Height);
-                    depthIndex = Util.toID(x, y, width, height, depthStride);
-
-                    int bitmapIndex = depthIndex * 4;
-                    Feature.PredictOnePixelCPU(depthIndex, depth, ref predictOutput);
-                    int predictLabel = 0;
-
-                    for (int i = 1; i < Feature.num_classes_; i++)
-                        if (predictOutput[i] > predictOutput[predictLabel])
-                            predictLabel = i;
-
-                    label_counts[predictLabel]++;
-                    overlayBitmapBits[bitmapIndex + 2] = label_colors[predictLabel].Item1;
-                    overlayBitmapBits[bitmapIndex + 1] = label_colors[predictLabel].Item2;
-                    overlayBitmapBits[bitmapIndex + 0] = label_colors[predictLabel].Item3;
-                }
-            }
-
-            /* Courtesy of http://stackoverflow.com/questions/462699/how-do-i-get-the-index-of-the-highest-value-in-an-array-using-linq */
-            int max_index = -1;
-            int index = 0;
-            double max_value = 0;
-
-            int urgh = label_counts.Select(value =>
-            {
-                if ((max_index == -1 || value > max_value) && index != 0)
-                {
-                    max_index = index;
-                    max_value = value;
-                }
-                index++;
-                return max_index;
-            }).Last();
-
-            Console.WriteLine("Most common gesture is {0} (appears {1}/{2} times).", 
-                ((Util.HandGestureFormat)max_index).ToString(),
-                max_value, crop.Width * crop.Height);
-
-            //System.Threading.Thread.Sleep(1000);                
-            ExecutionStopTime = DateTime.Now;
-            ExecutionTime = ExecutionStopTime - ExecutionStartTime;
-            Console.WriteLine("Use {0} ms for getting prediction", ExecutionTime.TotalMilliseconds.ToString());
-            //updateHelper(); // update the current bitmap
-            overlayStart = true;
-            update(data);
-            Pause((PauseDelegate)HideOverlayDelegate);
+            predict_on_press_ = true;
+            return;
         }
 
         public void UpdateCropSettings()
@@ -891,11 +828,84 @@ namespace ColorGlove
                 case Step.ColorLabelingInRGB: ColorLabellingInRGB(); break;
                 case Step.OverlayOffset: ShowOverlay(); break;
                 case Step.Denoise: Denoise(); break;
+                case Step.PredictOnPress: PredictOnPress(); break;
             }
         }
 
         #region Filter functions
-        
+
+        private void PredictOnPress()
+        {
+            if (predict_on_press_ == false) return;
+
+            for (int i = 0; i < depth.Length; i++)
+                depth[i] = (short)(depth[i] >> DepthImageFrame.PlayerIndexBitmaskWidth);
+
+            DateTime ExecutionStartTime;
+            DateTime ExecutionStopTime;
+            TimeSpan ExecutionTime;               
+            ExecutionStartTime = DateTime.Now;
+            
+            int depthIndex;
+            double[] predictOutput = new double[0];
+            List<Tuple<byte, byte, byte>> label_colors = Util.GiveMeNColors(Feature.num_classes_);
+
+            int[] label_counts = new int[Feature.num_classes_];
+            Array.Clear(label_counts, 0, label_counts.Length);
+
+            for (int y = crop.Y; y <= crop.Y + crop.Height; y++)
+            {
+                for (int x = crop.X; x <= crop.X + crop.Width; x++)
+                {
+                    if (x == crop.X) Console.WriteLine("Processing {0}% ({1}/{2})", (float)(y - crop.Y) / crop.Height * 100, (y - crop.Y), crop.Height);
+                    depthIndex = Util.toID(x, y, width, height, depthStride);
+
+                    int bitmapIndex = depthIndex * 4;
+                    Feature.PredictOnePixelCPU(depthIndex, depth, ref predictOutput);
+                    int predictLabel = 0;
+
+                    for (int i = 1; i < Feature.num_classes_; i++)
+                        if (predictOutput[i] > predictOutput[predictLabel])
+                            predictLabel = i;
+
+                    label_counts[predictLabel]++;
+                    overlayBitmapBits[bitmapIndex + 2] = label_colors[predictLabel].Item1;
+                    overlayBitmapBits[bitmapIndex + 1] = label_colors[predictLabel].Item2;
+                    overlayBitmapBits[bitmapIndex + 0] = label_colors[predictLabel].Item3;
+                }
+            }
+
+            /* Courtesy of http://stackoverflow.com/questions/462699/how-do-i-get-the-index-of-the-highest-value-in-an-array-using-linq */
+            int max_index = -1;
+            int index = 0;
+            double max_value = 0;
+
+            int urgh = label_counts.Select(value =>
+            {
+                if ((max_index == -1 || value > max_value) && index != 0)
+                {
+                    max_index = index;
+                    max_value = value;
+                }
+                index++;
+                return max_index;
+            }).Last();
+
+            Console.WriteLine("Most common gesture is {0} (appears {1}/{2} times).",
+                ((Util.HandGestureFormat)max_index).ToString(),
+                max_value, crop.Width * crop.Height);
+
+            //System.Threading.Thread.Sleep(1000);                
+            ExecutionStopTime = DateTime.Now;
+            ExecutionTime = ExecutionStopTime - ExecutionStartTime;
+            Console.WriteLine("Use {0} ms for getting prediction", ExecutionTime.TotalMilliseconds.ToString());
+            //updateHelper(); // update the current bitmap
+            overlayStart = true;
+            //update(data);
+            //Pause((PauseDelegate)HideOverlayDelegate);
+            predict_on_press_ = false;
+        }
+
         private void Denoise()
         {
             int x, y;
