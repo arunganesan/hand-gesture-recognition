@@ -373,16 +373,21 @@ namespace FeatureExtractionLib
             //Console.WriteLine("y[0]:{0}, y[1]:{1},y[2]:{2}", predictOutput[0], predictOutput[1], predictOutput[2]);
         }
 
-        public void PredictOnePixelGPUWithCPUFeatureExtraction(int oneDimensionIndex, short[] depthArray, ref double[] predictOutput)
+        public void ConviencePredictFeatureVectorGPU(short[] feature_vector, ref float[] predict_output) 
+        {
+            myGPU.PredictFeatureVector(feature_vector, ref predict_output);    
+        }
+       
+        public void PredictOnePixelGPUWithCPUFeatureExtraction(int one_dimension_index, short[] depthArray, ref float[] predictOutput)
         /* Use the CPU for feature extraction
          * GPU for prediction
          * Test purpose
          */
         {
-            GetFeatureVectorsFromOneDepthPoint(oneDimensionIndex, depthArray);
+            GetFeatureVectorsFromOneDepthPoint(one_dimension_index, depthArray);
             for (int i = 0; i < RFfeatureVector.Length; i++)
-                RFfeatureVectorShort[i] = (short) (RFfeatureVector[i]);
-
+                 RFfeatureVectorShort[i] = (short) (RFfeatureVector[i]);
+            myGPU.PredictFeatureVector(RFfeatureVectorShort, ref predictOutput);    
         }
 
         private void ExtractFeatureFromOneDepthPointAndWriteToFile(int oneDimensionIndex)

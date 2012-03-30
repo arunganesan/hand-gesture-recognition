@@ -17,6 +17,30 @@ kernel void dfprocess(
         global write_only float* y)
 {
         int index= get_global_id(0);    
+        int offs = 0, k, idx;
+        short i;
+        float v;
+        v = (float)1 / (float)meta_tree[1];
+        for (i=0; i< meta_tree[0]; i++)
+            y[i] = 0;
+        for (i=0; i< meta_tree[1]; i++){
+            k = offs +1;
+            while (1){
+                if (trees[k] == -1)
+                {
+                   idx = trees[k+1];
+                   y[idx]++;
+                   break;
+                }
+                if (x[trees[k]] < trees[k+1] )
+                    k+=3;
+                else
+                    k = offs + trees[k+2];
+            }
+            offs = offs + trees[offs];
+        }
+        for (i=0; i< meta_tree[0]; i++)
+            y[i] = v* y[i];
 }  
 ";
         private string clProgramSourceRD = @"
@@ -38,7 +62,7 @@ kernel void ReduceDepth(
         private ComputeBuffer<int> trees;
         private ComputeBuffer<short> meta_tree;
         private ComputeBuffer<short> x; // feature vector
-        private ComputeBuffer<double> y; // predict output
+        private ComputeBuffer<float> y; // predict output
 
         private int count;
 
@@ -88,28 +112,33 @@ kernel void ReduceDepth(
         }
 
         public void LoadTrees(int[] toLoadTrees, short nclasses=0, short ntrees=0, int nfeatures=0) {
-            /*
-            trees = new ComputeBuffer<int>(context, ComputeMemoryFlags.ReadOnly, toLoadTrees.Length);
+            
+            trees = new ComputeBuffer<int>(context, ComputeMemoryFlags.ReadOnly| ComputeMemoryFlags.CopyHostPointer, toLoadTrees);            
             kernel.SetMemoryArgument(1, trees);
-            commands.WriteToBuffer(toLoadTrees, trees, true, null);
-             */
+            //commands.WriteToBuffer(toLoadTrees, trees, true, null);           
             if (ComputeMode == ComputeModeFormat.PredictWithFeatures)
             {
                 short[] host_meta_tree = new short[2];
                 host_meta_tree[0] = nclasses;
-                host_meta_tree[1] = ntrees;
-                
+                host_meta_tree[1] = ntrees;                
                 meta_tree = new ComputeBuffer<short>(context, ComputeMemoryFlags.ReadOnly | ComputeMemoryFlags.CopyHostPointer, host_meta_tree);
-                kernel.SetMemoryArgument(0, meta_tree);
-                trees = new ComputeBuffer<int>(context, ComputeMemoryFlags.ReadOnly, toLoadTrees.Length);
-                kernel.SetMemoryArgument(1, trees);
-                commands.WriteToBuffer(toLoadTrees, trees, true, null);
+                kernel.SetMemoryArgument(0, meta_tree);                 
                 x = new ComputeBuffer<short>(context, ComputeMemoryFlags.ReadOnly, nfeatures);
                 kernel.SetMemoryArgument(2, x);
-                y = new ComputeBuffer<double>(context, ComputeMemoryFlags.WriteOnly, nclasses);
-                kernel.SetMemoryArgument(3, y);
-                
+                y = new ComputeBuffer<float>(context, ComputeMemoryFlags.WriteOnly, nclasses);
+                kernel.SetMemoryArgument(3, y);                
             }
+        }
+
+        public void PredictFeatureVector(short [] feature_vector, ref float[] predict_output) 
+        {
+            commands.WriteToBuffer(feature_vector, x, true, null);
+            Console.WriteLine("Copy the feature_vector from host to CPU");
+            commands.Execute(kernel, null, new long[] { 1}, null, null); // set the work-item size here.
+            commands.Finish();
+            //predict_output = new float[3];
+            commands.ReadFromBuffer(y, ref predict_output, true, null);
+            Console.WriteLine("internal GPU output: y[0]: {0}, y[1]: {1}, y[2]:{2}", predict_output[0], predict_output[1], predict_output[2]);
         }
 
         public void AddDepthPerPixel( short [] BeforeDepth, short [] AfterDepth)
