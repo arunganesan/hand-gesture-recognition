@@ -9,7 +9,7 @@ namespace TestModuleNamespace
     class TestModule
     {
         private FeatureExtraction Feature;
-        private GPUCompute myGPU = new GPUCompute();
+        private GPUCompute myGPU;
         dforest.decisionforest decisionForest = new dforest.decisionforest();
         private int[] treesInt; // random forest in int type. (faster in GPU)
         //private GPU myGPU;
@@ -44,7 +44,8 @@ namespace TestModuleNamespace
 
             // Test simple case for GPU
             /* #################### */
-            FeatureExtractionTest.TestReduceDepthViaGPU();
+            //
+            //FeatureExtractionTest.TestReduceDepthViaGPU();
 
             /* ###################### */          
 
@@ -54,6 +55,10 @@ namespace TestModuleNamespace
             // ############################
             Console.ReadKey();
 
+        }
+
+        public TestModule() { 
+            //myGPU = new GPUCompute();
         }
 
         private void TraverseTree(double[] tree, int index, int off, int [] treeInt) {
@@ -125,7 +130,6 @@ namespace TestModuleNamespace
             }
 
             myGPU.LoadTrees(treesInt);
-
             Console.WriteLine("Successfuly load the tree to GPU");
             // tree format
             /*
@@ -238,7 +242,8 @@ namespace TestModuleNamespace
         public void SetupFeatureExtraction() {
             //Default direcotry: "..\\..\\..\\Data";
             // To setup the mode, see README in the library
-            FeatureExtraction.ModeFormat MyMode = FeatureExtraction.ModeFormat.BlueDefault;
+            //FeatureExtraction.ModeFormat MyMode = FeatureExtraction.ModeFormat.BlueDefault;
+            FeatureExtraction.ModeFormat MyMode = FeatureExtraction.ModeFormat.Blue;
             //Feature = new FeatureExtraction(MyMode, "D:\\gr\\training\\blue\\");
             Feature = new FeatureExtraction(MyMode);
         }

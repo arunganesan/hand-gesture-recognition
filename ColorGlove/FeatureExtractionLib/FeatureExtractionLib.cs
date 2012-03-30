@@ -33,25 +33,36 @@ namespace FeatureExtractionLib
             Abstraction, // Operate in default Kinect mode, use a large box and a large number of offset
             BlueDefault
         };
+        public enum CPUorGPUFormat
+        {
+            CPU=1,
+            GPU=2,
+        };
+        private enum KinectModeFormat
+        {
+            Default = 0,
+            Near = 1,
+        };
+        private enum RandomGenerationModeFormat
+        {
+            Default, // which is a box
+            Circular, // uniform in a polar system (radius is uniform and angle is uniform)
+        };
 
         public int num_classes_;
         private ModeFormat Mode;
         private short[] depth; // one dimensional depth image
         private byte[] label; // one dimensional label image        
         double[] RFfeatureVector; // for random forest 
+        short[] RFfeatureVectorShort; // feature vector for GPU
         private const string defaultDirectory = "..\\..\\..\\Data";
         public string directory;
         private const int width = 640, height = 480; 
         private string RFModelFilePath;
-        private dforest.decisionforest decisionForest;
-        private int uMin, uMax;
-        // can try to generate circularly uniform offset pair
-        private enum RandomGenerationModeFormat { 
-            Default, // which is a box
-            Circular, // uniform in a polar system (radius is uniform and angle is uniform)
-        };
+        private dforest.decisionforest decisionForest;  // random forst
+        private GPUCompute myGPU; // GPU
+        private int uMin, uMax;        
         private RandomGenerationModeFormat RandomGenerationMode;
-
         private int numOfOffsetPairs;
         private Random _r;        
         private int sampledNumberPerClass; // used when generating the feature vectors from the image. It sample pixels that are the same class uniformly in an image.
@@ -59,25 +70,14 @@ namespace FeatureExtractionLib
         private string traningFilename;
         private StreamWriter outputFilestream;
         private List<int> featureVector = new List<int>();
-
         List<int> listOfTargetPosition, listOfBackgroundPosition;
+        List<int[]> listOfOffsetPairs; // Is this an efficient enough data structure? Or is two-dimensional array more efficient. Leave it on future work        
+        private KinectModeFormat KinectMode;                
 
-        List<int[]> listOfOffsetPairs; // Is this an efficient enough data structure? Or is two-dimensional array more efficient. Leave it on future work
-
-        private enum KinectModeFormat
-        {
-            Default = 0,
-            Near = 1,
-        };
-        private KinectModeFormat KinectMode;
-        
-        //private HandGestureFormat HandGestureValue;
-
-        public FeatureExtraction(ModeFormat setMode= ModeFormat.Maize, string varDirectory = defaultDirectory)
+        public FeatureExtraction(ModeFormat setMode= ModeFormat.Maize, string varDirectory = defaultDirectory, CPUorGPUFormat xPUMode=CPUorGPUFormat.GPU)
         // Construct fiunction
         {
             depth = new short[width * height];
-
             label = new byte[width * height];
             listOfTargetPosition = new List<int>();
             listOfBackgroundPosition = new List<int>();
@@ -87,6 +87,10 @@ namespace FeatureExtractionLib
             SetMode(setMode);
             LoadRFModel();
             RFfeatureVector = new double[numOfOffsetPairs];
+            RFfeatureVectorShort = new short[numOfOffsetPairs];
+            if (xPUMode == CPUorGPUFormat.GPU) {
+                InitGPU();
+            }
         }
 
         private void SetMode(ModeFormat setMode) {
@@ -153,7 +157,20 @@ namespace FeatureExtractionLib
             }
             traningFilename = "FeatureVector" + traningFilename + ".txt";
         }
-        
+
+        private void InitGPU()
+        {
+            Console.WriteLine("Start calling GPU");
+            myGPU = new GPUCompute(GPUCompute.ComputeModeFormat.PredictWithFeatures ); // initialize the GPU compute, including compiling.
+            // turn the tree from double type to int type to make it more efficient
+            int [] treesInt = new int [decisionForest.trees.Length];
+            for (int i = 0; i < decisionForest.trees.Length; i++)                 
+                treesInt[i] = (int) Math.Ceiling(decisionForest.trees[i]);
+            myGPU.LoadTrees(treesInt, (short)decisionForest.nclasses, (short)decisionForest.ntrees, decisionForest.nvars);
+            Console.WriteLine("Successfuly load the trained random forest into GPU");
+
+        }
+
         private void SetDirectory(string dir)
         // set working directory
         {     
@@ -185,6 +202,12 @@ namespace FeatureExtractionLib
             dforest.dfunserialize(Serializer, decisionForest);
             Serializer.stop();
             Console.WriteLine("Finish loading the RF model");
+            Console.WriteLine("Total tree size: {0}", decisionForest.trees.Length);
+            int treeSize = (int)(decisionForest.trees.Length / 3);
+            Console.WriteLine("single tree size:{0}", treeSize);
+            Console.WriteLine("Number of variable: {0}", decisionForest.nvars);
+            Console.WriteLine("ntress: {0}", decisionForest.ntrees);
+            Console.WriteLine("nclasses: {0}", decisionForest.nclasses);
         }
 
         #region FileOperations
@@ -325,12 +348,13 @@ namespace FeatureExtractionLib
                 return UpperBound;
         }
 
-        public void PredictOnePixel(int oneDimensionIndex, short[] depthArray, ref double[] predictOutput)
+        private void GetFeatureVectorsFromOneDepthPoint(int oneDimensionIndex, short[] depthArray)
+        /* 
+         * Output: RFfeaturevector (global double)
+         */
         {
             List<int[]> aListOfOffsetPosition = new List<int[]>();
-
-            depth = depthArray;
-            GetAllTransformedPairs(oneDimensionIndex, depth[oneDimensionIndex], aListOfOffsetPosition);
+            GetAllTransformedPairs(oneDimensionIndex, depthArray[oneDimensionIndex], aListOfOffsetPosition);
             //Console.WriteLine("Feature vector: {0}", label[oneDimensionIndex]);          
             //Console.WriteLine("aListOfOffsetPosition.Count:{0}", aListOfOffsetPosition.Count);            
             for (int i = 0; i < aListOfOffsetPosition.Count; i++)
@@ -338,13 +362,30 @@ namespace FeatureExtractionLib
                 //int uX = aListOfOffsetPosition[i][0], uY = aListOfOffsetPosition[i][1];
                 int uDepth = GetDepthByPoint(aListOfOffsetPosition[i][0], aListOfOffsetPosition[i][1]);
                 int vDepth = GetDepthByPoint(aListOfOffsetPosition[i][2], aListOfOffsetPosition[i][3]);
-                RFfeatureVector[i] = (uDepth - vDepth);                
+                RFfeatureVector[i] = (uDepth - vDepth);
             }            
+        }
+
+        public void PredictOnePixelCPU(int oneDimensionIndex, short[] depthArray, ref double[] predictOutput)
+        {
+            GetFeatureVectorsFromOneDepthPoint(oneDimensionIndex, depthArray);
             dforest.dfprocess(decisionForest, RFfeatureVector, ref predictOutput);
             //Console.WriteLine("y[0]:{0}, y[1]:{1},y[2]:{2}", predictOutput[0], predictOutput[1], predictOutput[2]);
         }
 
-        private void ExtractFeatureFromOneDepthPoint(int oneDimensionIndex)
+        public void PredictOnePixelGPUWithCPUFeatureExtraction(int oneDimensionIndex, short[] depthArray, ref double[] predictOutput)
+        /* Use the CPU for feature extraction
+         * GPU for prediction
+         * Test purpose
+         */
+        {
+            GetFeatureVectorsFromOneDepthPoint(oneDimensionIndex, depthArray);
+            for (int i = 0; i < RFfeatureVector.Length; i++)
+                RFfeatureVectorShort[i] = (short) (RFfeatureVector[i]);
+
+        }
+
+        private void ExtractFeatureFromOneDepthPointAndWriteToFile(int oneDimensionIndex)
             /*
              * Extract feature vectors and write it a file
              */
@@ -471,10 +512,10 @@ namespace FeatureExtractionLib
             Shuffle(listOfBackgroundPosition);
 
             for (int i = 0; i < Math.Min(numerPerClass, listOfBackgroundPosition.Count); i++)
-                ExtractFeatureFromOneDepthPoint(listOfBackgroundPosition[i]);
+                ExtractFeatureFromOneDepthPointAndWriteToFile(listOfBackgroundPosition[i]);
 
             for (int i = 0; i < Math.Min(numerPerClass, listOfTargetPosition.Count); i++)
-                ExtractFeatureFromOneDepthPoint(listOfTargetPosition[i]);
+                ExtractFeatureFromOneDepthPointAndWriteToFile(listOfTargetPosition[i]);
         }
  
 
