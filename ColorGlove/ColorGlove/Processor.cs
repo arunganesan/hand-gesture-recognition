@@ -146,7 +146,13 @@ namespace ColorGlove
             image.Height = height;
             mapped = new ColorImagePoint[width * height];
             depthLabel = new byte[width * height];
-            cropValues = new System.Drawing.Rectangle(220, 170, 150, 200);
+
+            cropValues = new System.Drawing.Rectangle(
+                Properties.Settings.Default.CropOffset.X,
+                Properties.Settings.Default.CropOffset.Y,
+                Properties.Settings.Default.CropSize.Width,
+                Properties.Settings.Default.CropSize.Height);
+
             crop = new System.Drawing.Rectangle(0, 0, width - 1, height - 1);
             overlayStart = false;
             kEmptyOverlay = new int[width * height * 4];
@@ -293,7 +299,7 @@ namespace ColorGlove
                 kMeans_clusters[i, 1] = rand.Next(0, 255);
                 kMeans_clusters[i, 2] = rand.Next(0, 255);
             }
-            
+
             //int width = x_1 - x_0;
             //int height = y_1 - y_0;
 
@@ -722,6 +728,13 @@ namespace ColorGlove
             Pause((PauseDelegate)HideOverlayDelegate);
         }
 
+        public void UpdateCropSettings()
+        {
+            Properties.Settings.Default.CropOffset = cropValues.Location;
+            Properties.Settings.Default.CropSize = cropValues.Size;
+            Properties.Settings.Default.Save();
+        }
+
         private void GetAllFeatures() {
             // timer start
             DateTime ExecutionStartTime; //Var will hold Execution Starting Time
@@ -794,6 +807,8 @@ namespace ColorGlove
             cropValues.Y = Math.Min(startDrag.Y, endDrag.Y);
             cropValues.Width = Math.Abs(startDrag.X - endDrag.X);
             cropValues.Height = Math.Abs(startDrag.Y - endDrag.Y);
+            UpdateCropSettings();
+            //Console.WriteLine("New crop values are {0}", cropValues);
         }
 
         public void ProcessAndSave()
