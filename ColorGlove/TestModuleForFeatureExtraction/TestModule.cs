@@ -8,7 +8,7 @@ namespace TestModuleNamespace
 {
     class TestModule
     {
-        private FeatureExtraction Feature;        
+        private FeatureExtraction feature_lib_obj_;        
         dforest.decisionforest decisionForest = new dforest.decisionforest();
         private int[] treesInt; // random forest in int type. (faster in GPU)
         private GPUCompute myGPU;
@@ -25,11 +25,8 @@ namespace TestModuleNamespace
 
         static void Main(string[] args)
         {
-            Console.WriteLine(
-                "Hello World");
-
+            Console.WriteLine("Hello World");
             TestModule FeatureExtractionTest = new TestModule();
-
             FeatureExtractionTest.SetupFeatureExtraction();
             // Test Random Forest
             // ##################
@@ -47,7 +44,7 @@ namespace TestModuleNamespace
             // Test simple case for GPU
             /* #################### */
             //
-            FeatureExtractionTest.TestAddVectorViaGPU();
+            //FeatureExtractionTest.TestAddVectorViaGPU();
 
             /* ###################### */          
 
@@ -55,12 +52,20 @@ namespace TestModuleNamespace
             // ############################
             //FeatureExtractionTest.LoadTrainedRFModelToGPU();
             // ############################
-            Console.ReadKey();
 
+            // Test extract one feature using GPU
+            // ########################
+            // ########################
+            Console.ReadKey();
         }
 
         public TestModule() { 
             //myGPU = new GPUCompute();
+        }
+
+        public void TestExtractOneFeatureViaGPU()
+        {
+            feature_lib_obj_.ReadOffsetPairsFromStorage();
         }
 
         private void TraverseTree(double[] tree, int index, int off, int [] treeInt) {
@@ -182,9 +187,9 @@ namespace TestModuleNamespace
                 for (int i = 0; i < count; i++)
                     input_array[i] = (short)((i + tmp) % 256);
                 //myGPU.AddVectorTest(input_array, output_array);
-                Feature.AddVectorViaGPUTest(input_array, output_array);
+                feature_lib_obj_.AddVectorViaGPUTest(input_array, output_array);
                 //Console.WriteLine("Before[0]: {0}, Before[{1}]: {2}; After[0]: {3}, After[{1}]: {4}", BeforeDepth[0], count, BeforeDepth[count-1], AfterDepth[0], AfterDepth[count-1]);
-                if (Feature.IsVectorAddingWrong(input_array, output_array))
+                if (feature_lib_obj_.IsVectorAddingWrong(input_array, output_array))
                 {                                        
                     testSuccess = false;
                 }
@@ -200,7 +205,7 @@ namespace TestModuleNamespace
         }
 
         private void LoadRFModel() {
-            string modelFilePath = Feature.directory + "\\FeatureVectureBlue149.rf.model";
+            string modelFilePath = feature_lib_obj_.directory + "\\FeatureVectureBlue149.rf.model";
             Console.WriteLine("Model file path {0}", modelFilePath);
             string modelFile = System.IO.File.ReadAllText(modelFilePath);            
             alglib.serializer Serializer = new alglib.serializer();
@@ -230,7 +235,7 @@ namespace TestModuleNamespace
                 short[] X_short = new short[X.Length];
                 for (int i = 0; i < X.Length; i++)
                     X_short[i] = (short)X[i];
-                Feature.ConviencePredictFeatureVectorGPU(X_short, ref predict_output);
+                feature_lib_obj_.ConviencePredictFeatureVectorGPU(X_short, ref predict_output);
                 Console.WriteLine("Use GPU background: {0}, open hand: {1}, close hand: {2}", predict_output[0], predict_output[1], predict_output[2]);
             }
         }
@@ -241,22 +246,22 @@ namespace TestModuleNamespace
             //FeatureExtraction.ModeFormat MyMode = FeatureExtraction.ModeFormat.BlueDefault;
             FeatureExtraction.ModeFormat MyMode = FeatureExtraction.ModeFormat.Blue;
             //Feature = new FeatureExtraction(MyMode, "D:\\gr\\training\\blue\\");
-            Feature = new FeatureExtraction(MyMode);
+            feature_lib_obj_ = new FeatureExtraction(MyMode);
         }
 
         private void TestGenerateFeatures()
         {
-            Feature.ReadOffsetPairsFromStorage();
-            Feature.GenerateFeatureVectorViaImageFiles();
+            feature_lib_obj_.ReadOffsetPairsFromStorage();
+            feature_lib_obj_.GenerateFeatureVectorViaImageFiles();
         }
 
         private void TestDisplay(){
-            Feature.ReadOffsetPairsFromStorage();
+            feature_lib_obj_.ReadOffsetPairsFromStorage();
             // Dispaly offset            
             List<int[]> listOfOffsetPosition = new List<int[]>();
 
             int curPosition = 300000;
-            Feature.GetAllTransformedPairs(curPosition, 500, listOfOffsetPosition);
+            feature_lib_obj_.GetAllTransformedPairs(curPosition, 500, listOfOffsetPosition);
             int CurX = curPosition % 640, CurY = curPosition / 640;
             Console.WriteLine("Cur({0},{1})", CurX, CurY);
             for (int i = 0; i < listOfOffsetPosition.Count; i++)
@@ -267,8 +272,8 @@ namespace TestModuleNamespace
 
         private void TestGenerateOffset()
         {            
-            Feature.GenerateOffsetPairs(); 
-            Feature.WriteOffsetPairsToStorage();                    
+            feature_lib_obj_.GenerateOffsetPairs(); 
+            feature_lib_obj_.WriteOffsetPairsToStorage();                    
         }
     }
 }
