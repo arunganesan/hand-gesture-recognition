@@ -55,6 +55,7 @@ namespace TestModuleNamespace
 
             // Test extract one feature using GPU
             // ########################
+            FeatureExtractionTest.TestExtractOneFeatureViaGPU();
             // ########################
             Console.ReadKey();
         }
@@ -66,6 +67,15 @@ namespace TestModuleNamespace
         public void TestExtractOneFeatureViaGPU()
         {
             feature_lib_obj_.ReadOffsetPairsFromStorage();
+            int count= 640*480;
+            short [] depth = new short[count];
+            Random _r = new Random();
+            for (int i = 0; i < depth.Length; i++)
+                depth[i] = (short) (_r.Next(10000)  + 1);
+            float[] y = new float[count * 3];
+            feature_lib_obj_.PredictGPU(depth, ref y);
+            Console.WriteLine(" Done in feature extraction test");
+
         }
 
         private void TraverseTree(double[] tree, int index, int off, int [] treeInt) {

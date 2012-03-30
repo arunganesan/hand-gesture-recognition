@@ -15,7 +15,7 @@ int GetNewDepthIndex(int cur_index, int dx, int dy)
     int cx = (cur_index % 640) + dx;
     int cy = (cur_index / 640) + dy;
     if (cx>=0 && cx< 640 && cy>=0 && cy< 480)
-        return cx*640 + cy;
+        return cy*640 + cx;
     else 
         return -1;
 } 
@@ -26,14 +26,16 @@ kernel void Predict(
     global write_only float* y,    
     global read_only short* depth)
 {
+/*
     int one_dim_index= get_global_id(0);    
     int feature_index = 0;
     int offset_list_index = feature_index*4;
-    int u_depth_index = GetNewDepthIndex(one_dim_index, offset_list[offset_list_index], offset_list[offset_list_index+1]) ;
-    int v_depth_index = GetNewDepthIndex(one_dim_index, offset_list[offset_list_index+2], offset_list[offset_list_index+3]);
-    short u_depth = (u_depth_index == -1)? 10000 : depth[u_depth_index];
-    short v_depth = (v_depth_index == -1)? 10000 : depth[v_depth_index];
-    y[one_dim_index] = (float) (u_depth - v_depth);
+    //int u_depth_index = GetNewDepthIndex(one_dim_index, offset_list[offset_list_index], offset_list[offset_list_index+1]) ;
+    //int v_depth_index = GetNewDepthIndex(one_dim_index, offset_list[offset_list_index+2], offset_list[offset_list_index+3]);
+    short u_depth = 0; //(u_depth_index == -1)? 10000 : depth[u_depth_index];
+    short v_depth = 0; //(v_depth_index == -1)? 10000 : depth[v_depth_index];
+    //y[one_dim_index] = (float) (u_depth - v_depth);
+*/
 }
 ";
         private string clProgramSource_dfprocess_ = @"
@@ -197,6 +199,7 @@ kernel void AddVectorWithTrees(
             {
                 offset_list_ = new ComputeBuffer<int>(context_, ComputeMemoryFlags.ReadOnly | ComputeMemoryFlags.CopyHostPointer, to_load_offset_list);
                 kernel_.SetMemoryArgument(2, offset_list_);
+                Console.WriteLine("Successfully load offset pair into GPU memory");                
             }
         }
 
@@ -214,8 +217,10 @@ kernel void AddVectorWithTrees(
         public void Predict(short[] depth, ref float[] predict_ouput)
         {
             commands_.WriteToBuffer(depth, depth_, true, null);
+            Console.WriteLine("Successfuly write depth to GPU memory");
             commands_.Execute(kernel_, null, new long[] { count_ }, null, null); // set the work-item size to be 640*480.
             commands_.Finish();
+            Console.WriteLine("Successfuly execute the kernel");
             commands_.ReadFromBuffer(y_, ref predict_ouput, true, null);
         }
 
