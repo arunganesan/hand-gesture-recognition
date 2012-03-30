@@ -25,6 +25,9 @@ namespace ColorGlove
     public class Processor
     {
 
+        private Object bitmap_lock_ = new Object();
+        private static Object depth_lock_ = new Object();
+
         //private Dictionary<Tuple<byte, byte, byte>, byte[]> nearest_cache = new Dictionary<Tuple<byte, byte, byte>, byte[]>();
         private enum RangeModeFormat
         {
@@ -54,7 +57,6 @@ namespace ColorGlove
         private ShowExtractedFeatureFormat ShowExtractedFeatureMode = ShowExtractedFeatureFormat.None;
         static private Dictionary<Tuple<byte, byte, byte>, byte> nearest_cache = new Dictionary<Tuple<byte, byte, byte>, byte>(); // It seems not necessary to save the mapped result as byte[], byte should be enough.
         private WriteableBitmap bitmap;
-        private Object bitmap_lock_ = new Object();
         private byte[] bitmapBits;
         private byte[] tmpBuffer;
         private int[] overlayBitmapBits;
@@ -558,8 +560,8 @@ namespace ColorGlove
 
                         int bitmapIndex = depthIndex * 4;
                         Feature.PredictOnePixel(depthIndex, depth, ref predictOutput);
-                        int predictLabel = 0;
                         
+                        int predictLabel = 0;
                         for (int i = 1; i < Feature.num_classes_; i++)
                             if (predictOutput[i] > predictOutput[predictLabel])
                                 predictLabel = i;
@@ -570,7 +572,7 @@ namespace ColorGlove
                     }
                 }
 
-                //System.Threading.Thread.Sleep(1000);                
+                //System.Threading.Thread.Sleep(1000);
                 ExecutionStopTime = DateTime.Now;
                 ExecutionTime = ExecutionStopTime - ExecutionStartTime;
                 Console.WriteLine("Use {0} ms for getting prediction", ExecutionTime.TotalMilliseconds.ToString());
@@ -661,10 +663,13 @@ namespace ColorGlove
 
         public void Pool()
         {
-            if (paused) UnPause();
+            //if (paused) UnPause();
 
             int expected_hands = 1;
             
+            for (int i = 0; i < depth.Length; i++)
+                depth[i] = (short)(depth[i] >> DepthImageFrame.PlayerIndexBitmaskWidth); // remember this
+
             DateTime ExecutionStartTime; //Var will hold Execution Starting Time
             DateTime ExecutionStopTime;//Var will hold Execution Stopped Time
             TimeSpan ExecutionTime;//Var will count Total Execution Time-Our Main Hero                

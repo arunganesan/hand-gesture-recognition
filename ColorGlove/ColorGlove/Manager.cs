@@ -119,12 +119,12 @@ namespace ColorGlove
             }
             #endregion
 
-            poller = new Thread(new ThreadStart(this.poll));
+            //poller = new Thread(new ThreadStart(this.poll));
         }
 
         public void start()
         {
-            poller.Start();
+            //poller.Start();
         }
 
         public void toggleProcessors()
@@ -178,6 +178,11 @@ namespace ColorGlove
             }
         }
 
+        public void PollOnPress()
+        {
+            data = datafeed.PullData();
+            foreach (Processor p in processors) p.update(data);
+        }
 
         public void kMeans() { processors[0].kMeans(); }
         public void Pool() { processors[1].Pool(); }
