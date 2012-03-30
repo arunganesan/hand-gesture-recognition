@@ -9,7 +9,8 @@ namespace FeatureExtractionLib
     public class GPUCompute
     {
         private ComputeProgram program;
-        private string clProgramSource = @"
+
+        private string clProgramSource_dfprocess = @"
 kernel void dfprocess(
         global read_only short* meta_tree, 
         global read_only int* trees, 
@@ -44,13 +45,18 @@ kernel void dfprocess(
 }  
 ";
         private string clProgramSourceRD = @"
+short AddVector(short a, short b)
+{
+    return a + b;
+}
 kernel void ReduceDepth(
     global  read_only short* a, 
     global  read_only int* trees,     
     global  write_only short* c)
 {
     int index = get_global_id(0);    
-    c[index] = a[index] + (short) (trees[index]);
+//    c[index] = a[index] + (short) (trees[index]);
+    c[index] =AddVector(a[index], (short)(trees[index]));
 }
 ";
         private ComputeKernel kernel;
@@ -61,18 +67,24 @@ kernel void ReduceDepth(
         private ComputeBuffer<short> c;
         private ComputeBuffer<int> trees;
         private ComputeBuffer<short> meta_tree;
-        private ComputeBuffer<short> x; // feature vector
-        private ComputeBuffer<float> y; // predict output
-
+        // feature vector
+        private ComputeBuffer<short> x;
+        // predict output
+        private ComputeBuffer<float> y; 
         private int count;
-
-        public enum ComputeModeFormat { 
-            ReduceDepth = 1,
-            PredictWithFeatures = 2,
-        };
         private ComputeModeFormat ComputeMode;
-        public GPUCompute(ComputeModeFormat SetComputeMode = ComputeModeFormat.PredictWithFeatures) 
+
+        // enum
+        public enum ComputeModeFormat { 
+            kAddVectorTest = 1,
+            kPredictWithFeaturesTest = 2,
+            kRelease = 4,
+        };
+        
+
         // Constructor function
+        public GPUCompute(ComputeModeFormat SetComputeMode = ComputeModeFormat.kRelease) 
+        
         {
             ComputePlatform platform = ComputePlatform.Platforms[0];
             ComputeContextPropertyList properties = new ComputeContextPropertyList(platform);
@@ -82,15 +94,15 @@ kernel void ReduceDepth(
             context = new ComputeContext(devices, properties, null, IntPtr.Zero);
             ComputeMode = SetComputeMode;
             Console.WriteLine("Compute Mode: {0}", ComputeMode);            
-            if (ComputeMode == ComputeModeFormat.ReduceDepth)
+            if (ComputeMode == ComputeModeFormat.kAddVectorTest)
                 program = new ComputeProgram(context, clProgramSourceRD);
-            else if (ComputeMode == ComputeModeFormat.PredictWithFeatures)
-                program = new ComputeProgram(context, clProgramSource);            
+            else if (ComputeMode == ComputeModeFormat.kPredictWithFeaturesTest)
+                program = new ComputeProgram(context, clProgramSource_dfprocess);            
             program.Build(null, null, null, IntPtr.Zero); 
             // built the GPU program            
             Console.WriteLine("Build success");            
             count = 640 * 480;            
-            if (ComputeMode == ComputeModeFormat.ReduceDepth)
+            if (ComputeMode == ComputeModeFormat.kAddVectorTest)
             {
                 kernel = program.CreateKernel("ReduceDepth");                
                 commands = new ComputeCommandQueue(context, context.Devices[0], ComputeCommandQueueFlags.None);                
@@ -99,7 +111,7 @@ kernel void ReduceDepth(
                 kernel.SetMemoryArgument(0, a);
                 kernel.SetMemoryArgument(2, c);
             }
-            else if (ComputeMode == ComputeModeFormat.PredictWithFeatures) {
+            else if (ComputeMode == ComputeModeFormat.kPredictWithFeaturesTest) {
                 kernel = program.CreateKernel("dfprocess");
                 Console.WriteLine("Sucessfully create kernel");
                 commands = new ComputeCommandQueue(context, context.Devices[0], ComputeCommandQueueFlags.None);
@@ -116,7 +128,7 @@ kernel void ReduceDepth(
             trees = new ComputeBuffer<int>(context, ComputeMemoryFlags.ReadOnly| ComputeMemoryFlags.CopyHostPointer, toLoadTrees);            
             kernel.SetMemoryArgument(1, trees);
             //commands.WriteToBuffer(toLoadTrees, trees, true, null);           
-            if (ComputeMode == ComputeModeFormat.PredictWithFeatures)
+            if (ComputeMode == ComputeModeFormat.kPredictWithFeaturesTest)
             {
                 short[] host_meta_tree = new short[2];
                 host_meta_tree[0] = nclasses;
@@ -141,12 +153,13 @@ kernel void ReduceDepth(
             //Console.WriteLine("internal GPU output: y[0]: {0}, y[1]: {1}, y[2]:{2}", predict_output[0], predict_output[1], predict_output[2]);
         }
 
-        public void AddDepthPerPixel( short [] BeforeDepth, short [] AfterDepth)
+        // test function for GPU, when using it also needs to load the tree array (just for test, can have errors)
+        public void AddVectorTest( short [] input_array, short [] output_array)
         {
-            commands.WriteToBuffer(BeforeDepth, a, true, null);            
-            commands.Execute(kernel, null, new long[] { BeforeDepth.Length }, null, null); // set the work-item size here.
+            commands.WriteToBuffer(input_array, a, true, null);            
+            commands.Execute(kernel, null, new long[] { input_array.Length }, null, null); // set the work-item size here.
             commands.Finish();
-            commands.ReadFromBuffer(c, ref AfterDepth, true, null);
+            commands.ReadFromBuffer(c, ref output_array, true, null);
             
         }
     }

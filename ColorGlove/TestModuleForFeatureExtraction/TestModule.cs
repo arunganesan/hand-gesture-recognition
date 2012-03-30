@@ -33,7 +33,7 @@ namespace TestModuleNamespace
             FeatureExtractionTest.SetupFeatureExtraction();
             // Test Random Forest
             // ##################
-            FeatureExtractionTest.testDecisionForest();
+            //FeatureExtractionTest.testDecisionForest();
 
             // ################
             // Generate feature vector file             
@@ -47,7 +47,7 @@ namespace TestModuleNamespace
             // Test simple case for GPU
             /* #################### */
             //
-            //FeatureExtractionTest.TestReduceDepthViaGPU();
+            FeatureExtractionTest.TestAddVectorViaGPU();
 
             /* ###################### */          
 
@@ -123,7 +123,7 @@ namespace TestModuleNamespace
             // the above isn't necessary. One can just scan the tree array...
 
             // test if tressInt and decisionForest.trees are the same
-            Random _r= new Random();
+            //Random _r= new Random();
             for (int i = 0; i < decisionForest.trees.Length; i++) { 
                 //int index= _r.Next(decisionForest.trees.Length);
                 if ( Math.Ceiling(decisionForest.trees[i]) != treesInt[i]  )
@@ -157,13 +157,13 @@ namespace TestModuleNamespace
             
         }
 
-        public void TestReduceDepthViaGPU()
+        public void TestAddVectorViaGPU()
         {
             int count = 640 * 480;
-            short[] BeforeDepth = new short[count];
-            short[] AfterDepth = new short[count];
+            short[] input_array = new short[count];
+            short[] output_array = new short[count];
             
-            LoadTrainedRFModelToGPU();            
+            //LoadTrainedRFModelToGPU();            
             const int maxTmp = 1000;
             DateTime ExecutionStartTime; //Var will hold Execution Starting Time
             DateTime ExecutionStopTime;//Var will hold Execution Stopped Time
@@ -180,14 +180,12 @@ namespace TestModuleNamespace
             for (int tmp = 0; tmp < maxTmp; tmp++)
             {
                 for (int i = 0; i < count; i++)
-                    BeforeDepth[i] = (short)((i + tmp) % 256);
-                myGPU.AddDepthPerPixel(BeforeDepth, AfterDepth);
+                    input_array[i] = (short)((i + tmp) % 256);
+                //myGPU.AddVectorTest(input_array, output_array);
+                Feature.AddVectorViaGPUTest(input_array, output_array);
                 //Console.WriteLine("Before[0]: {0}, Before[{1}]: {2}; After[0]: {3}, After[{1}]: {4}", BeforeDepth[0], count, BeforeDepth[count-1], AfterDepth[0], AfterDepth[count-1]);
-                if (BeforeDepth[0] != AfterDepth[0]-(short) (treesInt[0]) || BeforeDepth[count - 1] != AfterDepth[count - 1] - (short) (treesInt[count-1]))
-                {
-                    //Console.WriteLine("Something went wrong. Before[0]: {0}, Before[{1}]: {2}; After[0]: {3}, After[{1}]: {4}", BeforeDepth[0], count, BeforeDepth[count - 1], AfterDepth[0], AfterDepth[count - 1]);
-                    Console.WriteLine("Somethign wrong. treesInt[0]:{0} Before[0]: {1}, After[0]: {2};", (short) (treesInt[0]), BeforeDepth[0], AfterDepth[0]);
-                    Console.WriteLine("Somethign wrong. treesInt[{0}]:{1} Before[{0}]: {2}, After[{0}]: {3};", count-1, (short) (treesInt[count-1]), BeforeDepth[count-1], AfterDepth[count-1]);
+                if (Feature.IsVectorAddingWrong(input_array, output_array))
+                {                                        
                     testSuccess = false;
                 }
             }

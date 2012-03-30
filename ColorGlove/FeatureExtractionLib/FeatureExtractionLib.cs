@@ -51,38 +51,48 @@ namespace FeatureExtractionLib
 
         public int num_classes_;
         private ModeFormat Mode;
-        private short[] depth; // one dimensional depth image
-        private byte[] label; // one dimensional label image        
-        double[] RFfeatureVector; // for random forest 
-        short[] RFfeatureVectorShort; // feature vector for GPU
+        // one dimensional depth image
+        private short[] depth;
+        // one dimensional label image        
+        private byte[] label;
+        // for random forest 
+        double[] RFfeatureVector;
+        // feature vector for GPU
+        short[] RFfeatureVectorShort; 
         private const string defaultDirectory = "..\\..\\..\\Data";
         public string directory;
         private const int width = 640, height = 480; 
         private string RFModelFilePath;
-        private dforest.decisionforest decisionForest;  // random forst
+        // random forest object from Alglib
+        private dforest.decisionforest decisionForest;
+        // trees in int type
+        private int[] treesInt;
         private GPUCompute myGPU; // GPU
         private int uMin, uMax;        
         private RandomGenerationModeFormat RandomGenerationMode;
         private int numOfOffsetPairs;
-        private Random _r;        
-        private int sampledNumberPerClass; // used when generating the feature vectors from the image. It sample pixels that are the same class uniformly in an image.
-        private int UpperBound; // used when calculating the feature value. UpperBound is given when the depth is <0 or the pixel is out-of-bound.
+        private Random _r;
+        // used when generating the feature vectors from the image. It sample pixels that are the same class uniformly in an image.
+        private int sampledNumberPerClass;
+        // used when calculating the feature value. UpperBound is given when the depth is <0 or the pixel is out-of-bound.
+        private int UpperBound; 
         private string traningFilename;
         private StreamWriter outputFilestream;
         private List<int> featureVector = new List<int>();
-        List<int> listOfTargetPosition, listOfBackgroundPosition;
-        List<int[]> listOfOffsetPairs; // Is this an efficient enough data structure? Or is two-dimensional array more efficient. Leave it on future work        
-        private KinectModeFormat KinectMode;                
+        List<int> listOfTargetPosition, listOfBackgroundPosition;        
+        List<int[]> listOfOffsetPairs; 
+        private KinectModeFormat KinectMode;
 
-        public FeatureExtraction(ModeFormat setMode= ModeFormat.Maize, string varDirectory = defaultDirectory, CPUorGPUFormat xPUMode=CPUorGPUFormat.GPU)
         // Construct fiunction
+        public FeatureExtraction(ModeFormat setMode= ModeFormat.Maize, string varDirectory = defaultDirectory, CPUorGPUFormat xPUMode=CPUorGPUFormat.GPU)        
         {
             depth = new short[width * height];
             label = new byte[width * height];
             listOfTargetPosition = new List<int>();
             listOfBackgroundPosition = new List<int>();
-            listOfOffsetPairs = new List<int[]>();            
-            _r= new Random(); // used for random number generator                        
+            listOfOffsetPairs = new List<int[]>();
+            // used for random number generator                        
+            _r= new Random(); 
             SetDirectory(varDirectory);
             SetMode(setMode);
             LoadRFModel();
@@ -161,9 +171,10 @@ namespace FeatureExtractionLib
         private void InitGPU()
         {
             Console.WriteLine("Start calling GPU");
-            myGPU = new GPUCompute(GPUCompute.ComputeModeFormat.PredictWithFeatures ); // initialize the GPU compute, including compiling.
+            // initialize the GPU compute, including compiling.
+            myGPU = new GPUCompute(GPUCompute.ComputeModeFormat.kAddVectorTest ); 
             // turn the tree from double type to int type to make it more efficient
-            int [] treesInt = new int [decisionForest.trees.Length];
+            treesInt = new int [decisionForest.trees.Length];
             for (int i = 0; i < decisionForest.trees.Length; i++)                 
                 treesInt[i] = (int) Math.Ceiling(decisionForest.trees[i]);
             myGPU.LoadTrees(treesInt, (short)decisionForest.nclasses, (short)decisionForest.ntrees, decisionForest.nvars);
@@ -212,6 +223,8 @@ namespace FeatureExtractionLib
 
         #region FileOperations
         public void ReadOffsetPairsFromStorage()
+        // listOfOffsetPairs format:
+        // Pair1UX Pair1UY Pair1VX Pair1VY Pair2UX Pair2UY Pair2VX Pair2VY ...
         {
             string filename = GetOffsetPairsFilename();
             //Console.WriteLine("Filename: {0}", filename);
@@ -280,8 +293,8 @@ namespace FeatureExtractionLib
             }
         }
 
-        public void GenerateOffsetPairs()
         // Generate offset pairs and write them into memory: listoOfOffsetPairs. Not write them into file yet.
+        public void GenerateOffsetPairs()        
         {
             // Ask permission
             /*
@@ -389,6 +402,25 @@ namespace FeatureExtractionLib
                  RFfeatureVectorShort[i] = (short) (RFfeatureVector[i]);
             myGPU.PredictFeatureVector(RFfeatureVectorShort, ref predictOutput);    
         }
+
+        #region TestRegion
+        public void AddVectorViaGPUTest(short[] input_array, short[] output_array)
+        {
+            myGPU.AddVectorTest(input_array, output_array);
+        }
+
+        public bool IsVectorAddingWrong(short[] input_array, short[] output_array)
+        { 
+            int count= input_array.Length;
+            // true: if something wrong.
+            if (input_array[0] != output_array[0] - (short)(treesInt[0]) || input_array[count - 1] != output_array[count - 1] - (short)(treesInt[count - 1])) {
+                Console.WriteLine("Somethign wrong. treesInt[0]:{0} Before[0]: {1}, After[0]: {2};", (short)(treesInt[0]), input_array[0], output_array[0]);
+                Console.WriteLine("Somethign wrong. treesInt[{0}]:{1} Before[{0}]: {2}, After[{0}]: {3};", count - 1, (short)(treesInt[count - 1]), input_array[count - 1], output_array[count - 1]);
+                return true;
+            }
+            return false;
+        }
+        #endregion
 
         private void ExtractFeatureFromOneDepthPointAndWriteToFile(int oneDimensionIndex)
             /*
