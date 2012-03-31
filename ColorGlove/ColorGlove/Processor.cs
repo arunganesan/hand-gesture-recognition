@@ -840,6 +840,8 @@ namespace ColorGlove
         {
             if (predict_on_press_ == false) return;
 
+            ResetOverlay();
+
             for (int i = 0; i < depth.Length; i++)
                 depth[i] = (short)(depth[i] >> DepthImageFrame.PlayerIndexBitmaskWidth);
 
@@ -878,9 +880,11 @@ namespace ColorGlove
                         label_depths[predict_label] += depth[depth_index];
                     }
 
-                    overlayBitmapBits[bitmapIndex + 2] = label_colors[predict_label].Item1;
-                    overlayBitmapBits[bitmapIndex + 1] = label_colors[predict_label].Item2;
-                    overlayBitmapBits[bitmapIndex + 0] = label_colors[predict_label].Item3;
+                    if (predict_label != (int)Util.HandGestureFormat.Background) {
+                        overlayBitmapBits[bitmapIndex + 2] = label_colors[predict_label].Item1;
+                        overlayBitmapBits[bitmapIndex + 1] = label_colors[predict_label].Item2;
+                        overlayBitmapBits[bitmapIndex + 0] = label_colors[predict_label].Item3;
+                    }
                 }
             }
 
