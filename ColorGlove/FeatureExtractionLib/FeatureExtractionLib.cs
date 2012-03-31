@@ -174,7 +174,7 @@ namespace FeatureExtractionLib
         {
             Console.WriteLine("Start calling GPU");
             // initialize the GPU compute, including compiling. You can set which source to use in the construct function. See the default setting. 
-            myGPU_ = new GPUCompute(GPUCompute.ComputeModeFormat.kRelease); 
+            myGPU_ = new GPUCompute(); 
             // turn the tree from double type to int type to make it more efficient
             treesInt = new int [decisionForest.trees.Length];
             for (int i = 0; i < decisionForest.trees.Length; i++)                 

@@ -30,7 +30,7 @@ namespace TestModuleNamespace
             FeatureExtractionTest.SetupFeatureExtraction();
             // Test Random Forest
             // ##################
-            //FeatureExtractionTest.testDecisionForest();
+            FeatureExtractionTest.testDecisionForest();
 
             // ################
             // Generate feature vector file             
@@ -55,7 +55,7 @@ namespace TestModuleNamespace
 
             // General test on GPU
             // ########################
-            FeatureExtractionTest.GneralTestGPU();
+            //FeatureExtractionTest.GeneralTestGPU();
             // ########################
             Console.ReadKey();
         }
@@ -64,7 +64,7 @@ namespace TestModuleNamespace
             //myGPU = new GPUCompute();
         }
 
-        public void GneralTestGPU()
+        public void GeneralTestGPU()
         {
             feature_lib_obj_.ReadOffsetPairsFromStorage();
             int count= 640*480;
@@ -74,7 +74,7 @@ namespace TestModuleNamespace
                 depth[i] = (short) (_r.Next(10000)  + 1);
             float[] y = new float[count * 3];
 
-            const int maxTmp = 100;
+            const int maxTmp = 1;
             DateTime ExecutionStartTime; //Var will hold Execution Starting Time
             DateTime ExecutionStopTime;//Var will hold Execution Stopped Time
             TimeSpan ExecutionTime;//Var will count Total Execution Time-Our Main Hero
@@ -91,6 +91,7 @@ namespace TestModuleNamespace
 
         }
 
+        // Traverse the tree. 
         private void TraverseTree(double[] tree, int index, int off, int [] treeInt) {
             if ((double)(tree[index]) != (double)(-1))
             {
@@ -244,20 +245,28 @@ namespace TestModuleNamespace
             LoadRFModel();            
             double[] y=new double[3];
 
-            for (int tmp = 0; tmp < 2; tmp++)
+            for (int tmp = 0; tmp < 3; tmp++)
             {
                 if (tmp == 1)
                 {
                     for (int j = 0; j < X.Length-1; j++)
                         X[j] = X[j + 1];
                 }
-                dforest.dfprocess(decisionForest, X, ref y);
+                else if (tmp == 2)
+                {
+                    Array.Clear(X, 0, X.Length); // All zero array
+                }
+
+                //dforest.dfprocess(decisionForest, X, ref y);
+                // change to test dfprocess, which shows the visited tree depth in total
+                dforest.dfprocess_test(decisionForest, X, ref y);
                 Console.WriteLine("Use CPU background: {0}, open hand: {1}, close hand: {2}", y[0], y[1], y[2]);
                 // Then use GPU
                 float[] predict_output = new float[3];
                 short[] X_short = new short[X.Length];
                 for (int i = 0; i < X.Length; i++)
                     X_short[i] = (short)X[i];
+                feature_lib_obj_.ReadOffsetPairsFromStorage();
                 feature_lib_obj_.ConviencePredictFeatureVectorGPU(X_short, ref predict_output);
                 Console.WriteLine("Use GPU background: {0}, open hand: {1}, close hand: {2}", predict_output[0], predict_output[1], predict_output[2]);
             }
