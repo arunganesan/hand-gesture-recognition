@@ -48,7 +48,7 @@ namespace FeatureExtractionLib
             colors.Add(new Tuple<byte, byte, byte>(0, 0, 255));
             colors.Add(new Tuple<byte, byte, byte>(255, 0, 255));
             return colors;
-
+            
             /* A failed attempt at generating N evenly spaced out colors.
             int full_rgb = 256 * 256 * 256;
 

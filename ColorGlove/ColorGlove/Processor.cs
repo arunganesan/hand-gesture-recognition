@@ -86,6 +86,8 @@ namespace ColorGlove
 
         // *OnPress counters
         bool predict_on_press_ = false;
+        
+
 
         //private FeatureExtractionLib.Util.HandGestureFormat HandGestureValue;
         private FeatureExtractionLib.Util.HandGestureFormat HandGestureValue;
@@ -841,37 +843,44 @@ namespace ColorGlove
             for (int i = 0; i < depth.Length; i++)
                 depth[i] = (short)(depth[i] >> DepthImageFrame.PlayerIndexBitmaskWidth);
 
-            DateTime ExecutionStartTime;
-            DateTime ExecutionStopTime;
-            TimeSpan ExecutionTime;               
-            ExecutionStartTime = DateTime.Now;
-            
-            int depthIndex;
+            int depth_index;
             double[] predictOutput = new double[0];
             List<Tuple<byte, byte, byte>> label_colors = Util.GiveMeNColors(Feature.num_classes_);
 
             int[] label_counts = new int[Feature.num_classes_];
             Array.Clear(label_counts, 0, label_counts.Length);
+            System.Drawing.Point[] label_centers = new System.Drawing.Point[Feature.num_classes_];
+            int[] label_depths = new int[Feature.num_classes_];
+
+            Array.Clear(label_depths, 0, label_depths.Length);
+            for (int i = 1; i < Feature.num_classes_; i++)
+                label_centers[i] = new System.Drawing.Point(0, 0);
 
             for (int y = crop.Y; y <= crop.Y + crop.Height; y++)
             {
                 for (int x = crop.X; x <= crop.X + crop.Width; x++)
                 {
                     if (x == crop.X) Console.WriteLine("Processing {0}% ({1}/{2})", (float)(y - crop.Y) / crop.Height * 100, (y - crop.Y), crop.Height);
-                    depthIndex = Util.toID(x, y, width, height, depthStride);
+                    depth_index = Util.toID(x, y, width, height, depthStride);
 
-                    int bitmapIndex = depthIndex * 4;
-                    Feature.PredictOnePixelCPU(depthIndex, depth, ref predictOutput);
-                    int predictLabel = 0;
+                    int bitmapIndex = depth_index * 4;
+                    Feature.PredictOnePixel(depth_index, depth, ref predictOutput);
+                    int predict_label = 0;
 
                     for (int i = 1; i < Feature.num_classes_; i++)
-                        if (predictOutput[i] > predictOutput[predictLabel])
-                            predictLabel = i;
+                        if (predictOutput[i] > predictOutput[predict_label])
+                            predict_label = i;
 
-                    label_counts[predictLabel]++;
-                    overlayBitmapBits[bitmapIndex + 2] = label_colors[predictLabel].Item1;
-                    overlayBitmapBits[bitmapIndex + 1] = label_colors[predictLabel].Item2;
-                    overlayBitmapBits[bitmapIndex + 0] = label_colors[predictLabel].Item3;
+                    label_counts[predict_label]++;
+                    if (predict_label != (int)Util.HandGestureFormat.Background) {
+                        label_centers[predict_label].X += x;
+                        label_centers[predict_label].Y += y;
+                        label_depths[predict_label] += depth[depth_index];
+                    }
+
+                    overlayBitmapBits[bitmapIndex + 2] = label_colors[predict_label].Item1;
+                    overlayBitmapBits[bitmapIndex + 1] = label_colors[predict_label].Item2;
+                    overlayBitmapBits[bitmapIndex + 0] = label_colors[predict_label].Item3;
                 }
             }
 
@@ -879,7 +888,6 @@ namespace ColorGlove
             int max_index = -1;
             int index = 0;
             double max_value = 0;
-
             int urgh = label_counts.Select(value =>
             {
                 if ((max_index == -1 || value > max_value) && index != 0)
@@ -891,18 +899,20 @@ namespace ColorGlove
                 return max_index;
             }).Last();
 
+            int total_non_background = label_counts.Sum() - label_counts[0];
+
             Console.WriteLine("Most common gesture is {0} (appears {1}/{2} times).",
                 ((Util.HandGestureFormat)max_index).ToString(),
-                max_value, crop.Width * crop.Height);
+                max_value, total_non_background);
 
-            //System.Threading.Thread.Sleep(1000);                
-            ExecutionStopTime = DateTime.Now;
-            ExecutionTime = ExecutionStopTime - ExecutionStartTime;
-            Console.WriteLine("Use {0} ms for getting prediction", ExecutionTime.TotalMilliseconds.ToString());
-            //updateHelper(); // update the current bitmap
+            System.Drawing.Point center = new System.Drawing.Point();
+            center.X = (int)(label_centers[max_index].X / max_value);
+            center.Y = (int)(label_centers[max_index].Y / max_value);
+            int center_depth = (int)(label_depths[max_index] / max_value);
+
+            Console.WriteLine("Center: ({0}px, {1}px, {2}cm)", center.X, center.Y, center_depth);
+
             overlayStart = true;
-            //update(data);
-            //Pause((PauseDelegate)HideOverlayDelegate);
             predict_on_press_ = false;
         }
 
