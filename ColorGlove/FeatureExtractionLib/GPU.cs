@@ -29,8 +29,7 @@ kernel void Predict(
     int index= get_global_id(0);    
     int u_depth_index, v_depth_index, offs = 0, k, idx, offset_list_index;    
     short u_depth, v_depth, i;    
-    float v;
-    
+    float v;    
     v = (float)1 / (float)meta_tree[1];
     for (i=0; i< meta_tree[0]; i++)
         y[i] = 0;
@@ -243,10 +242,10 @@ kernel void AddVectorWithTrees(
         {
             //Console.WriteLine("array depth dimension: {0}, count: {1}", depth.Length, count_);
             commands_.WriteToBuffer(depth, depth_, true, null);
-            Console.WriteLine("Successfuly write depth to GPU memory");
+            //Console.WriteLine("Successfuly write depth to GPU memory");
             commands_.Execute(kernel_, null, new long[] {count_}, null, null); // set the work-item size to be 640*480.
             commands_.Finish();
-            Console.WriteLine("Successfuly execute the kernel");
+            //Console.WriteLine("Successfuly execute the kernel");
             commands_.ReadFromBuffer(y_, ref predict_ouput, true, null);
         }
 
@@ -258,5 +257,7 @@ kernel void AddVectorWithTrees(
             commands_.Finish();
             commands_.ReadFromBuffer(c_, ref output_array, true, null);            
         }
+
+
     }
 }

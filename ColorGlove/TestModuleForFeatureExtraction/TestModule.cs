@@ -73,7 +73,20 @@ namespace TestModuleNamespace
             for (int i = 0; i < depth.Length; i++)
                 depth[i] = (short) (_r.Next(10000)  + 1);
             float[] y = new float[count * 3];
+
+            const int maxTmp = 100;
+            DateTime ExecutionStartTime; //Var will hold Execution Starting Time
+            DateTime ExecutionStopTime;//Var will hold Execution Stopped Time
+            TimeSpan ExecutionTime;//Var will count Total Execution Time-Our Main Hero
+            ExecutionStartTime = DateTime.Now; //Gets the system Current date time expressed as local time
+            
+            for (int i=0; i<maxTmp; i++)
             feature_lib_obj_.PredictGPU(depth, ref y);
+
+            ExecutionStopTime = DateTime.Now;
+            ExecutionTime = ExecutionStopTime - ExecutionStartTime;
+            double perTaskTime = ExecutionTime.TotalMilliseconds / maxTmp;
+            Console.WriteLine("Use {0} ms using GPU", perTaskTime);
             Console.WriteLine(" Done in feature extraction test");
 
         }
