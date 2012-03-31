@@ -836,6 +836,9 @@ namespace ColorGlove
 
         #region Filter functions
 
+        // Runs the prediction algorithm for each pixel and pools the results. 
+        // The classes are drawn onto the overlay layer, and overlay is turned 
+        // on. 
         private void PredictOnPress()
         {
             if (predict_on_press_ == false) return;
@@ -915,11 +918,18 @@ namespace ColorGlove
             int center_depth = (int)(label_depths[max_index] / max_value);
 
             Console.WriteLine("Center: ({0}px, {1}px, {2}cm)", center.X, center.Y, center_depth);
+            DrawAt(center, center_depth);
 
             overlayStart = true;
             predict_on_press_ = false;
         }
 
+        // A general function for drawing a shape onto the overlay starting 
+        // at the xy point, and scaled in size to imitiate depth.
+        private void DrawAt(System.Drawing.Point xy, int depth)
+        {
+        }
+        
         private void Denoise()
         {
             int x, y;
