@@ -174,7 +174,7 @@ namespace FeatureExtractionLib
         {
             Console.WriteLine("Start calling GPU");
             // initialize the GPU compute, including compiling. You can set which source to use in the construct function. See the default setting. 
-            myGPU_ = new GPUCompute(); 
+            myGPU_ = new GPUCompute(GPUCompute.ComputeModeFormat.kRelease); 
             // turn the tree from double type to int type to make it more efficient
             treesInt = new int [decisionForest.trees.Length];
             for (int i = 0; i < decisionForest.trees.Length; i++)                 
@@ -424,9 +424,9 @@ namespace FeatureExtractionLib
         }
 
         #region TestRegion
-        public void AddVectorViaGPUTest(short[] input_array, short[] output_array)
+        public void AddVectorViaGPUTest(short[] input_array, ref short[] output_array)
         {
-            myGPU_.AddVectorTest(input_array, output_array);
+            myGPU_.AddVectorTest(input_array, ref output_array);
         }
 
         public bool IsVectorAddingWrong(short[] input_array, short[] output_array)

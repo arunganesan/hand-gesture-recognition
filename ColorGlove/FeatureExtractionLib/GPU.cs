@@ -15,7 +15,7 @@ int GetNewDepthIndex(int cur_index, int dx, int dy)
     int cx = (cur_index % 640) + dx;
     int cy = (cur_index / 640) + dy;
     if (cx>=0 && cx< 640 && cy>=0 && cy< 480)
-        return cy*640 + cx;
+        return (cy*640 + cx);
     else 
         return -1;
 } 
@@ -26,16 +26,38 @@ kernel void Predict(
     global write_only float* y,    
     global read_only short* depth)
 {
-/*
-    int one_dim_index= get_global_id(0);    
-    int feature_index = 0;
-    int offset_list_index = feature_index*4;
-    //int u_depth_index = GetNewDepthIndex(one_dim_index, offset_list[offset_list_index], offset_list[offset_list_index+1]) ;
-    //int v_depth_index = GetNewDepthIndex(one_dim_index, offset_list[offset_list_index+2], offset_list[offset_list_index+3]);
-    short u_depth = 0; //(u_depth_index == -1)? 10000 : depth[u_depth_index];
-    short v_depth = 0; //(v_depth_index == -1)? 10000 : depth[v_depth_index];
-    //y[one_dim_index] = (float) (u_depth - v_depth);
-*/
+    int index= get_global_id(0);    
+    int u_depth_index, v_depth_index, offs = 0, k, idx, offset_list_index;    
+    short u_depth, v_depth, i;    
+    float v;
+    
+    v = (float)1 / (float)meta_tree[1];
+    for (i=0; i< meta_tree[0]; i++)
+        y[i] = 0;
+    for (i=0; i< meta_tree[1]; i++){
+        k = offs +1;
+        while (1){
+            if (trees[k] == -1)
+            {
+                idx = trees[k+1];
+                y[idx]++;
+                break;
+            }
+            // get the feature value
+            offset_list_index = trees[k]*4;
+            u_depth_index = GetNewDepthIndex(index, offset_list[offset_list_index], offset_list[offset_list_index+1]) ;
+            v_depth_index = GetNewDepthIndex(index, offset_list[offset_list_index+2], offset_list[offset_list_index+3]);
+            u_depth = (u_depth_index == -1)? 10000 : depth[u_depth_index];
+            v_depth = (v_depth_index == -1)? 10000 : depth[v_depth_index];
+            if (u_depth - v_depth < trees[k+1] )
+                k+=3;
+            else
+                k = offs + trees[k+2];
+        }
+        offs = offs + trees[offs];
+    }
+    for (i=0; i< meta_tree[0]; i++)
+        y[i] = v* y[i];
 }
 ";
         private string clProgramSource_dfprocess_ = @"
@@ -114,8 +136,7 @@ kernel void AddVectorWithTrees(
         };
         
         // Constructor function
-        public GPUCompute(ComputeModeFormat SetComputeMode = ComputeModeFormat.kRelease) 
-        
+        public GPUCompute(ComputeModeFormat SetComputeMode = ComputeModeFormat.kRelease)         
         {
             ComputePlatform platform = ComputePlatform.Platforms[0];
             ComputeContextPropertyList properties = new ComputeContextPropertyList(platform);
@@ -159,9 +180,10 @@ kernel void AddVectorWithTrees(
 
         // load the random forest (a bunch of trees) from host memory to GPU memory, including some meta information
         public void LoadTrees(int[] toLoadTrees, short nclasses=0, short ntrees=0, int nfeatures=0) {            
-            trees_ = new ComputeBuffer<int>(context_, ComputeMemoryFlags.ReadOnly| ComputeMemoryFlags.CopyHostPointer, toLoadTrees);            
+            trees_ = new ComputeBuffer<int>(context_, ComputeMemoryFlags.ReadOnly | ComputeMemoryFlags.CopyHostPointer, toLoadTrees);
+            //commands_.WriteToBuffer(toLoadTrees, trees_, true, null);           
             kernel_.SetMemoryArgument(1, trees_);
-            //commands.WriteToBuffer(toLoadTrees, trees, true, null);           
+            
             if (compute_mode_ == ComputeModeFormat.kPredictWithFeaturesTest || compute_mode_ == ComputeModeFormat.kRelease)
             {
                 short[] host_meta_tree = new short[2];
@@ -179,13 +201,14 @@ kernel void AddVectorWithTrees(
                 }
                 if (compute_mode_ == ComputeModeFormat.kPredictWithFeaturesTest)
                 {
-                    y_ = new ComputeBuffer<float>(context_, ComputeMemoryFlags.WriteOnly, nclasses);
-                    kernel_.SetMemoryArgument(3, y_);
+                    y_ = new ComputeBuffer<float>(context_, ComputeMemoryFlags.WriteOnly, nclasses);                    
                 }
                 else if (compute_mode_ == ComputeModeFormat.kRelease)
                 {
-                    y_ = new ComputeBuffer<float>(context_, ComputeMemoryFlags.WriteOnly, count_ * nclasses);
+                    y_ = new ComputeBuffer<float>(context_, ComputeMemoryFlags.WriteOnly, count_ * nclasses);                    
                 }
+                // the following bug takes me a day to find out
+                kernel_.SetMemoryArgument(3, y_); 
                 if (compute_mode_ == ComputeModeFormat.kRelease) {
                     depth_ = new ComputeBuffer<short>(context_, ComputeMemoryFlags.ReadOnly, count_);
                     kernel_.SetMemoryArgument(4, depth_);
@@ -196,9 +219,11 @@ kernel void AddVectorWithTrees(
         public void LoadOffsets(int[] to_load_offset_list)
         {
             if (compute_mode_ == ComputeModeFormat.kRelease)
-            {
+            {                
                 offset_list_ = new ComputeBuffer<int>(context_, ComputeMemoryFlags.ReadOnly | ComputeMemoryFlags.CopyHostPointer, to_load_offset_list);
+                //commands_.WriteToBuffer(to_load_offset_list, offset_list_, true, null);
                 kernel_.SetMemoryArgument(2, offset_list_);
+                 
                 Console.WriteLine("Successfully load offset pair into GPU memory");                
             }
         }
@@ -216,19 +241,20 @@ kernel void AddVectorWithTrees(
 
         public void Predict(short[] depth, ref float[] predict_ouput)
         {
+            //Console.WriteLine("array depth dimension: {0}, count: {1}", depth.Length, count_);
             commands_.WriteToBuffer(depth, depth_, true, null);
             Console.WriteLine("Successfuly write depth to GPU memory");
-            commands_.Execute(kernel_, null, new long[] { count_ }, null, null); // set the work-item size to be 640*480.
+            commands_.Execute(kernel_, null, new long[] {count_}, null, null); // set the work-item size to be 640*480.
             commands_.Finish();
             Console.WriteLine("Successfuly execute the kernel");
             commands_.ReadFromBuffer(y_, ref predict_ouput, true, null);
         }
 
         // test function for GPU, when using it also needs to load the tree array (just for test, can have errors)
-        public void AddVectorTest( short [] input_array, short [] output_array)
+        public void AddVectorTest( short [] input_array, ref short [] output_array)
         {
             commands_.WriteToBuffer(input_array, a_, true, null);            
-            commands_.Execute(kernel_, null, new long[] { input_array.Length }, null, null); // set the work-item size here.
+            commands_.Execute(kernel_, null, new long[] {count_ }, null, null); // set the work-item size here.
             commands_.Finish();
             commands_.ReadFromBuffer(c_, ref output_array, true, null);            
         }

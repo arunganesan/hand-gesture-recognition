@@ -197,7 +197,7 @@ namespace TestModuleNamespace
                 for (int i = 0; i < count; i++)
                     input_array[i] = (short)((i + tmp) % 256);
                 //myGPU.AddVectorTest(input_array, output_array);
-                feature_lib_obj_.AddVectorViaGPUTest(input_array, output_array);
+                feature_lib_obj_.AddVectorViaGPUTest(input_array, ref output_array);
                 //Console.WriteLine("Before[0]: {0}, Before[{1}]: {2}; After[0]: {3}, After[{1}]: {4}", BeforeDepth[0], count, BeforeDepth[count-1], AfterDepth[0], AfterDepth[count-1]);
                 if (feature_lib_obj_.IsVectorAddingWrong(input_array, output_array))
                 {                                        
