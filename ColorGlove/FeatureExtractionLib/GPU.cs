@@ -10,14 +10,19 @@ namespace FeatureExtractionLib
     {
         private ComputeProgram program_;
         private string clProgramSource_predict_ = @"
-int GetNewDepthIndex(int cur_index, int dx, int dy)
-{
-    int cx = (cur_index % 640) + dx;
-    int cy = (cur_index / 640) + dy;
+short GetNewDepthIndex(int cur_index, int dx, int dy, global read_only short* depth)
+{    
+    int cx = (int) ( (cur_index % 640) +  (float)dx / (float)depth[cur_index] );
+    int cy = (int) ( (cur_index / 640) + (float)dy / (float)depth[cur_index] );
     if (cx>=0 && cx< 640 && cy>=0 && cy< 480)
-        return (cy*640 + cx);
+    {
+        if (depth[cy*640 + cx] <0)
+            return 10000;
+        else
+            return depth[cy*640 + cx];
+    }
     else 
-        return -1;
+        return 10000;  
 } 
 kernel void Predict(
     global read_only short* meta_tree,     
@@ -26,28 +31,33 @@ kernel void Predict(
     global write_only float* y,    
     global read_only short* depth)
 {
-    int index= get_global_id(0);    
-    int u_depth_index, v_depth_index, offs = 0, k, idx, offset_list_index;    
+    int index= get_global_id(0), y_index =index* meta_tree[0];    
+    int offs = 0, k, idx, offset_list_index;    
     short u_depth, v_depth, i;    
     float v;    
+    if (depth[index] == -1)
+    {
+        y[y_index] = 1;
+        for (i=1; i< meta_tree[0]; i++)
+            y[y_index + i] = 0;
+        return;
+    }
     v = (float)1 / (float)meta_tree[1];
     for (i=0; i< meta_tree[0]; i++)
-        y[i] = 0;
+        y[y_index + i] = 0;
     for (i=0; i< meta_tree[1]; i++){
         k = offs +1;
         while (1){
             if (trees[k] == -1)
             {
                 idx = trees[k+1];
-                y[idx]++;
+                y[y_index + idx]++;
                 break;
             }
             // get the feature value
-            offset_list_index = trees[k]*4;
-            u_depth_index = GetNewDepthIndex(index, offset_list[offset_list_index], offset_list[offset_list_index+1]) ;
-            v_depth_index = GetNewDepthIndex(index, offset_list[offset_list_index+2], offset_list[offset_list_index+3]);
-            u_depth = (u_depth_index == -1)? 10000 : depth[u_depth_index];
-            v_depth = (v_depth_index == -1)? 10000 : depth[v_depth_index];
+            offset_list_index = trees[k]*4;            
+            u_depth = GetNewDepthIndex(index, offset_list[offset_list_index], offset_list[offset_list_index+1], depth);
+            v_depth = GetNewDepthIndex(index, offset_list[offset_list_index + 2], offset_list[offset_list_index+3], depth);            
             if (u_depth - v_depth < trees[k+1] )
                 k+=3;
             else
@@ -56,7 +66,7 @@ kernel void Predict(
         offs = offs + trees[offs];
     }
     for (i=0; i< meta_tree[0]; i++)
-        y[i] = v* y[i];
+        y[y_index + i] = v* y[y_index + i];
 }
 ";
         private string clProgramSource_dfprocess_ = @"
@@ -94,10 +104,16 @@ kernel void DFProcess(
 }  
 ";
         private string clProgramSource_vector_add_ = @"
-short AddVector(short a, short b)
+short AddVector(short a, global read_only int* t, int index)
+{
+    return a + t[index];
+}
+/*
+short AddVector(short a, short b, global read_only int* t)
 {
     return a + b;
 }
+*/
 kernel void AddVectorWithTrees(
     global  read_only short* a, 
     global  read_only int* trees,     
@@ -105,7 +121,8 @@ kernel void AddVectorWithTrees(
 {
     int index = get_global_id(0);    
 //    c[index] = a[index] + (short) (trees[index]);
-    c[index] =AddVector(a[index], (short)(trees[index]));
+//    c[index] =AddVector(a[index], (short)(trees[index]), trees);
+    c[index] =AddVector(a[index], trees, index);
 }
 ";
         private ComputeKernel kernel_;
@@ -238,7 +255,7 @@ kernel void AddVectorWithTrees(
             //Console.WriteLine("internal GPU output: y[0]: {0}, y[1]: {1}, y[2]:{2}", predict_output[0], predict_output[1], predict_output[2]);
         }
 
-        public void Predict(short[] depth, ref float[] predict_ouput)
+        public void Predict(short[] depth, ref float[] predict_output)
         {
             //Console.WriteLine("array depth dimension: {0}, count: {1}", depth.Length, count_);
             commands_.WriteToBuffer(depth, depth_, true, null);
@@ -246,7 +263,7 @@ kernel void AddVectorWithTrees(
             commands_.Execute(kernel_, null, new long[] {count_}, null, null); // set the work-item size to be 640*480.
             commands_.Finish();
             //Console.WriteLine("Successfuly execute the kernel");
-            commands_.ReadFromBuffer(y_, ref predict_ouput, true, null);
+            commands_.ReadFromBuffer(y_, ref predict_output, true, null);
         }
 
         // test function for GPU, when using it also needs to load the tree array (just for test, can have errors)
@@ -261,3 +278,5 @@ kernel void AddVectorWithTrees(
 
     }
 }
+
+

@@ -53,9 +53,9 @@ namespace TestModuleNamespace
             //FeatureExtractionTest.LoadTrainedRFModelToGPU();
             // ############################
 
-            // Test extract one feature using GPU
+            // General test on GPU
             // ########################
-            FeatureExtractionTest.TestExtractOneFeatureViaGPU();
+            FeatureExtractionTest.GneralTestGPU();
             // ########################
             Console.ReadKey();
         }
@@ -64,7 +64,7 @@ namespace TestModuleNamespace
             //myGPU = new GPUCompute();
         }
 
-        public void TestExtractOneFeatureViaGPU()
+        public void GneralTestGPU()
         {
             feature_lib_obj_.ReadOffsetPairsFromStorage();
             int count= 640*480;

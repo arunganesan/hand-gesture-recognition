@@ -32,7 +32,7 @@ namespace ColorGlove
         }
         Thread poller;
         DataFeed datafeed;
-        ProcessorModeFormat ProcessorMode = ProcessorModeFormat.Arun; // set the mode for processor here
+        ProcessorModeFormat ProcessorMode = ProcessorModeFormat.Michael; // set the mode for processor here
 
         public Manager(MainWindow parent)  // Construct function
         {
@@ -73,7 +73,8 @@ namespace ColorGlove
 
                 //processors[0].updatePipeline(Processor.Step.ColorMatch);
                 //processors[1].SetTestModule(Processor.ShowExtractedFeatureFormat.PredictOnePixelCPU | Processor.ShowExtractedFeatureFormat.ShowTransformedForOnePixel); // 
-                processors[1].SetTestModule(Processor.ShowExtractedFeatureFormat.PredictAllPixelsCPU); // test prediction on one pixel
+                // one should call SetTestModule to active the FeatureExtractionLib
+                processors[1].SetTestModule(Processor.ShowExtractedFeatureFormat.PredictAllPixelsGPU); 
                 processors[1].updatePipeline(
                     // Show the rgb image
                     // Processor.Step.Color
