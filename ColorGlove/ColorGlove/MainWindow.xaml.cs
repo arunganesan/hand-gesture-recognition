@@ -40,7 +40,9 @@ namespace ColorGlove
 
         private void Window_KeyDown(object sender, KeyEventArgs e)
         {
-            if (e.Key == Key.S)
+            if (e.Key == Key.Space)
+                m.toggleProcessors();
+            else if (e.Key == Key.S)
                 m.saveImages();
             else if (e.Key == Key.K)
                 m.kMeans();

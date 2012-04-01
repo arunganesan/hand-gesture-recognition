@@ -631,6 +631,50 @@ namespace FeatureExtractionLib
             }
         }
 
+        // dfprocess for testing
+        public static void dfprocess_test(decisionforest df,
+            double[] x,
+            ref double[] y)
+        {
+            int offs = 0;
+            int i = 0;
+            double v = 0;
+            int i_ = 0;
+            int visit_count = 0;
+
+            //
+            // Proceed
+            //
+            //if (alglib.ap.len(y) < df.nclasses)
+            if (y.Length < df.nclasses)
+            {
+                y = new double[df.nclasses];
+            }
+            offs = 0;
+            for (i = 0; i <= df.nclasses - 1; i++)
+            {
+                y[i] = 0;
+            }
+            for (i = 0; i <= df.ntrees - 1; i++)
+            {
+
+                //
+                // Process basic tree
+                //
+                visit_count += dfprocessinternal_test(df, offs, x, ref y);
+
+                //
+                // Next tree
+                //
+                offs = offs + (int)Math.Round(df.trees[offs]);
+            }
+            v = (double)1 / (double)df.ntrees;
+            for (i_ = 0; i_ <= df.nclasses - 1; i_++)
+            {
+                y[i_] = visit_count;
+            }
+        }
+
 
         /*************************************************************************
         'interactive' variant of DFProcess for languages like Python which support
@@ -1170,6 +1214,51 @@ namespace FeatureExtractionLib
             }
         }
 
+        // for testing
+        private static int dfprocessinternal_test(decisionforest df,
+            int offs,
+            double[] x,
+            ref double[] y)
+        {
+            int k = 0;
+            int idx = 0;
+            int visit_count = 0;
+
+            //
+            // Set pointer to the root
+            //
+            k = offs + 1;
+
+            //
+            // Navigate through the tree
+            //
+            while (true)
+            {
+                visit_count++;
+                if ((double)(df.trees[k]) == (double)(-1))
+                {
+                    if (df.nclasses == 1)
+                    {
+                        y[0] = y[0] + df.trees[k + 1];
+                    }
+                    else
+                    {
+                        idx = (int)Math.Round(df.trees[k + 1]);
+                        y[idx] = y[idx] + 1;
+                    }
+                    break;
+                }
+                if ((double)(x[(int)Math.Round(df.trees[k])]) < (double)(df.trees[k + 1]))
+                {
+                    k = k + innernodewidth;
+                }
+                else
+                {
+                    k = offs + (int)Math.Round(df.trees[k + 2]);
+                }
+            }
+            return visit_count;
+        }
 
         /*************************************************************************
         Builds one decision tree. Just a wralglib.apper for the DFBuildTreeRec.

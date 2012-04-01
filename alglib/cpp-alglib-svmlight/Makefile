@@ -1,6 +1,8 @@
-readfile: dataanalysis.o
-	g++ ap.o alglibinternal.o statistics.o specialfunctions.o linalg.o alglibmisc.o solvers.o optimization.o dataanalysis.o readsvm.cpp
-	./a.exe
+readfile: dataanalysis.o readsvm.o
+	g++ ap.o alglibinternal.o statistics.o specialfunctions.o linalg.o alglibmisc.o solvers.o optimization.o dataanalysis.o readsvm.o -o readfile
+
+readsvm.o: readsvm.cpp
+	g++ -c readsvm.cpp
 
 dataanalysis.o: ap.o alglibinternal.o statistics.o specialfunctions.o linalg.o alglibmisc.o solvers.o optimization.o dataanalysis.cpp
 	g++ -c dataanalysis.cpp
@@ -33,10 +35,11 @@ clean:
 	-rm -f *.o
 
 default:
-	g++ alglibinternal.cpp alglibmisc.cpp ap.cpp dataanalysis.cpp diffequations.cpp fasttransforms.cpp integration.cpp interpolation.cpp linalg.cpp optimization.cpp solvers.cpp specialfunctions.cpp statistics.cpp readsvm.cpp -o readsvm
+#	g++ alglibinternal.cpp alglibmisc.cpp ap.cpp dataanalysis.cpp diffequations.cpp fasttransforms.cpp integration.cpp interpolation.cpp linalg.cpp optimization.cpp solvers.cpp specialfunctions.cpp statistics.cpp readsvm.cpp -o readsvm
 
 all:
-	g++ alglibinternal.cpp alglibmisc.cpp ap.cpp dataanalysis.cpp diffequations.cpp fasttransforms.cpp integration.cpp interpolation.cpp linalg.cpp optimization.cpp solvers.cpp specialfunctions.cpp statistics.cpp simpleforest.cpp -o simpleforest
+#	g++ alglibinternal.cpp alglibmisc.cpp ap.cpp dataanalysis.cpp diffequations.cpp fasttransforms.cpp integration.cpp interpolation.cpp linalg.cpp optimization.cpp solvers.cpp specialfunctions.cpp statistics.cpp simpleforest.cpp -o simpleforest
+	readfile
   
 testi:
 	g++ alglibinternal.cpp alglibmisc.cpp ap.cpp dataanalysis.cpp diffequations.cpp fasttransforms.cpp integration.cpp interpolation.cpp linalg.cpp optimization.cpp solvers.cpp specialfunctions.cpp statistics.cpp test_i.cpp -o test_i
