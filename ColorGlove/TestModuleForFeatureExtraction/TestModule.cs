@@ -30,7 +30,8 @@ namespace TestModuleNamespace
             FeatureExtractionTest.SetupFeatureExtraction();
             // Test Random Forest
             // ##################
-            FeatureExtractionTest.testDecisionForest();
+            FeatureExtractionTest.FindMaxDepth();
+            //FeatureExtractionTest.testDecisionForest();
 
             // ################
             // Generate feature vector file             
@@ -91,6 +92,16 @@ namespace TestModuleNamespace
 
         }
 
+
+        /* ###################### */
+        // Find the maximum depth of the tree
+        private int MaxDepth(double[] tree, int index, int off) {
+            if ((double)(tree[index]) == (double)(-1))
+                return 1;
+            return Math.Max(MaxDepth(tree, index + 3, off), MaxDepth(tree, off + (int)tree[index + 2], off)) + 1;
+        }
+
+        /* ############################## */
         // Traverse the tree. 
         private void TraverseTree(double[] tree, int index, int off, int [] treeInt) {
             if ((double)(tree[index]) != (double)(-1))
@@ -110,6 +121,20 @@ namespace TestModuleNamespace
                 treeInt[index + 1] = (int)tree[index + 1];
             }
 
+        }
+
+        /* ##################### */
+        // Find the maximum depth of a loaded random forest
+        public void FindMaxDepth()
+        {
+            LoadRFModel();
+            int off = 0;            
+            for (int i = 0; i < decisionForest.ntrees; i++)
+            {                
+                Console.WriteLine("Tree {0}", i + 1);
+                Console.WriteLine("max depth: {0}", MaxDepth(decisionForest.trees, off + 1, off));
+                off = off + (int)(decisionForest.trees[off]);
+            }
         }
 
         public void LoadTrainedRFModelToGPU() {
@@ -228,6 +253,8 @@ namespace TestModuleNamespace
             
         }
 
+        /* ######################### */
+        // load the random forest model from the file to the class property decisionForest
         private void LoadRFModel() {
             string modelFilePath = feature_lib_obj_.directory + "\\FeatureVectureBlue149.rf.model";
             Console.WriteLine("Model file path {0}", modelFilePath);
