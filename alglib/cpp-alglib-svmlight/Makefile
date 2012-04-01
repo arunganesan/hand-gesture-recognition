@@ -1,6 +1,5 @@
 readfile: dataanalysis.o
-	g++ ap.o alglibinternal.o statistics.o specialfunctions.o linalg.o alglibmisc.o solvers.o optimization.o dataanalysis.o readsvm.cpp
-	./a.exe
+	g++ ap.o alglibinternal.o statistics.o specialfunctions.o linalg.o alglibmisc.o solvers.o optimization.o dataanalysis.o readsvm.cpp -o readfile
 
 dataanalysis.o: ap.o alglibinternal.o statistics.o specialfunctions.o linalg.o alglibmisc.o solvers.o optimization.o dataanalysis.cpp
 	g++ -c dataanalysis.cpp
