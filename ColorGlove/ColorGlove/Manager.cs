@@ -32,7 +32,7 @@ namespace ColorGlove
         }
         Thread poller;
         DataFeed datafeed;
-        ProcessorModeFormat ProcessorMode = ProcessorModeFormat.Michael; // set the mode for processor here
+        ProcessorModeFormat ProcessorMode = ProcessorModeFormat.Arun; // set the mode for processor here
 
         public Manager(MainWindow parent)  // Construct function
         {
@@ -41,6 +41,7 @@ namespace ColorGlove
             else
                 datafeed = new DataFeed(DataFeed.DataSource.Kinect, DataFeed.RangeModeFormat.Default);
             sensor_ = datafeed.sensor();
+
             #region Create and arrange Images
             int total_processors = 2;
             processors = new Processor[total_processors];
@@ -102,11 +103,12 @@ namespace ColorGlove
                 );
 
                 
-                processors[1].SetTestModule(Processor.ShowExtractedFeatureFormat.PredictAllPixelsCPU);
+                processors[1].SetTestModule(Processor.ShowExtractedFeatureFormat.PredictAllPixelsGPU);
                 processors[1].updatePipeline(
                     Processor.Step.PaintGreen,
                     Processor.Step.Crop,
                     Processor.Step.Depth,
+                    Processor.Step.PredictOnPress,
                     Processor.Step.OverlayOffset);
                 
                  

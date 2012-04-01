@@ -56,12 +56,14 @@ namespace ColorGlove
         // It seems not necessary to save the mapped result as byte[], byte should be enough.
         static private Dictionary<Tuple<byte, byte, byte>, byte> nearest_cache = new Dictionary<Tuple<byte, byte, byte>, byte>();         
         private WriteableBitmap bitmap_;
-        private Object bitmap_lock_ = new Object();
         private byte[] bitmap_bits_;
         private byte[] tmp_buffer_;
         private int[] overlay_bitmap_bits_;
         private readonly int kNoOverlay = -1;
         private int[] kEmptyOverlay;
+
+        private Object bitmap_lock_ = new Object();
+        private static Object depth_lock_ = new Object();
 
         private bool overlayStart; 
         private System.Windows.Controls.Image image;
@@ -79,7 +81,11 @@ namespace ColorGlove
             ColorLabelingInRGB,
             OverlayOffset,
             Denoise,
+            PredictOnPress,
         };
+
+        // *OnPress counters
+        bool predict_on_press_ = false;
 
         //private FeatureExtractionLib.Util.HandGestureFormat HandGestureValue;
         private FeatureExtractionLib.Util.HandGestureFormat HandGestureValue;
@@ -110,7 +116,7 @@ namespace ColorGlove
         private static System.Drawing.Rectangle cropValues;
         private System.Drawing.Rectangle crop;
         private int width, height;
-        private int colorStride, depthStride;
+        private int kColorStride, kDepthStride;
         private System.Drawing.Point startDrag, endDrag;
         private bool dragging = false;
         
@@ -144,7 +150,7 @@ namespace ColorGlove
             this.manager = manager;
             this.sensor = sensor;
             width = 640; height = 480;
-            colorStride = 4; depthStride = 1;
+            kColorStride = 4; kDepthStride = 1;
             image = new System.Windows.Controls.Image();
             image.Width = width;
             image.Height = height;
@@ -191,10 +197,11 @@ namespace ColorGlove
             //Default direcotry: "..\\..\\..\\Data";
             // To setup the mode, see README in the library
 
-            //FeatureExtraction.ModeFormat MyMode = FeatureExtraction.ModeFormat.BlueDefault; // User dependent. Notice that this is important
-            FeatureExtraction.ModeFormat MyMode = FeatureExtraction.ModeFormat.Blue;
-            //Feature = new FeatureExtractionLib.FeatureExtraction(MyMode, "D:\\gr\\training\\blue");
-            Feature = new FeatureExtractionLib.FeatureExtraction(MyMode);
+            // User dependent. Notice that this is important
+            FeatureExtraction.ModeFormat MyMode = FeatureExtraction.ModeFormat.BlueDefault; 
+            //FeatureExtraction.ModeFormat MyMode = FeatureExtraction.ModeFormat.Blue;
+            Feature = new FeatureExtractionLib.FeatureExtraction(MyMode, "D:\\gr\\training\\blue");
+            //Feature = new FeatureExtractionLib.FeatureExtraction(MyMode);
             Feature.ReadOffsetPairsFromStorage();
             predict_output_ = new float[width * height * Feature.num_classes_];
             Console.WriteLine("Allocate memory for predict_output");
@@ -238,7 +245,6 @@ namespace ColorGlove
             
 
             // For background color 
-            
             AddCentroid(80, 80, 80, backgroundLabel);
             AddCentroid(250, 240, 240, backgroundLabel);
             AddCentroid(210, 180, 150, backgroundLabel);
@@ -273,7 +279,7 @@ namespace ColorGlove
             {
                 for (int y = crop.Y; y <= crop.Y + crop.Height; y++)
                 {
-                    idx = Util.toID(x, y, width, height, depthStride);
+                    idx = Util.toID(x, y, width, height, kDepthStride);
                     depthVal = depth_[idx] >> DepthImageFrame.PlayerIndexBitmaskWidth;
                     if (depthVal < min && depthVal > lower)
                     {
@@ -559,7 +565,7 @@ namespace ColorGlove
                     for (int x = crop.X; x <= crop.X + crop.Width; x++)
                     {
                         if (x == crop.X) Console.WriteLine("Processing {0}% ({1}/{2})", (float)(y - crop.Y) / crop.Height * 100, (y - crop.Y), crop.Height);
-                        depthIndex = Util.toID(x, y, width, height, depthStride);
+                        depthIndex = Util.toID(x, y, width, height, kDepthStride);
 
                         int bitmap_index = depthIndex * 4;
                         Feature.PredictOnePixelCPU(depthIndex, depth_, ref predictOutput);
@@ -706,73 +712,11 @@ namespace ColorGlove
             System.IO.File.WriteAllText(Feature.directory+ "\\visited_levels.txt", tmp);
         }
 
+        // Enables the prediction step in the pipeline
         public void Pool()
         {
-            if (paused) UnPause();
-
-            int expected_hands = 1;
-            
-            DateTime ExecutionStartTime; //Var will hold Execution Starting Time
-            DateTime ExecutionStopTime;//Var will hold Execution Stopped Time
-            TimeSpan ExecutionTime;//Var will count Total Execution Time-Our Main Hero                
-            ExecutionStartTime = DateTime.Now; //Gets the system Current date time expressed as local time
-            int depthIndex;
-            double[] predictOutput = new double[0];
-            List<Tuple<byte, byte, byte>> label_colors = Util.GiveMeNColors(Feature.num_classes_);
-
-            int[] label_counts = new int[Feature.num_classes_];
-            Array.Clear(label_counts, 0, label_counts.Length);
-
-            for (int y = crop.Y; y <= crop.Y + crop.Height; y++)
-            {
-                for (int x = crop.X; x <= crop.X + crop.Width; x++)
-                {
-                    if (x == crop.X) Console.WriteLine("Processing {0}% ({1}/{2})", (float)(y - crop.Y) / crop.Height * 100, (y - crop.Y), crop.Height);
-                    depthIndex = Util.toID(x, y, width, height, depthStride);
-
-                    int bitmapIndex = depthIndex * 4;
-                    Feature.PredictOnePixelCPU(depthIndex, depth_, ref predictOutput);
-                    int predictLabel = 0;
-
-                    for (int i = 1; i < Feature.num_classes_; i++)
-                        if (predictOutput[i] > predictOutput[predictLabel])
-                            predictLabel = i;
-
-                    label_counts[predictLabel]++;
-                    overlay_bitmap_bits_[bitmapIndex + 2] = label_colors[predictLabel].Item1;
-                    overlay_bitmap_bits_[bitmapIndex + 1] = label_colors[predictLabel].Item2;
-                    overlay_bitmap_bits_[bitmapIndex + 0] = label_colors[predictLabel].Item3;
-                }
-            }
-
-            /* Courtesy of http://stackoverflow.com/questions/462699/how-do-i-get-the-index-of-the-highest-value-in-an-array-using-linq */
-            int max_index = -1;
-            int index = 0;
-            double max_value = 0;
-
-            int urgh = label_counts.Select(value =>
-            {
-                if ((max_index == -1 || value > max_value) && index != 0)
-                {
-                    max_index = index;
-                    max_value = value;
-                }
-                index++;
-                return max_index;
-            }).Last();
-
-            Console.WriteLine("Most common gesture is {0} (appears {1}/{2} times).", 
-                ((Util.HandGestureFormat)max_index).ToString(),
-                max_value, crop.Width * crop.Height);
-
-            //System.Threading.Thread.Sleep(1000);                
-            ExecutionStopTime = DateTime.Now;
-            ExecutionTime = ExecutionStopTime - ExecutionStartTime;
-            Console.WriteLine("Use {0} ms for getting prediction", ExecutionTime.TotalMilliseconds.ToString());
-            //updateHelper(); // update the current bitmap
-            overlayStart = true;
-            update(data_);
-            Pause((PauseDelegate)HideOverlayDelegate);
+            predict_on_press_ = true;
+            return;
         }
 
         public void UpdateCropSettings()
@@ -932,6 +876,7 @@ namespace ColorGlove
                 case Step.ColorLabelingInRGB: ColorLabellingInRGB(); break;
                 case Step.OverlayOffset: ShowOverlay(); break;
                 case Step.Denoise: Denoise(); break;
+                case Step.PredictOnPress: PredictOnPress(); break;
             }
         }
 
@@ -942,11 +887,11 @@ namespace ColorGlove
         private void PredictOnPress()
         {
             if (predict_on_press_ == false) return;
-
+            
             ResetOverlay();
 
-            for (int i = 0; i < depth.Length; i++)
-                depth[i] = (short)(depth[i] >> DepthImageFrame.PlayerIndexBitmaskWidth);
+            for (int i = 0; i < depth_.Length; i++)
+                depth_[i] = (short)(depth_[i] >> DepthImageFrame.PlayerIndexBitmaskWidth);
 
             int depth_index;
             double[] predictOutput = new double[0];
@@ -961,36 +906,38 @@ namespace ColorGlove
             for (int i = 1; i < Feature.num_classes_; i++)
                 label_centers[i] = new System.Drawing.Point(0, 0);
 
+            
+            Feature.PredictGPU(depth_, ref predict_output_);
+            ShowAverageAndVariance(predict_output_);
+
             for (int y = crop.Y; y <= crop.Y + crop.Height; y++)
             {
                 for (int x = crop.X; x <= crop.X + crop.Width; x++)
                 {
-                    if (x == crop.X) Console.WriteLine("Processing {0}% ({1}/{2})", (float)(y - crop.Y) / crop.Height * 100, (y - crop.Y), crop.Height);
-                    depth_index = Util.toID(x, y, width, height, depthStride);
-
-                    int bitmapIndex = depth_index * 4;
-                    Feature.PredictOnePixel(depth_index, depth, ref predictOutput);
-                    int predict_label = 0;
-
+                    //if (x == crop.X) Console.WriteLine("Processing {0}% ({1}/{2})", (float)(y - crop.Y) / crop.Height * 100, (y - crop.Y), crop.Height);
+                    depth_index = Util.toID(x, y, width, height, kDepthStride);
+                    int predict_label = 0, bitmap_index = depth_index * 4, y_index = depth_index * Feature.num_classes_;
                     for (int i = 1; i < Feature.num_classes_; i++)
-                        if (predictOutput[i] > predictOutput[predict_label])
+                        if (predict_output_[y_index + i] > predict_output_[y_index + predict_label])
                             predict_label = i;
 
                     label_counts[predict_label]++;
-                    if (predict_label != (int)Util.HandGestureFormat.Background) {
+                    if (predict_label != (int)Util.HandGestureFormat.Background)
+                    {
                         label_centers[predict_label].X += x;
                         label_centers[predict_label].Y += y;
-                        label_depths[predict_label] += depth[depth_index];
+                        label_depths[predict_label] += depth_[depth_index];
                     }
 
-                    if (predict_label != (int)Util.HandGestureFormat.Background) {
-                        overlayBitmapBits[bitmapIndex + 2] = label_colors[predict_label].Item1;
-                        overlayBitmapBits[bitmapIndex + 1] = label_colors[predict_label].Item2;
-                        overlayBitmapBits[bitmapIndex + 0] = label_colors[predict_label].Item3;
+                    if (predict_label != (int)Util.HandGestureFormat.Background)
+                    {
+                        overlay_bitmap_bits_[bitmap_index + 2] = (int)label_colors[predict_label].Item1;
+                        overlay_bitmap_bits_[bitmap_index + 1] = (int)label_colors[predict_label].Item2;
+                        overlay_bitmap_bits_[bitmap_index + 0] = (int)label_colors[predict_label].Item3;
                     }
                 }
             }
-
+            
             /* Courtesy of http://stackoverflow.com/questions/462699/how-do-i-get-the-index-of-the-highest-value-in-an-array-using-linq */
             int max_index = -1;
             int index = 0;
@@ -1129,7 +1076,7 @@ namespace ColorGlove
             {
                 for (int y = crop.Y; y <= crop.Height + crop.Y; y++)
                 {
-                    int idx = Util.toID(x, y, width, height, depthStride);
+                    int idx = Util.toID(x, y, width, height, kDepthStride);
                     bitmap_bits_[4 * idx] =
                     bitmap_bits_[4 * idx + 1] =
                     bitmap_bits_[4 * idx + 2] =
@@ -1145,8 +1092,8 @@ namespace ColorGlove
             {
                 for (int y = crop.Y; y <= crop.Height + crop.Y; y++)
                 {
-                    int idx = Util.toID(x, y, width, height, colorStride);
-                    Array.Copy(rgb_, idx, bitmap_bits_, idx, colorStride);
+                    int idx = Util.toID(x, y, width, height, kColorStride);
+                    Array.Copy(rgb_, idx, bitmap_bits_, idx, kColorStride);
                 }
             }
         }
@@ -1165,7 +1112,7 @@ namespace ColorGlove
             {
                 for (int y = crop.Y; y <= crop.Height + crop.Y; y++)
                 {
-                    int idx = Util.toID(x, y, width, height, colorStride);
+                    int idx = Util.toID(x, y, width, height, kColorStride);
                     bitmap_bits_[idx] = 
                     bitmap_bits_[idx + 1] = 
                     bitmap_bits_[idx + 2] = 255;
@@ -1179,7 +1126,7 @@ namespace ColorGlove
             {
                 for (int y = crop.Y; y <= crop.Height + crop.Y; y++)
                 {
-                    int idx = Util.toID(x, y, width, height, colorStride);
+                    int idx = Util.toID(x, y, width, height, kColorStride);
                     bitmap_bits_[idx] = 153;
                     bitmap_bits_[idx + 1] = 204;
                     bitmap_bits_[idx + 2] = 153;
@@ -1268,7 +1215,7 @@ namespace ColorGlove
                 {
                     for (int y = crop.Y; y <= crop.Height + crop.Y; y++)
                     {
-                        int idx = Util.toID(x, y, width, height, colorStride);
+                        int idx = Util.toID(x, y, width, height, kColorStride);
                         if (overlay_bitmap_bits_[idx] != kNoOverlay) bitmap_bits_[idx] = (byte)overlay_bitmap_bits_[idx];
                         if (overlay_bitmap_bits_[idx + 1] != kNoOverlay) bitmap_bits_[idx + 1] = (byte)overlay_bitmap_bits_[idx + 1];
                         if (overlay_bitmap_bits_[idx + 2] != kNoOverlay) bitmap_bits_[idx + 2] = (byte)overlay_bitmap_bits_[idx + 2];
