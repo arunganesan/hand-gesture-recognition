@@ -20,6 +20,8 @@ using FeatureExtractionLib;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Threading;
 
+using Fleck;
+
 namespace ColorGlove
 {
     public class Processor
@@ -143,7 +145,6 @@ namespace ColorGlove
         private static FeatureExtractionLib.FeatureExtraction Feature = null;
         List<int[]> listOfTransformedPairPosition;
         
-
         public Processor(KinectSensor sensor, Manager manager)
         {
             Debug.WriteLine("Start processor contruction");
@@ -965,18 +966,46 @@ namespace ColorGlove
             int center_depth = (int)(label_depths[max_index] / max_value);
 
             Console.WriteLine("Center: ({0}px, {1}px, {2}cm)", center.X, center.Y, center_depth);
-            DrawAt(center, center_depth);
+            DrawCrosshairAt(center, center_depth);
 
             overlayStart = true;
             predict_on_press_ = false;
         }
 
-        // A general function for drawing a shape onto the overlay starting 
-        // at the xy point, and scaled in size to imitiate depth.
-        private void DrawAt(System.Drawing.Point xy, int depth)
+        // Draws a crosshair at the specific point in the overlay buffer
+        private void DrawCrosshairAt(System.Drawing.Point xy, int depth)
         {
+            int box_length = 20;
+            int idx, x, y;
+            System.Drawing.Color paint = System.Drawing.Color.Black;
+
+            x = xy.X - box_length / 2;
+            for (int i = 0; i < box_length; i++)
+            {
+                PaintAt(x + i, xy.Y - 1, paint);
+                PaintAt(x + i, xy.Y, paint);
+                PaintAt(x + i, xy.Y + 1, paint);
+            }
+
+            y = xy.Y - box_length / 2;
+            for (int i = 0; i < box_length; i++)
+            {
+                PaintAt(xy.X - 1, y + i, paint);
+                PaintAt(xy.X, y + i, paint);
+                PaintAt(xy.X + 1, y + i, paint);
+            }
         }
-		
+
+        // Helper function for drawing custom shapes on the overlay buffer
+        private void PaintAt(int x, int y, System.Drawing.Color paint)
+        {
+            int idx = Util.toID(x, y, width, height, kColorStride);
+
+            overlay_bitmap_bits_[idx] = paint.B;
+            overlay_bitmap_bits_[idx + 1] = paint.G;
+            overlay_bitmap_bits_[idx + 2] = paint.R;
+        }
+
         private void Denoise()
         {
             int x, y;
