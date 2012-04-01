@@ -595,6 +595,7 @@ namespace ColorGlove
                 ExecutionStartTime = DateTime.Now;  
 
                 Feature.PredictGPU(depth_, ref predict_output_);
+                ShowAverageAndVariance(predict_output_);
                 for (int depth_index = 0; depth_index < depth_.Length; depth_index++)
                 {
                     int predict_label = 0,  bitmap_index = depth_index * 4, y_index= depth_index * Feature.num_classes_;
@@ -690,6 +691,19 @@ namespace ColorGlove
             foreach (double feature in features) Console.Write(feature + " ");
             Console.WriteLine("]");
              */
+        }
+
+        private void ShowAverageAndVariance(float[] a)
+        {
+            float sum = 0;
+            for (int i = 0; i < a.Length; i++)
+                sum += a[i];
+            Console.WriteLine("Average: {0}, Max: {1}", sum / a.Length, a.Max());
+            float[] per_tree_visited_level = new float[a.Length / 3];
+            for (int i = 0; i < per_tree_visited_level.Length; i++)
+                per_tree_visited_level[i] = a[i * 3];
+            string tmp =  string.Join(" ", per_tree_visited_level.Select(x => x.ToString()).ToArray());
+            System.IO.File.WriteAllText(Feature.directory+ "\\visited_levels.txt", tmp);
         }
 
         public void Pool()

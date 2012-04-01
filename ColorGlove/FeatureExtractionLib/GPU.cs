@@ -71,7 +71,10 @@ kernel void Predict(
     
 }
 ";
-        private string clProgramSource_predict_test_speed_ = @"
+        /*
+         The following kernel make the output to be the total depths it visits.
+         */
+        private string clProgramSource_predict_test_ = @"
 short GetNewDepthIndex(int cur_index, int dx, int dy, global read_only short* depth)
 {    
     int cx = (int) ( (cur_index % 640) +  (float)dx / (float)depth[cur_index] );
@@ -120,10 +123,10 @@ kernel void Predict(
             }
             // get the feature value
             offset_list_index = trees[k]*4;            
-            u_depth = 0;
-            v_depth = 0;
-            //u_depth = GetNewDepthIndex(index, offset_list[offset_list_index], offset_list[offset_list_index+1], depth);
-            //v_depth = GetNewDepthIndex(index, offset_list[offset_list_index + 2], offset_list[offset_list_index+3], depth);            
+            //u_depth = 0;
+            //v_depth = 0;
+            u_depth = GetNewDepthIndex(index, offset_list[offset_list_index], offset_list[offset_list_index+1], depth);
+            v_depth = GetNewDepthIndex(index, offset_list[offset_list_index + 2], offset_list[offset_list_index+3], depth);            
             if (u_depth - v_depth < trees[k+1] )
                 k+=3;
             else
@@ -217,7 +220,7 @@ kernel void AddVectorWithTrees(
             kAddVectorTest = 1,
             kPredictWithFeaturesTest = 2,
             kRelease = 4,
-            kTestSpeed = 8,
+            kTest = 8,
         };
         
         // Constructor function
@@ -238,8 +241,8 @@ kernel void AddVectorWithTrees(
                 program_ = new ComputeProgram(context_, clProgramSource_dfprocess_);
             else if (compute_mode_ == ComputeModeFormat.kRelease)
                 program_ = new ComputeProgram(context_, clProgramSource_predict_);
-            else if (compute_mode_ == ComputeModeFormat.kTestSpeed)
-                program_ = new ComputeProgram(context_, clProgramSource_predict_test_speed_);                    
+            else if (compute_mode_ == ComputeModeFormat.kTest)
+                program_ = new ComputeProgram(context_, clProgramSource_predict_test_);                    
             program_.Build(null, null, null, IntPtr.Zero); 
             // end building
             Console.WriteLine("Build success");            
@@ -258,7 +261,7 @@ kernel void AddVectorWithTrees(
             else if (compute_mode_ == ComputeModeFormat.kPredictWithFeaturesTest) {
                 kernel_ = program_.CreateKernel("DFProcess");                                
             }
-            else if (compute_mode_ == ComputeModeFormat.kRelease || compute_mode_ == ComputeModeFormat.kTestSpeed) {
+            else if (compute_mode_ == ComputeModeFormat.kRelease || compute_mode_ == ComputeModeFormat.kTest) {
                 kernel_ = program_.CreateKernel("Predict");
             }
             commands_ = new ComputeCommandQueue(context_, context_.Devices[0], ComputeCommandQueueFlags.None);                
@@ -271,7 +274,7 @@ kernel void AddVectorWithTrees(
             //commands_.WriteToBuffer(toLoadTrees, trees_, true, null);           
             kernel_.SetMemoryArgument(1, trees_);
 
-            if (compute_mode_ == ComputeModeFormat.kPredictWithFeaturesTest || compute_mode_ == ComputeModeFormat.kRelease || compute_mode_ == ComputeModeFormat.kTestSpeed)
+            if (compute_mode_ == ComputeModeFormat.kPredictWithFeaturesTest || compute_mode_ == ComputeModeFormat.kRelease || compute_mode_ == ComputeModeFormat.kTest)
             {
                 short[] host_meta_tree = new short[2];
                 host_meta_tree[0] = nclasses;
@@ -283,7 +286,7 @@ kernel void AddVectorWithTrees(
                     x_ = new ComputeBuffer<short>(context_, ComputeMemoryFlags.ReadOnly, nfeatures);
                     kernel_.SetMemoryArgument(2, x_);
                 }
-                else if (compute_mode_ == ComputeModeFormat.kRelease || compute_mode_ == ComputeModeFormat.kTestSpeed)
+                else if (compute_mode_ == ComputeModeFormat.kRelease || compute_mode_ == ComputeModeFormat.kTest)
                 { 
                     // load offset. Is done in LoadOffsets()                    
                 }
@@ -291,13 +294,13 @@ kernel void AddVectorWithTrees(
                 {
                     y_ = new ComputeBuffer<float>(context_, ComputeMemoryFlags.WriteOnly, nclasses);                    
                 }
-                else if (compute_mode_ == ComputeModeFormat.kRelease || compute_mode_ == ComputeModeFormat.kTestSpeed)
+                else if (compute_mode_ == ComputeModeFormat.kRelease || compute_mode_ == ComputeModeFormat.kTest)
                 {
                     y_ = new ComputeBuffer<float>(context_, ComputeMemoryFlags.WriteOnly, count_ * nclasses);                    
                 }
                 // the following bug takes me a day to find out
                 kernel_.SetMemoryArgument(3, y_);
-                if (compute_mode_ == ComputeModeFormat.kRelease || compute_mode_ == ComputeModeFormat.kTestSpeed)
+                if (compute_mode_ == ComputeModeFormat.kRelease || compute_mode_ == ComputeModeFormat.kTest)
                 {
                     depth_ = new ComputeBuffer<short>(context_, ComputeMemoryFlags.ReadOnly, count_);
                     kernel_.SetMemoryArgument(4, depth_);
@@ -307,7 +310,7 @@ kernel void AddVectorWithTrees(
 
         public void LoadOffsets(int[] to_load_offset_list)
         {
-            if (compute_mode_ == ComputeModeFormat.kRelease || compute_mode_ == ComputeModeFormat.kTestSpeed)
+            if (compute_mode_ == ComputeModeFormat.kRelease || compute_mode_ == ComputeModeFormat.kTest)
             {                
                 offset_list_ = new ComputeBuffer<int>(context_, ComputeMemoryFlags.ReadOnly | ComputeMemoryFlags.CopyHostPointer, to_load_offset_list);
                 //commands_.WriteToBuffer(to_load_offset_list, offset_list_, true, null);
