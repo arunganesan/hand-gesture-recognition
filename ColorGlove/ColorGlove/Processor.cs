@@ -110,8 +110,7 @@ namespace ColorGlove
         private ColorImagePoint[] mapped;
         private byte[] depth_label_;
         private float MinHueTarget, MaxHueTarget, MinSatTarget, MaxSatTarget; // max/min hue value of the target color. Used for hue detection
-
-
+        
         private const float DesiredMinHue = 198f - .5f, DesiredMaxHue = 214f + .5f,
                                   DesiredMinSat = 0.174f, DesiredMaxSat = 0.397f; // Used for hue dection
 
@@ -141,6 +140,8 @@ namespace ColorGlove
 
         byte targetLabel, backgroundLabel;
 
+        private static WebSocketServer server = null;
+        private static List<IWebSocketConnection> all_sockets_ = new List<IWebSocketConnection>();
 
         private static FeatureExtractionLib.FeatureExtraction Feature = null;
         List<int[]> listOfTransformedPairPosition;
@@ -187,7 +188,33 @@ namespace ColorGlove
 
 
             SetCentroidColorAndLabel();
-            
+
+            FleckLog.Level = LogLevel.Debug;
+            if (server == null)
+            {
+                server = new WebSocketServer("ws://localhost:8181");
+                server.Start(socket =>
+                {
+                    socket.OnOpen = () =>
+                    {
+                        Console.WriteLine("Socket opened.");
+                        all_sockets_.Add(socket);
+                    };
+
+                    socket.OnClose = () =>
+                    {
+                        Console.WriteLine("Socket closed.");
+                        all_sockets_.Remove(socket);
+                    };
+
+                    socket.OnMessage = message =>
+                    {
+                        Console.WriteLine("Message received: {0}", message);
+                        socket.Send(String.Format("Message received from you: {0}", message));
+                    };
+                });
+            }
+
             listOfTransformedPairPosition = new List<int[]>(); // remember to clear.
             Debug.WriteLine("Pass processor setting");
         }
@@ -870,8 +897,8 @@ namespace ColorGlove
                 case Step.Depth: CopyDepth(); break;
                 case Step.Color: CopyColor(); break;
                 case Step.Crop: Crop(); break;
-                case Step.PaintWhite: PaintWhite(); break;
-                case Step.PaintGreen: PaintGreen(); break;
+                case Step.PaintWhite: Paint(System.Drawing.Color.White); break;
+                case Step.PaintGreen: Paint(System.Drawing.Color.PaleGreen); break;
                 case Step.MappedDepth: show_mapped_depth(); break;
                 case Step.ColorMatch: MatchColors(); break;
                 case Step.ColorLabelingInRGB: ColorLabellingInRGB(); break;
@@ -967,6 +994,7 @@ namespace ColorGlove
 
             Console.WriteLine("Center: ({0}px, {1}px, {2}cm)", center.X, center.Y, center_depth);
             DrawCrosshairAt(center, center_depth);
+            SendToSockets((Util.HandGestureFormat)max_index, center.X, center.Y, center_depth);
 
             overlayStart = true;
             predict_on_press_ = false;
@@ -976,7 +1004,7 @@ namespace ColorGlove
         private void DrawCrosshairAt(System.Drawing.Point xy, int depth)
         {
             int box_length = 20;
-            int idx, x, y;
+            int x, y;
             System.Drawing.Color paint = System.Drawing.Color.Black;
 
             x = xy.X - box_length / 2;
@@ -996,7 +1024,7 @@ namespace ColorGlove
             }
         }
 
-        // Helper function for drawing custom shapes on the overlay buffer
+        // Helper function for drawing custom    shapes on the overlay buffer
         private void PaintAt(int x, int y, System.Drawing.Color paint)
         {
             int idx = Util.toID(x, y, width, height, kColorStride);
@@ -1004,6 +1032,13 @@ namespace ColorGlove
             overlay_bitmap_bits_[idx] = paint.B;
             overlay_bitmap_bits_[idx + 1] = paint.G;
             overlay_bitmap_bits_[idx + 2] = paint.R;
+        }
+
+        private void SendToSockets(Util.HandGestureFormat gesture, int x, int y, int depth)
+        {
+            string message = String.Format("({0},{1},{2},{3})", gesture, x, y, depth);
+            Console.WriteLine("Sending: {0}", message);
+            foreach (var socket in all_sockets_.ToList()) socket.Send(message);
         }
 
         private void Denoise()
@@ -1135,30 +1170,16 @@ namespace ColorGlove
         }
 
         // Sets everything within the crop to white.
-        private void PaintWhite()
+        private void Paint(System.Drawing.Color color)
         {
             for (int x = crop.X; x <= crop.Width + crop.X; x++)
             {
                 for (int y = crop.Y; y <= crop.Height + crop.Y; y++)
                 {
                     int idx = Util.toID(x, y, width, height, kColorStride);
-                    bitmap_bits_[idx] = 
-                    bitmap_bits_[idx + 1] = 
-                    bitmap_bits_[idx + 2] = 255;
-                }
-            }
-        }
-
-        private void PaintGreen()
-        {
-            for (int x = crop.X; x <= crop.Width + crop.X; x++)
-            {
-                for (int y = crop.Y; y <= crop.Height + crop.Y; y++)
-                {
-                    int idx = Util.toID(x, y, width, height, kColorStride);
-                    bitmap_bits_[idx] = 153;
-                    bitmap_bits_[idx + 1] = 204;
-                    bitmap_bits_[idx + 2] = 153;
+                    bitmap_bits_[idx] = color.B;
+                    bitmap_bits_[idx + 1] = color.G;
+                    bitmap_bits_[idx + 2] = color.R;
                 }
             }
         }

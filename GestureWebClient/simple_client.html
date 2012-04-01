@@ -1,0 +1,48 @@
+<html>
+	<head>
+		<script src='http://code.jquery.com/jquery-1.7.1.min.js'></script>  
+		<title>Web socket client</title>
+		<script>
+			var connection = new WebSocket("ws://localhost:8181");
+			connection.onopen = function () {
+				connection.send('Ping');
+			};
+			
+			connection.onmessage = function(e) {
+				console.log('Server: ' + e.data);
+				var parts = e.data.substring(1, e.data.length - 1).split(',');
+				var image_name = parts[0] + '.jpg';
+				var x = parseInt(parts[1]);
+				var y = parseInt(parts[2]);
+				var depth = parseInt(parts[3]);
+				
+				$('#gesture').attr('src', 'images/' + image_name);
+				$('#gesture').offset({top: y, left: x});
+				// XXX: Need to scale by the depth
+			}
+		</script>
+		
+		<style>
+		#canvas {
+			position: absolute;
+			width: 600px;
+			height: 400px;
+			border: solid thin black;
+			margin: 0 auto;
+		}
+		
+		
+		#gesture {
+			width: 50px;
+			height: 50px;
+		}
+		</style>
+		
+	</head>
+	
+	<body>
+		<div id='canvas'>
+			<img id='gesture' />
+		</div>
+	</body>
+</html>
