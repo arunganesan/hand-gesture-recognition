@@ -997,7 +997,7 @@ namespace ColorGlove
             SendToSockets((Util.HandGestureFormat)max_index, center.X, center.Y, center_depth);
 
             overlayStart = true;
-            predict_on_press_ = false;
+            //predict_on_press_ = false;
         }
 
         // Draws a crosshair at the specific point in the overlay buffer

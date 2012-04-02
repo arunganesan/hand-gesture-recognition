@@ -9,6 +9,8 @@
 			};
 			
 			connection.onmessage = function(e) {
+				if (e.data.indexOf('Ping') != -1) return;
+				
 				console.log('Server: ' + e.data);
 				var parts = e.data.substring(1, e.data.length - 1).split(',');
 				var image_name = parts[0] + '.jpg';
@@ -16,33 +18,43 @@
 				var y = parseInt(parts[2]);
 				var depth = parseInt(parts[3]);
 				
-				$('#gesture').attr('src', 'images/' + image_name);
-				$('#gesture').offset({top: y, left: x});
+				var canvas = $('#canvas').get(0);
+				var ctx = canvas.getContext('2d');
+				ctx.clearRect(0, 0, canvas.width, canvas.height);
+				
+				
+				var img = new Image();
+				img.src = 'images/' + image_name;
+				img.onload = function() {
+					ctx.drawImage(img, x, y, 50, 35);
+				}
+				//$('#gesture').attr('src', 'images/' + image_name);
+				//$('#gesture').offset({top: y, left: x});
 				// XXX: Need to scale by the depth
 			}
 		</script>
 		
 		<style>
-		#canvas {
-			position: absolute;
-			width: 600px;
-			height: 400px;
+		
+		#wrapper {
 			border: solid thin black;
 			margin: 0 auto;
+			width: 600px;
+			height: 400px;
 		}
 		
-		
-		#gesture {
-			width: 50px;
-			height: 50px;
+		#canvas {
+			width: 600px;
+			height: 400px;
 		}
+		
 		</style>
 		
 	</head>
 	
 	<body>
-		<div id='canvas'>
-			<img id='gesture' />
+		<div id='wrapper'>
+		<canvas id='canvas' width=600 height=400>
 		</div>
 	</body>
 </html>
