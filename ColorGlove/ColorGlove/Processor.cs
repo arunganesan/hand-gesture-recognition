@@ -132,6 +132,13 @@ namespace ColorGlove
         // predict output for each pixel. It is used when using GPU.
         private float[] predict_output_;
         private int[] predict_labels_;
+        List<Tuple<byte, byte, byte>> label_colors;
+        private enum PoolType
+        {
+            Centroid,
+            Median,
+            ExcludeOutliers,
+        };
         
         private readonly byte[] targetColor = new byte[] { 255, 0, 0 };
         private readonly byte[] backgroundColor = new byte[] { 255, 255, 255 };
@@ -232,6 +239,7 @@ namespace ColorGlove
             FeatureExtraction.ModeFormat MyMode = FeatureExtraction.ModeFormat.BlueDefault; 
             //FeatureExtraction.ModeFormat MyMode = FeatureExtraction.ModeFormat.Blue;
             Feature = new FeatureExtractionLib.FeatureExtraction(MyMode, "D:\\gr\\training\\blue");
+            label_colors = Util.GiveMeNColors(Feature.num_classes_);
             //Feature = new FeatureExtractionLib.FeatureExtraction(MyMode);
             Feature.ReadOffsetPairsFromStorage();
             predict_output_ = new float[width * height * Feature.num_classes_];
@@ -700,35 +708,6 @@ namespace ColorGlove
 
                 overlayStart = true;
             }
-             
-                        
-            // timer off 
-             
-            // Print HSL
-            /*
-            System.Drawing.Color color = System.Drawing.Color.FromArgb(bitmapBits[baseIndex + 2], bitmapBits[baseIndex + 1], bitmapBits[baseIndex]);
-            float hue = color.GetHue();
-            float saturation = color.GetSaturation();
-            float lightness = color.GetBrightness();
-            Console.WriteLine("HSL ({0:0.000}, {1:0.000}, {2:0.000})", hue, saturation, lightness);
-            if (hue < MinHueTarget) MinHueTarget = hue;
-            if (hue > MaxHueTarget) MaxHueTarget = hue;
-            if (saturation < MinSatTarget) MinSatTarget = saturation;
-            if (saturation > MaxSatTarget) MaxSatTarget = saturation;
-
-            Console.WriteLine("Hue (Min,Max), {0:0.000}, {1:0.000}; Saturation (Min,Max), {2:0.000}, {3:0.000}", MinHueTarget, MaxHueTarget, MinSatTarget, MaxSatTarget);
-            */
-            // Print distance to a reference point
-            //    Console.WriteLine("Distance between RGB({0}, {1}, {2}) and RGB(90, 175, 221) is {3}", bitmapBits[baseIndex + 2], bitmapBits[baseIndex + 1], bitmapBits[baseIndex], ColorDistance(new byte[] { bitmapBits[baseIndex + 2], bitmapBits[baseIndex + 1], bitmapBits[baseIndex] }, new byte[] { 90, 175, 221 }));
-
-
-            // Extract feature from this point:
-            /*
-            double[] features = classifier.extract_features(depth, click_position);
-            Console.Write("Features: [ ");
-            foreach (double feature in features) Console.Write(feature + " ");
-            Console.WriteLine("]");
-             */
         }
 
         private void ShowAverageAndVariance(float[] a)
@@ -745,7 +724,7 @@ namespace ColorGlove
         }
 
         // Enables the prediction step in the pipeline
-        public void Pool()
+        public void EnablePool()
         {
             predict_on_press_ = true;
             return;
@@ -920,33 +899,35 @@ namespace ColorGlove
         private void PredictOnPress()
         {
             if (predict_on_press_ == false) return;
-            
+            AdjustDepth();
+            PredictGPU();
+            DrawPredictionOverlay();
+            Pooled gesture = Pool(PoolType.Centroid);
+            SendToSockets(gesture);
+            predict_on_press_ = false;
+        }
+
+        // Scales all values in the depth image by the bitmaskshift.
+        private void AdjustDepth()
+        {
             for (int i = 0; i < depth_.Length; i++)
                 depth_[i] = (short)(depth_[i] >> DepthImageFrame.PlayerIndexBitmaskWidth);
+        }
 
-            int depth_index, predict_label;
-            List<Tuple<byte, byte, byte>> label_colors = Util.GiveMeNColors(Feature.num_classes_);
-
-            int[] label_counts = new int[Feature.num_classes_];
-            Array.Clear(label_counts, 0, label_counts.Length);
-            System.Drawing.Point[] label_centers = new System.Drawing.Point[Feature.num_classes_];
-            int[] label_depths = new int[Feature.num_classes_];
-
-            Array.Clear(label_depths, 0, label_depths.Length);
-            for (int i = 1; i < Feature.num_classes_; i++)
-                label_centers[i] = new System.Drawing.Point(0, 0);
-
-            
+        // Uses (awesome) GPU code for prediction, and counts the majority 
+        // class for each point. Stores the probability distr in predict_output_
+        // and the majority value in predict_labels_.
+        private void PredictGPU()
+        {
             Feature.PredictGPU(depth_, ref predict_output_);
             ShowAverageAndVariance(predict_output_);
 
-            // Get predictions
             for (int y = crop.Y; y <= crop.Y + crop.Height; y++)
             {
                 for (int x = crop.X; x <= crop.X + crop.Width; x++)
                 {
-                    depth_index = Util.toID(x, y, width, height, kDepthStride);
-                    predict_label = 0;
+                    int depth_index = Util.toID(x, y, width, height, kDepthStride);
+                    int predict_label = 0;
                     int y_index = depth_index * Feature.num_classes_;
 
                     for (int i = 1; i < Feature.num_classes_; i++)
@@ -956,16 +937,20 @@ namespace ColorGlove
                     predict_labels_[depth_index] = predict_label;
                 }
             }
+        }
 
-            // Draw overlay
+        // Uses the prediction output from PredictGPU to color in the overlay.
+        // If the point belongs to the background, doesn't draw anything.
+        private void DrawPredictionOverlay()
+        {
             ResetOverlay();
 
             for (int y = crop.Y; y <= crop.Y + crop.Height; y++)
             {
                 for (int x = crop.X; x <= crop.X + crop.Width; x++)
                 {
-                    depth_index = Util.toID(x, y, width, height, kDepthStride);
-                    predict_label = predict_labels_[depth_index];
+                    int depth_index = Util.toID(x, y, width, height, kDepthStride);
+                    int predict_label = predict_labels_[depth_index];
 
                     int bitmap_index = depth_index * 4;
                     if (predict_label != (int)Util.HandGestureFormat.Background)
@@ -977,13 +962,36 @@ namespace ColorGlove
                 }
             }
 
-            // Pool
+            overlayStart = true;
+        }
+
+        // Uses the per-pixel classes from PredictGPU to pool the location of 
+        // gestures. Supports multiple types of pooling algorithms. Each 
+        // algorithm is described before each section.
+        private Pooled Pool(PoolType type)
+        {
+            Debug.Assert(type == PoolType.Centroid, "Only centroid pooling implemented so far.");
+            
+            // Centroid pooling. First calculate the majority class and then 
+            // calculate the centroid of all points belonging to that class. 
+            // This method is very prone to outliers.
+
+            int[] label_counts = new int[Feature.num_classes_];
+            Array.Clear(label_counts, 0, label_counts.Length);
+
+            System.Drawing.Point[] label_centers = new System.Drawing.Point[Feature.num_classes_];
+            int[] label_depths = new int[Feature.num_classes_];
+
+            Array.Clear(label_depths, 0, label_depths.Length);
+            for (int i = 1; i < Feature.num_classes_; i++)
+                label_centers[i] = new System.Drawing.Point(0, 0);
+
             for (int y = crop.Y; y <= crop.Y + crop.Height; y++)
             {
                 for (int x = crop.X; x <= crop.X + crop.Width; x++)
                 {
-                    depth_index = Util.toID(x, y, width, height, kDepthStride);
-                    predict_label = predict_labels_[depth_index];
+                    int depth_index = Util.toID(x, y, width, height, kDepthStride);
+                    int predict_label = predict_labels_[depth_index];
 
                     label_counts[predict_label]++;
                     if (predict_label != (int)Util.HandGestureFormat.Background)
@@ -994,7 +1002,7 @@ namespace ColorGlove
                     }
                 }
             }
-            
+
             /* Courtesy of http://stackoverflow.com/questions/462699/how-do-i-get-the-index-of-the-highest-value-in-an-array-using-linq */
             int max_index = -1;
             int index = 0;
@@ -1021,12 +1029,11 @@ namespace ColorGlove
             center.Y = (int)(label_centers[max_index].Y / max_value);
             int center_depth = (int)(label_depths[max_index] / max_value);
 
+            Pooled gesture = new Pooled(center, center_depth, (Util.HandGestureFormat)max_index);
+
             Console.WriteLine("Center: ({0}px, {1}px, {2}cm)", center.X, center.Y, center_depth);
             DrawCrosshairAt(center, center_depth);
-            SendToSockets((Util.HandGestureFormat)max_index, center.X, center.Y, center_depth);
-
-            overlayStart = true;
-            predict_on_press_ = false;
+            return gesture;
         }
 
         // Draws a crosshair at the specific point in the overlay buffer
@@ -1063,9 +1070,9 @@ namespace ColorGlove
             overlay_bitmap_bits_[idx + 2] = paint.R;
         }
 
-        private void SendToSockets(Util.HandGestureFormat gesture, int x, int y, int depth)
+        private void SendToSockets(Pooled gesture)
         {
-            string message = String.Format("({0},{1},{2},{3})", gesture, x, y, depth);
+            string message = gesture.ToString();
             Console.WriteLine("Sending: {0}", message);
             foreach (var socket in all_sockets_.ToList()) socket.Send(message);
         }

@@ -70,6 +70,7 @@
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Pooled.cs" />
     <Compile Include="Processor.cs" />
     <Compile Include="Manager.cs" />
     <Compile Include="MainWindow.xaml.cs">
