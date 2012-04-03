@@ -28,9 +28,22 @@ namespace TestModuleNamespace
             Console.WriteLine("Hello World");
             TestModule FeatureExtractionTest = new TestModule();
             FeatureExtractionTest.SetupFeatureExtraction();
+            FeatureExtractionTest.TestGenerateOffset();
+            
+            // Generating feature files for different training set sizes
+            FeatureExtractionTest.TestGenerateFeatures("10");
+            FeatureExtractionTest.TestGenerateFeatures("50");
+            FeatureExtractionTest.TestGenerateFeatures("100");
+            FeatureExtractionTest.TestGenerateFeatures("150");
+            FeatureExtractionTest.TestGenerateFeatures("200");
+            FeatureExtractionTest.TestGenerateFeatures("250");
+            FeatureExtractionTest.TestGenerateFeatures("300");
+            FeatureExtractionTest.TestGenerateFeatures("350");
+            FeatureExtractionTest.TestGenerateFeatures("test");
+            
             // Test Random Forest
             // ##################
-            FeatureExtractionTest.FindMaxDepth();
+            //FeatureExtractionTest.FindMaxDepth();
             //FeatureExtractionTest.testDecisionForest();
 
             // ################
@@ -303,15 +316,16 @@ namespace TestModuleNamespace
             //Default direcotry: "..\\..\\..\\Data";
             // To setup the mode, see README in the library
             //FeatureExtraction.ModeFormat MyMode = FeatureExtraction.ModeFormat.BlueDefault;
-            FeatureExtraction.ModeFormat MyMode = FeatureExtraction.ModeFormat.Blue;
+            FeatureExtraction.ModeFormat MyMode = FeatureExtraction.ModeFormat.F2000;
+            string dir = "D:\\gr\\training\\blue\\";
             //Feature = new FeatureExtraction(MyMode, "D:\\gr\\training\\blue\\");
-            feature_lib_obj_ = new FeatureExtraction(MyMode);
+            feature_lib_obj_ = new FeatureExtraction(MyMode, dir);
         }
 
-        private void TestGenerateFeatures()
+        private void TestGenerateFeatures(string training_set_size)
         {
             feature_lib_obj_.ReadOffsetPairsFromStorage();
-            feature_lib_obj_.GenerateFeatureVectorViaImageFiles();
+            feature_lib_obj_.GenerateFeatureVectorViaImageFiles(training_set_size);
         }
 
         private void TestDisplay(){
