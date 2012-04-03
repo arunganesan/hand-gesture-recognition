@@ -132,15 +132,8 @@ namespace ColorGlove
 
         public void toggleProcessors()
         {
-            // Michael: Visual Studo said it's deprecated. Need to change?
-            // Arun: Their reason is that if a thread is holding a lock while 
-            //          suspended, it may deadlock. We're not using any locks
-            //          and pausing a thread like this is convenient, so I think 
-            //          we can continue.
-
             if (poller.ThreadState == System.Threading.ThreadState.Suspended) poller.Resume(); 
             else poller.Suspend();
-            //else poller.Resume();
         }
 
 

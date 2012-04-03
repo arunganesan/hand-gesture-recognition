@@ -902,7 +902,7 @@ namespace ColorGlove
             AdjustDepth();
             PredictGPU();
             DrawPredictionOverlay();
-            Pooled gesture = Pool(PoolType.Centroid);
+            Pooled gesture = Pool(PoolType.Median);
             SendToSockets(gesture);
             predict_on_press_ = false;
         }
@@ -970,70 +970,129 @@ namespace ColorGlove
         // algorithm is described before each section.
         private Pooled Pool(PoolType type)
         {
-            Debug.Assert(type == PoolType.Centroid, "Only centroid pooling implemented so far.");
-            
-            // Centroid pooling. First calculate the majority class and then 
-            // calculate the centroid of all points belonging to that class. 
-            // This method is very prone to outliers.
-
-            int[] label_counts = new int[Feature.num_classes_];
-            Array.Clear(label_counts, 0, label_counts.Length);
-
-            System.Drawing.Point[] label_centers = new System.Drawing.Point[Feature.num_classes_];
-            int[] label_depths = new int[Feature.num_classes_];
-
-            Array.Clear(label_depths, 0, label_depths.Length);
-            for (int i = 1; i < Feature.num_classes_; i++)
-                label_centers[i] = new System.Drawing.Point(0, 0);
-
-            for (int y = crop.Y; y <= crop.Y + crop.Height; y++)
+            if (type == PoolType.Median || type == PoolType.Centroid)
             {
-                for (int x = crop.X; x <= crop.X + crop.Width; x++)
-                {
-                    int depth_index = Util.toID(x, y, width, height, kDepthStride);
-                    int predict_label = predict_labels_[depth_index];
+                // Median pooling. The median X, Y and depths are calculated
+                // for the majority class. The pooled location takes on these
+                // values.
 
-                    label_counts[predict_label]++;
-                    if (predict_label != (int)Util.HandGestureFormat.Background)
+                int[] label_counts = new int[Feature.num_classes_];
+                Array.Clear(label_counts, 0, label_counts.Length);
+
+                List<int>[] label_sorted_x = new List<int>[Feature.num_classes_];
+                List<int>[] label_sorted_y = new List<int>[Feature.num_classes_];
+                List<int>[] label_sorted_depth = new List<int>[Feature.num_classes_];
+                
+                for (int i = 1; i < Feature.num_classes_; i++)
+                {
+                    label_sorted_x[i] = new List<int>();
+                    label_sorted_y[i] = new List<int>();
+                    label_sorted_depth[i] = new List<int>();
+                }
+
+                for (int y = crop.Y; y <= crop.Y + crop.Height; y++)
+                {
+                    for (int x = crop.X; x <= crop.X + crop.Width; x++)
                     {
-                        label_centers[predict_label].X += x;
-                        label_centers[predict_label].Y += y;
-                        label_depths[predict_label] += depth_[depth_index];
+                        int depth_index = Util.toID(x, y, width, height, kDepthStride);
+                        int predict_label = predict_labels_[depth_index];
+
+                        label_counts[predict_label]++;
+                        if (predict_label != (int)Util.HandGestureFormat.Background)
+                        {
+                            label_sorted_x[predict_label].Add(x);
+                            label_sorted_y[predict_label].Add(y);
+                            label_sorted_depth[predict_label].Add(depth_[depth_index]);
+                        }
                     }
                 }
-            }
 
-            /* Courtesy of http://stackoverflow.com/questions/462699/how-do-i-get-the-index-of-the-highest-value-in-an-array-using-linq */
-            int max_index = -1;
-            int index = 0;
-            double max_value = 0;
-            int urgh = label_counts.Select(value =>
-            {
-                if ((max_index == -1 || value > max_value) && index != 0)
+                Tuple<int, int> max = Util.MaxNonBackground(label_counts);
+                int max_index = max.Item1, max_value = max.Item2;
+                int total_non_background = label_counts.Sum() - label_counts[0];
+
+                Console.WriteLine("Most common gesture is {0} (appears {1}/{2} times).",
+                    ((Util.HandGestureFormat)max_index).ToString(),
+                    max_value, total_non_background);
+
+                System.Drawing.Point center = new System.Drawing.Point();
+                int center_depth = 0;
+
+                if (type == PoolType.Centroid)
                 {
-                    max_index = index;
-                    max_value = value;
+                    center.X = (int)(label_sorted_x[max_index].Average());
+                    center.Y = (int)(label_sorted_y[max_index].Average());
+                    center_depth = (int)(label_sorted_depth[max_index].Average());
                 }
-                index++;
-                return max_index;
-            }).Last();
+                else if (type == PoolType.Median)
+                {
+                    label_sorted_x[max_index].Sort();
+                    label_sorted_y[max_index].Sort();
+                    label_sorted_depth[max_index].Sort();
+                    
+                    center.X = (int)(label_sorted_x[max_index].ElementAt(max_value / 2));
+                    center.Y = (int)(label_sorted_y[max_index].ElementAt(max_value / 2));
+                    center_depth = (int)(label_sorted_depth[max_index].ElementAt(max_value / 2));
+                }
 
-            int total_non_background = label_counts.Sum() - label_counts[0];
+                Pooled gesture = new Pooled(center, center_depth, (Util.HandGestureFormat)max_index);
+                Console.WriteLine("Center: ({0}px, {1}px, {2}cm)", center.X, center.Y, center_depth);
+                DrawCrosshairAt(center, center_depth);
+                return gesture;
+            }
+            else 
+            {
+                //(type == PoolType.ExcludeOutliers)
+                // Centroid pooling. First calculate the majority class and then 
+                // calculate the centroid of all points belonging to that class. 
+                // This method is very prone to outliers.
 
-            Console.WriteLine("Most common gesture is {0} (appears {1}/{2} times).",
-                ((Util.HandGestureFormat)max_index).ToString(),
-                max_value, total_non_background);
+                int[] label_counts = new int[Feature.num_classes_];
+                Array.Clear(label_counts, 0, label_counts.Length);
 
-            System.Drawing.Point center = new System.Drawing.Point();
-            center.X = (int)(label_centers[max_index].X / max_value);
-            center.Y = (int)(label_centers[max_index].Y / max_value);
-            int center_depth = (int)(label_depths[max_index] / max_value);
+                System.Drawing.Point[] label_centers = new System.Drawing.Point[Feature.num_classes_];
+                int[] label_depths = new int[Feature.num_classes_];
 
-            Pooled gesture = new Pooled(center, center_depth, (Util.HandGestureFormat)max_index);
+                Array.Clear(label_depths, 0, label_depths.Length);
+                for (int i = 1; i < Feature.num_classes_; i++)
+                    label_centers[i] = new System.Drawing.Point(0, 0);
 
-            Console.WriteLine("Center: ({0}px, {1}px, {2}cm)", center.X, center.Y, center_depth);
-            DrawCrosshairAt(center, center_depth);
-            return gesture;
+                for (int y = crop.Y; y <= crop.Y + crop.Height; y++)
+                {
+                    for (int x = crop.X; x <= crop.X + crop.Width; x++)
+                    {
+                        int depth_index = Util.toID(x, y, width, height, kDepthStride);
+                        int predict_label = predict_labels_[depth_index];
+
+                        label_counts[predict_label]++;
+                        if (predict_label != (int)Util.HandGestureFormat.Background)
+                        {
+                            label_centers[predict_label].X += x;
+                            label_centers[predict_label].Y += y;
+                            label_depths[predict_label] += depth_[depth_index];
+                        }
+                    }
+                }
+                
+                Tuple<int, int> max = Util.MaxNonBackground(label_counts);
+                int max_index = max.Item1, max_value = max.Item2;
+                int total_non_background = label_counts.Sum() - label_counts[0];
+
+                Console.WriteLine("Most common gesture is {0} (appears {1}/{2} times).",
+                    ((Util.HandGestureFormat)max_index).ToString(),
+                    max_value, total_non_background);
+
+                System.Drawing.Point center = new System.Drawing.Point();
+                center.X = (int)(label_centers[max_index].X / max_value);
+                center.Y = (int)(label_centers[max_index].Y / max_value);
+                int center_depth = (int)(label_depths[max_index] / max_value);
+
+                Pooled gesture = new Pooled(center, center_depth, (Util.HandGestureFormat)max_index);
+
+                Console.WriteLine("Center: ({0}px, {1}px, {2}cm)", center.X, center.Y, center_depth);
+                DrawCrosshairAt(center, center_depth);
+                return gesture;
+            }
         }
 
         // Draws a crosshair at the specific point in the overlay buffer
