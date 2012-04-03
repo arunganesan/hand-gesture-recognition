@@ -27,6 +27,7 @@ namespace ColorGlove
     public class Processor
     {
 
+        #region Object properties
         //private Dictionary<Tuple<byte, byte, byte>, byte[]> nearest_cache = new Dictionary<Tuple<byte, byte, byte>, byte[]>();
         private enum RangeModeFormat
         {
@@ -67,7 +68,7 @@ namespace ColorGlove
         private Object bitmap_lock_ = new Object();
         private static Object depth_lock_ = new Object();
 
-        private bool overlayStart; 
+        private bool overlayStart;
         private System.Windows.Controls.Image image;
         private Manager manager;
         public int lower, upper; // range for thresholding in show_mapped_depth(),  show_color_depth(). Set by the manager.
@@ -127,10 +128,11 @@ namespace ColorGlove
         byte[] tmp_byte = new byte[3];
         private Step[] pipeline = new Step[0];
         private KinectSensor sensor;
+        
         // predict output for each pixel. It is used when using GPU.
         private float[] predict_output_;
-        //private Classifier classifier;
-
+        private int[] predict_labels_;
+        
         private readonly byte[] targetColor = new byte[] { 255, 0, 0 };
         private readonly byte[] backgroundColor = new byte[] { 255, 255, 255 };
 
@@ -145,7 +147,8 @@ namespace ColorGlove
 
         private static FeatureExtractionLib.FeatureExtraction Feature = null;
         List<int[]> listOfTransformedPairPosition;
-        
+        #endregion
+
         public Processor(KinectSensor sensor, Manager manager)
         {
             Debug.WriteLine("Start processor contruction");
@@ -232,6 +235,7 @@ namespace ColorGlove
             //Feature = new FeatureExtractionLib.FeatureExtraction(MyMode);
             Feature.ReadOffsetPairsFromStorage();
             predict_output_ = new float[width * height * Feature.num_classes_];
+            predict_labels_ = new int[width * height];
             Console.WriteLine("Allocate memory for predict_output");
             
             //Feature.GenerateOffsetPairs(); // use this to test the offset pairs parameters setting
@@ -909,6 +913,7 @@ namespace ColorGlove
         }
 
         #region Filter functions
+        
         // Runs the prediction algorithm for each pixel and pools the results. 
         // The classes are drawn onto the overlay layer, and overlay is turned 
         // on. 
@@ -916,13 +921,10 @@ namespace ColorGlove
         {
             if (predict_on_press_ == false) return;
             
-            ResetOverlay();
-
             for (int i = 0; i < depth_.Length; i++)
                 depth_[i] = (short)(depth_[i] >> DepthImageFrame.PlayerIndexBitmaskWidth);
 
-            int depth_index;
-            double[] predictOutput = new double[0];
+            int depth_index, predict_label;
             List<Tuple<byte, byte, byte>> label_colors = Util.GiveMeNColors(Feature.num_classes_);
 
             int[] label_counts = new int[Feature.num_classes_];
@@ -938,16 +940,50 @@ namespace ColorGlove
             Feature.PredictGPU(depth_, ref predict_output_);
             ShowAverageAndVariance(predict_output_);
 
+            // Get predictions
             for (int y = crop.Y; y <= crop.Y + crop.Height; y++)
             {
                 for (int x = crop.X; x <= crop.X + crop.Width; x++)
                 {
-                    //if (x == crop.X) Console.WriteLine("Processing {0}% ({1}/{2})", (float)(y - crop.Y) / crop.Height * 100, (y - crop.Y), crop.Height);
                     depth_index = Util.toID(x, y, width, height, kDepthStride);
-                    int predict_label = 0, bitmap_index = depth_index * 4, y_index = depth_index * Feature.num_classes_;
+                    predict_label = 0;
+                    int y_index = depth_index * Feature.num_classes_;
+
                     for (int i = 1; i < Feature.num_classes_; i++)
                         if (predict_output_[y_index + i] > predict_output_[y_index + predict_label])
                             predict_label = i;
+
+                    predict_labels_[depth_index] = predict_label;
+                }
+            }
+
+            // Draw overlay
+            ResetOverlay();
+
+            for (int y = crop.Y; y <= crop.Y + crop.Height; y++)
+            {
+                for (int x = crop.X; x <= crop.X + crop.Width; x++)
+                {
+                    depth_index = Util.toID(x, y, width, height, kDepthStride);
+                    predict_label = predict_labels_[depth_index];
+
+                    int bitmap_index = depth_index * 4;
+                    if (predict_label != (int)Util.HandGestureFormat.Background)
+                    {
+                        overlay_bitmap_bits_[bitmap_index + 2] = (int)label_colors[predict_label].Item1;
+                        overlay_bitmap_bits_[bitmap_index + 1] = (int)label_colors[predict_label].Item2;
+                        overlay_bitmap_bits_[bitmap_index + 0] = (int)label_colors[predict_label].Item3;
+                    }
+                }
+            }
+
+            // Pool
+            for (int y = crop.Y; y <= crop.Y + crop.Height; y++)
+            {
+                for (int x = crop.X; x <= crop.X + crop.Width; x++)
+                {
+                    depth_index = Util.toID(x, y, width, height, kDepthStride);
+                    predict_label = predict_labels_[depth_index];
 
                     label_counts[predict_label]++;
                     if (predict_label != (int)Util.HandGestureFormat.Background)
@@ -955,13 +991,6 @@ namespace ColorGlove
                         label_centers[predict_label].X += x;
                         label_centers[predict_label].Y += y;
                         label_depths[predict_label] += depth_[depth_index];
-                    }
-
-                    if (predict_label != (int)Util.HandGestureFormat.Background)
-                    {
-                        overlay_bitmap_bits_[bitmap_index + 2] = (int)label_colors[predict_label].Item1;
-                        overlay_bitmap_bits_[bitmap_index + 1] = (int)label_colors[predict_label].Item2;
-                        overlay_bitmap_bits_[bitmap_index + 0] = (int)label_colors[predict_label].Item3;
                     }
                 }
             }
@@ -997,7 +1026,7 @@ namespace ColorGlove
             SendToSockets((Util.HandGestureFormat)max_index, center.X, center.Y, center_depth);
 
             overlayStart = true;
-            //predict_on_press_ = false;
+            predict_on_press_ = false;
         }
 
         // Draws a crosshair at the specific point in the overlay buffer
