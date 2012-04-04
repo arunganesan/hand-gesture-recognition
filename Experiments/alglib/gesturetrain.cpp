@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <map>
 #include <algorithm>
 
 #include "dataanalysis.h"
@@ -58,9 +59,14 @@ void readsvmfile(double * container, int lines, int stride, char * filename) {
   }
 }
 
-int main () {
+int main (int argc, char * argv []) {
+  if (argc != 4) {
+    cout << "Usage: ./<exec> <nfeatures> <ntraining images> <ntrees>" << endl;
+    exit(1);
+  }
+  
   cout << "Welcome." << endl;
-
+  
   alglib::dfreport rep;
   alglib::decisionforest df;
   alglib::ae_int_t info; 
@@ -71,16 +77,26 @@ int main () {
   /************************************/
   /* EXPERIMENT SPECIFIC PARAMETERS   */
   /************************************/
-  int ntrain_images = 10;
-  int nfeatures = 1000; 
-  int ntrees = 2;
-  int ntrain = 19999;
+  int nfeatures = atoi(argv[1]); 
+  int ntrain_images = atoi(argv[2]);
+  int ntrees = atoi(argv[3]);
   /************************************/
   /************************************/
+  
+  map<int, int> line_counts;
+  line_counts[10] = 19999;
+  line_counts[50] = 99439;
+  line_counts[100] = 198662;
+  line_counts[150] = 298446;
+  line_counts[200] = 398799;
+  line_counts[250] = 496847;
+  line_counts[300] = 596372;
+  line_counts[350] = 695672;
   
   double r = 0.66;
   int nclasses = 5;
   int ntest = 103280;
+  int ntrain = line_counts[ntrain_images];
   char model_file [50], training_file [50], test_file [50], results_file [50];
   
   sprintf(model_file, "RF.%d.%d.%d.model", nfeatures, ntrain_images, ntrees);
