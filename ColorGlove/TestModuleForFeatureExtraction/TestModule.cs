@@ -316,7 +316,7 @@ namespace TestModuleNamespace
             //Default direcotry: "..\\..\\..\\Data";
             // To setup the mode, see README in the library
             //FeatureExtraction.ModeFormat MyMode = FeatureExtraction.ModeFormat.BlueDefault;
-            FeatureExtraction.ModeFormat MyMode = FeatureExtraction.ModeFormat.F2000;
+            FeatureExtraction.ModeFormat MyMode = FeatureExtraction.ModeFormat.F1000;
             string dir = "D:\\gr\\training\\blue\\";
             //Feature = new FeatureExtraction(MyMode, "D:\\gr\\training\\blue\\");
             feature_lib_obj_ = new FeatureExtraction(MyMode, dir);
