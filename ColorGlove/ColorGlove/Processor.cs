@@ -235,9 +235,11 @@ namespace ColorGlove
             // To setup the mode, see README in the library
 
             // User dependent. Notice that this is important
-            FeatureExtraction.ModeFormat MyMode = FeatureExtraction.ModeFormat.F1000; 
-            //FeatureExtraction.ModeFormat MyMode = FeatureExtraction.ModeFormat.Blue;
-            Feature = new FeatureExtractionLib.FeatureExtraction(MyMode, "D:\\gr\\training\\blue");
+            //FeatureExtraction.ModeFormat MyMode = FeatureExtraction.ModeFormat.F1000; 
+            FeatureExtraction.ModeFormat MyMode = FeatureExtraction.ModeFormat.Blue;
+            //Feature = new FeatureExtractionLib.FeatureExtraction(MyMode, "D:\\gr\\training\\blue");            
+            Feature = new FeatureExtractionLib.FeatureExtraction(MyMode);
+            
             label_colors = Util.GiveMeNColors(Feature.num_classes_);
             Feature.ReadOffsetPairsFromStorage();
             predict_output_ = new float[width * height * Feature.num_classes_];
@@ -672,7 +674,7 @@ namespace ColorGlove
                 Pause((PauseDelegate)HideOverlayDelegate);
             }
                 
-            EnablePool(); // ??? Need condition?
+            //EnablePool(); // ??? Need condition?
             
             if ((ShowExtractedFeatureMode & ShowExtractedFeatureFormat.ShowTransformedForOnePixel) == ShowExtractedFeatureFormat.ShowTransformedForOnePixel)
             {
@@ -914,8 +916,8 @@ namespace ColorGlove
             AdjustDepth();
             PredictGPU();
             DrawPredictionOverlay();
-            Pooled gesture = Pool(PoolType.Median);
-            SendToSockets(gesture);
+            //Pooled gesture = Pool(PoolType.Median);
+            //SendToSockets(gesture);
             predict_on_enable_ = false;
         }
 
@@ -965,7 +967,16 @@ namespace ColorGlove
         // and the majority value in predict_labels_.
         private void PredictGPU()
         {
+            DateTime ExecutionStartTime; //Var will hold Execution Starting Time
+            DateTime ExecutionStopTime;//Var will hold Execution Stopped Time
+            TimeSpan ExecutionTime;//Var will count Total Execution Time-Our Main Hero                
+            ExecutionStartTime = DateTime.Now; //Gets the system Current date time expressed as local time
             Feature.PredictGPU(depth_, ref predict_output_);
+
+            ExecutionStopTime = DateTime.Now;
+            ExecutionTime = ExecutionStopTime - ExecutionStartTime;
+            Console.WriteLine("Use {0} ms for getting prediction", ExecutionTime.TotalMilliseconds.ToString());
+
             ShowAverageAndVariance(predict_output_);
 
             for (int y = crop.Y; y <= crop.Y + crop.Height; y++)

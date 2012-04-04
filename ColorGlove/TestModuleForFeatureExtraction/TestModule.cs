@@ -29,10 +29,11 @@ namespace TestModuleNamespace
             TestModule FeatureExtractionTest = new TestModule();
             //FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.F1000);
             //FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.F2000);
-            FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.F3000);
+            //FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.F3000);
             //FeatureExtractionTest.TestGenerateOffset();
             
             // Generating feature files for different training set sizes
+            /*
             FeatureExtractionTest.TestGenerateFeatures("10");
             FeatureExtractionTest.TestGenerateFeatures("50");
             FeatureExtractionTest.TestGenerateFeatures("100");
@@ -43,6 +44,7 @@ namespace TestModuleNamespace
             FeatureExtractionTest.TestGenerateFeatures("350");
             FeatureExtractionTest.TestGenerateFeatures("test");
             Console.WriteLine("Generated features.");
+             */
             // Test Random Forest
             // ##################
             //FeatureExtractionTest.FindMaxDepth();
@@ -71,6 +73,7 @@ namespace TestModuleNamespace
 
             // General test on GPU
             // ########################
+            FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.Blue);
             FeatureExtractionTest.GeneralTestGPU();
             // ########################
             Console.ReadKey();
@@ -90,7 +93,7 @@ namespace TestModuleNamespace
                 depth[i] = (short) (_r.Next(10000)  + 1);
             float[] y = new float[count * 3];
 
-            const int maxTmp = 1;
+            const int maxTmp = 10;
             DateTime ExecutionStartTime; //Var will hold Execution Starting Time
             DateTime ExecutionStopTime;//Var will hold Execution Stopped Time
             TimeSpan ExecutionTime;//Var will count Total Execution Time-Our Main Hero
@@ -319,9 +322,10 @@ namespace TestModuleNamespace
             // To setup the mode, see README in the library
             //FeatureExtraction.ModeFormat MyMode = FeatureExtraction.ModeFormat.BlueDefault;
             FeatureExtraction.ModeFormat MyMode = mode;
-            string dir = "D:\\gr\\training\\blue\\";
-            //Feature = new FeatureExtraction(MyMode, "D:\\gr\\training\\blue\\");
-            feature_lib_obj_ = new FeatureExtraction(MyMode, dir);
+            //string dir = "D:\\gr\\training\\blue\\";
+            
+            //feature_lib_obj_ = new FeatureExtraction(MyMode, dir);
+            feature_lib_obj_ = new FeatureExtraction(MyMode);
         }
 
         private void TestGenerateFeatures(string training_set_size)
