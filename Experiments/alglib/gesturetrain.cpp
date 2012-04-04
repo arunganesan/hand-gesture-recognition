@@ -67,36 +67,35 @@ int main () {
   
   cout << "Created forest, and report." << endl;
   
-  cout << "Creating containers." << endl;
-  int nfeatures = 2000; 
+  
+  /************************************/
+  /* EXPERIMENT SPECIFIC PARAMETERS   */
+  /************************************/
+  int ntrain_images = 10;
+  int nfeatures = 1000; 
+  int ntrees = 2;
+  int ntrain = 19999;
+  /************************************/
+  /************************************/
+  
   double r = 0.66;
-  int ntrees = 3;
-
-  //int num_train = 121722;
-  //int num_test = 30276;
-  //char * training_file = "FeatureVectorBlue73.txt.train";
-  //char * test_file = "FeatureVectorBlue73.txt.test";
-  
-  //int num_train = 238035;
-  //int num_test = 59964;
-  //char * training_file = "FeatureVectorBlue149.txt.train";
-  //char * test_file = "FeatureVectorBlue149.txt.test";
-  
-
-  int ntrain = 653431;
-  int ntest = 163214;
   int nclasses = 5;
-  char * model_name = "rf.model";
-  char * training_file = "FeatureVectorBlueDefault.400.txt.train";
-  char * test_file = "FeatureVectorBlueDefault.400.txt.test";
+  int ntest = 103280;
+  char model_file [50], training_file [50], test_file [50], results_file [50];
   
-  cout << "Reading in SVM files." << endl;
+  sprintf(model_file, "RF.%d.%d.%d.model", nfeatures, ntrain_images, ntrees);
+  sprintf(training_file, "F%d.%d.features.txt", nfeatures, ntrain_images);
+  sprintf(test_file, "F%d.test.features.txt", nfeatures);
+  sprintf(results_file, "Results.%d.%d.%d.txt", nfeatures, ntrain_images, ntrees);
+
+  cout << "Reading in training file." << endl;
   double * _train = new double [ntrain*(nfeatures + 1)];
   alglib::real_2d_array train;
   readsvmfile(_train, ntrain, nfeatures + 1, training_file);
   train.setcontent(ntrain, nfeatures + 1, _train);
   delete [] _train;
-  
+
+  cout << "Reading in test file." << endl;
   double * _test = new double [ntest*(nfeatures + 1)];
   alglib::real_2d_array test;
   readsvmfile(_test, ntest, nfeatures + 1, test_file);
@@ -110,10 +109,13 @@ int main () {
   double error = alglib::dfavgrelerror(df, test, ntest);
   printf("Average error is %f\n", error);
   
-  
+  ofstream results_ofile (results_file);
+  results_ofile << error << endl;
+  results_ofile.close();
+
   string serialized;
   alglib::dfserialize(df, serialized);
-  ofstream ofile (model_name);
+  ofstream ofile (model_file);
   ofile << serialized;
   ofile.close();
   
