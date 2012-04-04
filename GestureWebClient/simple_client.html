@@ -1,0 +1,60 @@
+<html>
+	<head>
+		<script src='http://code.jquery.com/jquery-1.7.1.min.js'></script>  
+		<title>Web socket client</title>
+		<script>
+			var connection = new WebSocket("ws://localhost:8181");
+			connection.onopen = function () {
+				connection.send('Ping');
+			};
+			
+			connection.onmessage = function(e) {
+				if (e.data.indexOf('Ping') != -1) return;
+				
+				console.log('Server: ' + e.data);
+				var parts = e.data.substring(1, e.data.length - 1).split(',');
+				var image_name = parts[0] + '.jpg';
+				var x = parseInt(parts[1]);
+				var y = parseInt(parts[2]);
+				var depth = parseInt(parts[3]);
+				
+				var canvas = $('#canvas').get(0);
+				var ctx = canvas.getContext('2d');
+				ctx.clearRect(0, 0, canvas.width, canvas.height);
+				
+				
+				var img = new Image();
+				img.src = 'images/' + image_name;
+				img.onload = function() {
+					ctx.drawImage(img, x, y, 50, 35);
+				}
+				//$('#gesture').attr('src', 'images/' + image_name);
+				//$('#gesture').offset({top: y, left: x});
+				// XXX: Need to scale by the depth
+			}
+		</script>
+		
+		<style>
+		
+		#wrapper {
+			border: solid thin black;
+			margin: 0 auto;
+			width: 600px;
+			height: 400px;
+		}
+		
+		#canvas {
+			width: 600px;
+			height: 400px;
+		}
+		
+		</style>
+		
+	</head>
+	
+	<body>
+		<div id='wrapper'>
+		<canvas id='canvas' width=600 height=400>
+		</div>
+	</body>
+</html>

@@ -48,25 +48,27 @@ namespace FeatureExtractionLib
             colors.Add(new Tuple<byte, byte, byte>(0, 0, 255));
             colors.Add(new Tuple<byte, byte, byte>(255, 0, 255));
             return colors;
+        }
 
-            /* A failed attempt at generating N evenly spaced out colors.
-            int full_rgb = 256 * 256 * 256;
+        /* Courtesy of http://stackoverflow.com/questions/462699/how-do-i-get-the-index-of-the-highest-value-in-an-array-using-linq */
+        public static Tuple<int, T> MaxNonBackground<T>(IEnumerable<T> sequence)
+        where T : IComparable<T>
+        {
+            int maxIndex = -1;
+            T maxValue = default(T); // Immediately overwritten anyway
 
-            List<Tuple<byte, byte, byte>> colors = new List<Tuple<byte, byte, byte>>();
-            if (n == 0) return colors;
-
-            colors.Add(new Tuple<byte, byte, byte>(255, 255, 255));
-            for (int i = n; i > 0; i--)
+            int index = 0;
+            foreach (T value in sequence)
             {
-                int color_linear = full_rgb / n * i;
-                colors.Add(new Tuple<byte, byte, byte>(
-                    (byte)(color_linear / (256*256) % 256),
-                    (byte)(color_linear / 256 % 256),
-                    (byte)(color_linear % 256)));
-            }
+                if ((value.CompareTo(maxValue) > 0 || maxIndex == -1) && (HandGestureFormat)index != HandGestureFormat.Background)
+                {
+                    maxIndex = index;
+                    maxValue = value;
+                }
 
-            return colors;
-            */
+                index++;
+            }
+            return Tuple.Create<int, T>(maxIndex, maxValue);
         }
     }
 }

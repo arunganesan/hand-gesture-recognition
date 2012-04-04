@@ -34,15 +34,15 @@ namespace ColorGlove
             // Create the Kinect sensor anyway. Need for mapping depth to image.
             KinectSensor.KinectSensors.StatusChanged += (object sender, StatusChangedEventArgs e) =>
             {
-                if (e.Sensor == sensor_ && e.Status != KinectStatus.Connected) setSensor(null);
-                else if ((sensor_ == null) && (e.Status == KinectStatus.Connected)) setSensor(e.Sensor);
+                if (e.Sensor == sensor_ && e.Status != KinectStatus.Connected) SetSensor(null);
+                else if ((sensor_ == null) && (e.Status == KinectStatus.Connected)) SetSensor(e.Sensor);
             };
 
             foreach (var sensor in KinectSensor.KinectSensors)
-                if (sensor.Status == KinectStatus.Connected) setSensor(sensor);
+                if (sensor.Status == KinectStatus.Connected) SetSensor(sensor);
         }
 
-        private void setSensor(KinectSensor newSensor)
+        private void SetSensor(KinectSensor newSensor)
         {
             Console.WriteLine("Set sensor!");
             if (sensor_ != null) sensor_.Stop();
@@ -61,9 +61,7 @@ namespace ColorGlove
                 sensor_.Start();
             }
         }
-
-        public KinectSensor sensor() { return sensor_; }
-
+        
         public KinectData PullData()
         {
             using (var frame = sensor_.DepthStream.OpenNextFrame(DepthTimeout))
@@ -73,6 +71,8 @@ namespace ColorGlove
             using (var frame = sensor_.ColorStream.OpenNextFrame(ColorTimeout))
                 if (frame != null) 
                     frame.CopyPixelDataTo(data.color());
+
+            sensor_.MapDepthFrameToColorFrame(DepthImageFormat.Resolution640x480Fps30, data.depth(), ColorImageFormat.RgbResolution640x480Fps30, data.mapped());
 
             return data;
         }

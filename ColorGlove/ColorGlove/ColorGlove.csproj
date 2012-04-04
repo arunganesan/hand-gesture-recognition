@@ -36,6 +36,9 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Fleck">
+      <HintPath>..\..\Fleck\src\Fleck\bin\Release\Fleck.dll</HintPath>
+    </Reference>
     <Reference Include="Microsoft.Kinect, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL" />
     <Reference Include="System" />
     <Reference Include="System.Data" />
@@ -67,6 +70,7 @@
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Pooled.cs" />
     <Compile Include="Processor.cs" />
     <Compile Include="Manager.cs" />
     <Compile Include="MainWindow.xaml.cs">

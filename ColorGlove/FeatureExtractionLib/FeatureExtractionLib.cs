@@ -31,7 +31,10 @@ namespace FeatureExtractionLib
             Blue, // Operate in near Kinect mode, use a large box and a large number of offset
             //Blue149,
             Abstraction, // Operate in default Kinect mode, use a large box and a large number of offset
-            BlueDefault
+            BlueDefault,
+            F1000,
+            F2000,
+            F3000,
         };
         public enum CPUorGPUFormat
         {
@@ -96,13 +99,14 @@ namespace FeatureExtractionLib
             _r= new Random(); 
             SetDirectory(varDirectory);
             SetMode(setMode);
-            LoadRFModel();
-            RFfeatureVector = new double[numOfOffsetPairs];
-            RFfeatureVectorShort = new short[numOfOffsetPairs];
-            xPU_mode_ = to_set_xPU_mode;
-            if (xPU_mode_ == CPUorGPUFormat.GPU) {
-                InitGPU();
-            }
+            
+            //LoadRFModel();
+            //RFfeatureVector = new double[numOfOffsetPairs];
+            //RFfeatureVectorShort = new short[numOfOffsetPairs];
+            //xPU_mode_ = to_set_xPU_mode;
+            //if (xPU_mode_ == CPUorGPUFormat.GPU) {
+            //    InitGPU();
+            //}
         }
 
         private void SetMode(ModeFormat setMode) {
@@ -142,7 +146,7 @@ namespace FeatureExtractionLib
                     RandomGenerationMode = RandomGenerationModeFormat.Circular;
                     // 149 imgs
                     break;
-                 */ 
+                 */
                 case ModeFormat.BlueDefault:
                     numOfOffsetPairs = 2000;
                     uMin = 500;
@@ -166,8 +170,47 @@ namespace FeatureExtractionLib
                     RandomGenerationMode = RandomGenerationModeFormat.Default;
                     break;
 
+
+                
+                case ModeFormat.F1000:
+                    numOfOffsetPairs = 1000;
+                    uMin = 500;
+                    uMax = 40 * 2000;
+                    sampledNumberPerClass = 1000;
+                    UpperBound = 10000;
+                    kinect_mode_ = KinectModeFormat.Default;
+                    traningFilename = "F1000";
+                    RandomGenerationMode = RandomGenerationModeFormat.Circular;
+                    RFModelFilePath = directory + "\\FeatureVectorF1000.400.rf.model";
+                    num_classes_ = 5;
+                    break;
+                case ModeFormat.F2000:
+                    numOfOffsetPairs = 2000;
+                    uMin = 500;
+                    uMax = 40 * 2000;
+                    sampledNumberPerClass = 1000;
+                    UpperBound = 10000;
+                    kinect_mode_ = KinectModeFormat.Default;
+                    traningFilename = "F2000";
+                    RandomGenerationMode = RandomGenerationModeFormat.Circular;
+                    RFModelFilePath = directory + "\\FeatureVectorF2000.400.rf.model";
+                    num_classes_ = 5;
+                    break;
+                case ModeFormat.F3000:
+                    numOfOffsetPairs = 3000;
+                    uMin = 500;
+                    uMax = 40 * 2000;
+                    sampledNumberPerClass = 1000;
+                    UpperBound = 10000;
+                    kinect_mode_ = KinectModeFormat.Default;
+                    traningFilename = "F3000";
+                    RandomGenerationMode = RandomGenerationModeFormat.Circular;
+                    RFModelFilePath = directory + "\\FeatureVectorF3000.400.rf.model";
+                    num_classes_ = 5;
+                    break;
+
+               
             }
-            traningFilename = "FeatureVector" + traningFilename + ".txt";
         }
 
         private void InitGPU()
@@ -224,9 +267,9 @@ namespace FeatureExtractionLib
         }
 
         #region FileOperations
-        public void ReadOffsetPairsFromStorage()
         // listOfOffsetPairs format:
         // Pair1UX Pair1UY Pair1VX Pair1VY Pair2UX Pair2UY Pair2VX Pair2VY ...
+        public void ReadOffsetPairsFromStorage()
         {
             string filename = GetOffsetPairsFilename();
             //Console.WriteLine("Filename: {0}", filename);
@@ -498,17 +541,18 @@ namespace FeatureExtractionLib
 
         }
 
-        public void GenerateFeatureVectorViaImageFiles()
+        public void GenerateFeatureVectorViaImageFiles(string training_set_size)
         {
-
             Array values = Enum.GetValues(typeof(Util.HandGestureFormat));
-            output_filestream_ = new StreamWriter(directory + "\\" + traningFilename);         
+            output_filestream_ = new StreamWriter(String.Format("{0}\\{1}.{2}.features.txt", directory, traningFilename, training_set_size));         
             foreach (Util.HandGestureFormat val in values) // go through each directory
             {
                 //Console.WriteLine ("{0}: {1}", Enum.GetName(typeof(HandGestureFormat), val), val);
                 if (val == Util.HandGestureFormat.Background)
                     continue;
-                string subdirectory = directory + "\\" + val + kinect_mode_;
+
+                string subdirectory = String.Format("{0}\\{1}.{2}", directory, val, training_set_size);
+
                 Console.WriteLine("Current directoray: {0}", subdirectory);
                 string[] fileEntries = Directory.GetFiles(subdirectory);
                 int tmpCounter = 0;

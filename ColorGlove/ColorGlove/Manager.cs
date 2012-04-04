@@ -23,7 +23,6 @@ namespace ColorGlove
 
     public class Manager
     {
-        private KinectSensor sensor_;
         private KinectData data;
         private Processor[] processors;
         private enum ProcessorModeFormat { 
@@ -32,7 +31,7 @@ namespace ColorGlove
         }
         Thread poller;
         DataFeed datafeed;
-        ProcessorModeFormat ProcessorMode = ProcessorModeFormat.Michael; // set the mode for processor here
+        ProcessorModeFormat ProcessorMode = ProcessorModeFormat.Arun; // set the mode for processor here
 
         public Manager(MainWindow parent)  // Construct function
         {
@@ -40,13 +39,13 @@ namespace ColorGlove
                 datafeed = new DataFeed(DataFeed.DataSource.Kinect, DataFeed.RangeModeFormat.Near);
             else
                 datafeed = new DataFeed(DataFeed.DataSource.Kinect, DataFeed.RangeModeFormat.Default);
-            sensor_ = datafeed.sensor();
+            
             #region Create and arrange Images
             int total_processors = 2;
             processors = new Processor[total_processors];
             for (int i = 0; i < total_processors; i++)
             {
-                processors[i] = new Processor(this.sensor_, this);
+                processors[i] = new Processor(this);
                 processors[i].lower = 100;
                 processors[i].upper = 1000;
                 Image image = processors[i].getImage();
@@ -97,16 +96,22 @@ namespace ColorGlove
                 processors[0].updatePipeline(
                     Processor.Step.PaintWhite,
                     Processor.Step.Crop,
-                    Processor.Step.Depth,
+                    Processor.Step.PaintGreen,
+                    //Processor.Step.Depth,
+                    Processor.Step.ColorMatch,
+                    Processor.Step.FeatureExtractOnEnable,
                     Processor.Step.OverlayOffset
                 );
 
-                
-                processors[1].SetTestModule(Processor.ShowExtractedFeatureFormat.PredictAllPixelsCPU);
+
+                processors[1].SetTestModule(Processor.ShowExtractedFeatureFormat.PredictAllPixelsGPU);
                 processors[1].updatePipeline(
-                    Processor.Step.PaintGreen,
+                    //Processor.Step.PaintGreen,
                     Processor.Step.Crop,
-                    Processor.Step.Depth,
+                    Processor.Step.Color,
+                    //Processor.Step.Depth,
+                    //Processor.Step.EnablePredict,
+                    Processor.Step.PredictOnEnable,
                     Processor.Step.OverlayOffset);
                 
                  
@@ -130,25 +135,19 @@ namespace ColorGlove
 
         public void toggleProcessors()
         {
-            // Michael: Visual Studo said it's deprecated. Need to change?
-            // Arun: Their reason is that if a thread is holding a lock while 
-            //          suspended, it may deadlock. We're not using any locks
-            //          and pausing a thread like this is convenient, so I think 
-            //          we can continue.
-
             if (poller.ThreadState == System.Threading.ThreadState.Suspended) poller.Resume(); 
             else poller.Suspend();
-            //else poller.Resume();
         }
 
 
         public void saveImages()
         {
-            poller.Suspend();
+            foreach(Processor p in processors) p.EnableFeatureExtract();
+            //poller.Suspend();
             //foreach (Processor p in processors) p.processAndSave();
-            processors[0].ProcessAndSave();
+            //processors[0].ProcessAndSave();
             // use processor[0] to save the depth image
-            poller.Resume();
+            //poller.Resume();
         }
 
 
@@ -181,6 +180,15 @@ namespace ColorGlove
 
 
         public void kMeans() { processors[0].kMeans(); }
-        public void Pool() { processors[1].Pool(); }
+        
+
+        // Just adds pooling to the pipeline. 
+        // XXX: This doesn't have to happen for only processor 1. Pooling can 
+        // be enabled for all processors and only the ones with the pooling 
+        // added to the pipeline will then perform that action.
+        public void Pool() 
+        {
+            processors[1].EnablePool(); 
+        }
     }
 }
