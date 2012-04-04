@@ -27,8 +27,10 @@ namespace TestModuleNamespace
         {
             Console.WriteLine("Hello World");
             TestModule FeatureExtractionTest = new TestModule();
-            FeatureExtractionTest.SetupFeatureExtraction();
-            FeatureExtractionTest.TestGenerateOffset();
+            //FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.F1000);
+            //FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.F2000);
+            FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.F3000);
+            //FeatureExtractionTest.TestGenerateOffset();
             
             // Generating feature files for different training set sizes
             FeatureExtractionTest.TestGenerateFeatures("10");
@@ -40,7 +42,7 @@ namespace TestModuleNamespace
             FeatureExtractionTest.TestGenerateFeatures("300");
             FeatureExtractionTest.TestGenerateFeatures("350");
             FeatureExtractionTest.TestGenerateFeatures("test");
-            
+            Console.WriteLine("Generated features.");
             // Test Random Forest
             // ##################
             //FeatureExtractionTest.FindMaxDepth();
@@ -312,11 +314,11 @@ namespace TestModuleNamespace
             }
         }
 
-        public void SetupFeatureExtraction() {
+        public void SetupFeatureExtraction(FeatureExtraction.ModeFormat mode) {
             //Default direcotry: "..\\..\\..\\Data";
             // To setup the mode, see README in the library
             //FeatureExtraction.ModeFormat MyMode = FeatureExtraction.ModeFormat.BlueDefault;
-            FeatureExtraction.ModeFormat MyMode = FeatureExtraction.ModeFormat.F1000;
+            FeatureExtraction.ModeFormat MyMode = mode;
             string dir = "D:\\gr\\training\\blue\\";
             //Feature = new FeatureExtraction(MyMode, "D:\\gr\\training\\blue\\");
             feature_lib_obj_ = new FeatureExtraction(MyMode, dir);
