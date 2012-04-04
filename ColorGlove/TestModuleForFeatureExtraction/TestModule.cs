@@ -30,7 +30,7 @@ namespace TestModuleNamespace
             FeatureExtractionTest.SetupFeatureExtraction();
             // Test Random Forest
             // ##################
-            FeatureExtractionTest.FindMaxDepth();
+            //FeatureExtractionTest.FindMaxDepth();
             //FeatureExtractionTest.testDecisionForest();
 
             // ################
@@ -56,7 +56,7 @@ namespace TestModuleNamespace
 
             // General test on GPU
             // ########################
-            //FeatureExtractionTest.GeneralTestGPU();
+            FeatureExtractionTest.GeneralTestGPU();
             // ########################
             Console.ReadKey();
         }

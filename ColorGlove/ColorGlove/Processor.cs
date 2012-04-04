@@ -595,7 +595,11 @@ namespace ColorGlove
                 ExecutionStartTime = DateTime.Now;  
 
                 Feature.PredictGPU(depth_, ref predict_output_);
-                ShowAverageAndVariance(predict_output_);
+                ShowAverageAndVariance(predict_output_); // used for debug
+                
+                ExecutionStopTime = DateTime.Now;
+                ExecutionTime = ExecutionStopTime - ExecutionStartTime;
+                Console.WriteLine("Use {0} ms for getting prediction", ExecutionTime.TotalMilliseconds.ToString());
                 for (int depth_index = 0; depth_index < depth_.Length; depth_index++)
                 {
                     int predict_label = 0,  bitmap_index = depth_index * 4, y_index= depth_index * Feature.num_classes_;
@@ -606,9 +610,7 @@ namespace ColorGlove
                     overlay_bitmap_bits_[bitmap_index + 1] = (int)label_colors[predict_label].Item2;
                     overlay_bitmap_bits_[bitmap_index + 0] = (int)label_colors[predict_label].Item3;
                 }
-                ExecutionStopTime = DateTime.Now;
-                ExecutionTime = ExecutionStopTime - ExecutionStartTime;
-                Console.WriteLine("Use {0} ms for getting prediction", ExecutionTime.TotalMilliseconds.ToString());
+                
                 overlayStart = true;
                 update(data_);
                 Pause((PauseDelegate)HideOverlayDelegate);
