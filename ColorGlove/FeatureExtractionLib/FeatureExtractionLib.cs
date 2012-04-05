@@ -220,6 +220,7 @@ namespace FeatureExtractionLib
             myGPU_ = new GPUCompute(); 
             // turn the tree from double type to int type to make it more efficient
             treesInt = new int [decisionForest.trees.Length];
+            Console.WriteLine("Length of the tree: {0}", treesInt.Length);
             for (int i = 0; i < decisionForest.trees.Length; i++)                 
                 treesInt[i] = (int) Math.Ceiling(decisionForest.trees[i]);
             myGPU_.LoadTrees(treesInt, (short)decisionForest.nclasses, (short)decisionForest.ntrees, decisionForest.nvars);

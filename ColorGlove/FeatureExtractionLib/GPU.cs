@@ -9,6 +9,7 @@ namespace FeatureExtractionLib
     public class GPUCompute
     {
         private ComputeProgram program_;
+        #region predict_release
         private string clProgramSource_predict_ = @"
 short GetNewDepth(int cur_index, int dx, int dy, global read_only short* depth)
 {    
@@ -70,23 +71,34 @@ kernel void Predict(
     
 }
 ";
+        #endregion
+
         /*
-         The following kernel make the output to be the total depths it visits.
+        test
          */
+        #region test
         private string clProgramSource_predict_test_ = @"
-short GetNewDepthIndex(int cur_index, int dx, int dy, global read_only short* depth)
+short GetNewDepth(int cur_x, int cur_y, int cur_index, int dx, int dy, global read_only short* depth)
 {    
-    int cx = (int) ( (cur_index % 640) +  (float)dx / (float)depth[cur_index] );
-    int cy = (int) ( (cur_index / 640) + (float)dy / (float)depth[cur_index] );
+    /* 
+    int cx = (int) ( (float)cur_x +  (float)dx / (float)depth[cur_index] );
+    int cy = (int) ( (float)cur_y + (float)dy / (float)depth[cur_index] );         
+    */
+    float v= 1 / (float)depth[cur_index] ;
+    int cx = (int) ( (float)cur_x +  (float)dx * v  );
+    int cy = (int) ( (float)cur_y + (float)dy * v );         
+    //return depth[cy*640 + cx];    
     if (cx>=0 && cx< 640 && cy>=0 && cy< 480)
     {
+        
         if (depth[cy*640 + cx] <0)
             return 10000;
         else
-            return depth[cy*640 + cx];
+            return depth[cy*640 + cx];        
     }
     else 
         return 10000;  
+   
 } 
 kernel void Predict(
     global read_only short* meta_tree,     
@@ -99,6 +111,7 @@ kernel void Predict(
     int index= get_global_id(0), y_index =index* meta_tree[0];    
     int offs = 0, k, offset_list_index, visit_count = 0;    
     short u_depth, v_depth, i;    
+    int cur_x= index % 640, cur_y=index / 640;
     float v;        
     if (depth[index] == -1)
     {
@@ -119,11 +132,10 @@ kernel void Predict(
         visit_count = 0;   
         while (1){            
             visit_count ++;
-            // limit the depth
-            /*
+            // limit the depth                        
             if (visit_count>20)
                 break;
-            */
+            
             if (trees[k] == -1)
             {                
                 y[y_index + trees[k+1]]++;
@@ -131,16 +143,20 @@ kernel void Predict(
             }
             // get the feature value
             offset_list_index = trees[k]*4;            
+            
             //u_depth = 0;
             //v_depth = 0;
-            u_depth = GetNewDepthIndex(index, offset_list[offset_list_index], offset_list[offset_list_index+1], depth);
-            v_depth = GetNewDepthIndex(index, offset_list[offset_list_index + 2], offset_list[offset_list_index+3], depth);                  
+            u_depth = GetNewDepth(cur_x, cur_y, index, offset_list[offset_list_index], offset_list[offset_list_index+1], depth);
+            v_depth = GetNewDepth(cur_x, cur_y, index, offset_list[offset_list_index + 2], offset_list[offset_list_index+3], depth);                  
             
+             
             if (u_depth - v_depth < trees[k+1] )
                 k+=3;
             else
                 k = offs + trees[k+2];
             
+            // just traverse 
+            //k = offs + trees[k];
         }
         offs = offs + trees[offs];
     }
@@ -151,10 +167,11 @@ kernel void Predict(
     
 }
 ";
-
+        #endregion
         /*
         2d test
          */
+        #region test2D
         private string clProgramSource_predict_test_2d_ = @"
 short GetNewDepth(int cur_x, int cur_y, int cur_index, int dx, int dy, global read_only short* depth)
 {        
@@ -234,10 +251,11 @@ kernel void Predict(
     
 }
 ";
-
+        #endregion
         /*
        2d test
         */
+        #region release2D
         private string clProgramSource_predict_2d_ = @"
 short GetNewDepth(int cur_x, int cur_y, int cur_index, int dx, int dy, global read_only short* depth)
 {        
@@ -313,7 +331,9 @@ kernel void Predict(
         y[y_index + i] *= v;            
 }
 ";
+        #endregion
 
+        #region random forest process
         private string clProgramSource_dfprocess_ = @"
 kernel void DFProcess(
     global read_only short* meta_tree, 
@@ -348,6 +368,9 @@ kernel void DFProcess(
         y[i] = v* y[i];
 }  
 ";
+        #endregion
+
+        #region vector add
         private string clProgramSource_vector_add_ = @"
 short AddVector(short a, global read_only int* t, int index)
 {
@@ -370,6 +393,7 @@ kernel void AddVectorWithTrees(
     c[index] =AddVector(a[index], trees, index);
 }
 ";
+        #endregion
         private ComputeKernel kernel_;
         private ComputeContext context_;
         private ComputeCommandQueue commands_;
@@ -400,7 +424,7 @@ kernel void AddVectorWithTrees(
         };
         
         // Constructor function
-        public GPUCompute(ComputeModeFormat SetComputeMode = ComputeModeFormat.kRelease)         
+        public GPUCompute(ComputeModeFormat SetComputeMode = ComputeModeFormat.kTest)         
         {
             ComputePlatform platform = ComputePlatform.Platforms[0];
             ComputeContextPropertyList properties = new ComputeContextPropertyList(platform);
