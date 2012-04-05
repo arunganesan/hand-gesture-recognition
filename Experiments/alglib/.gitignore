@@ -1,3 +1,5 @@
+gesturetrain
+*.out
 *.model
 *.features.txt
 *.exe
