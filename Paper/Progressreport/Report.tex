@@ -1,0 +1,124 @@
+\documentclass[11pt]{article}
+\usepackage{graphicx, amsfonts, amsmath, amsthm, wrapfig, color}
+\usepackage{hyperref}
+\usepackage[parfill]{parskip}
+\usepackage{fullpage}
+
+\newcommand{\includeimage}[2] {\fbox{ \includegraphics[width=#1]{#2}}}
+
+\title{Progress report: Gesture based interaction with data visualizations} 
+\author{Arun Ganesan, Michael (Caoxie) Zhang}
+\date{\today\\ EECS 545}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Recent times have witnessed a large explosion in data. Data visualization has emerged as a powerful technique for data analysis by leveraging human cognition and layout algorithms for quickly seeing patterns. Despite the growth in data visualizations, tools for interacting with the data have largely remained the keyboard and mouse. We hypothesize that by developing accessible and affordable data interaction systems, we can gain more from data visualization analysis. In this report we focus on the gesture recognition aspect of this system.
+
+\end{abstract}
+
+\section{Introduction}
+There are two main techniques in hand gesture recognition - appearance based and model based. These are akin to probabilistic models of classification and generative models of classification respectively. \textbf{Appearance based} approaches read the pixels from the camera and build classifiers to label that as belonging to a finite set of classes. The main limitation of this technique is that the set of labels is finite and fixed ahead of time. The advantage of appearance based approaches is their implementation is often extremely fast and therefore suited for situations where live classification is important. Examples of appearance based techniques can be found in \cite{shotton2011, wang2009}. \textbf{Model based} approaches start with a set of hypotheses of the final classification based on rules of the object being classified. For instance, in the case of hand gestures a hypothesis can be a particular orientation of the joints.  An advantage here is that the hypotheses can be generated from an infinite space of possible classifications. The main disadvantage of model-based techniques is that they are often computationally expensive. In addition, model-based approaches tend to be very complex. An example of a model based technique can be found in \cite{oikonomidis2011}.
+
+We adopted a pixel-level appearance based approach for gesture recognition. At each pixel level we are limited to a fintie set of classes, however by combining this information across different pixels in the image, we can construct a large number of possible classifications of the image. 
+
+\section{Proposed method}
+Our proposed method involves a technique for rapidly generating labelled training samples, and a technique for extracting depth-invariant features for classification.
+
+To rapidly generate training samples, we use a color glove that has a different color for each area of interest. We can present the glove to the camera and extract regions of a specific color and label that appropriately. Specifically, we color each finger as a different color and the palm as a separate color and instruct the software to label the pixels of a certain finger's color as that finger. Examples of gloves we used in our experiments are shown in figure~\ref{fig:gloves}.
+
+\begin{figure}
+\begin{center}
+\includeimage{50mm}{figures/blueglove.png}
+\includeimage{50mm}{figures/colorglove.png}
+\end{center}
+\caption{Two differently colored gloves we used in rapidly generating labelled training samples. For the multicolored glove, we had to ensure the colors were different enough to be easily recognized by the program.}
+\label{fig:gloves}
+\end{figure}
+
+We devised two different techniques of labeling each pixel. The first technique, shown in the left image of figure~\ref{fig:gloves}, is to differentiate all pixels in the hand from the background. When training the system, we train one gesture at a time and classify a pixel on the hand as belonging to that gesture and classify any pixel not on the hand as part of the background. We trained four gestures using this approach yielding a total of five labels. The gestures can be seen in figure~\ref{fig:gestures}. The second technique is shown in the right image of figure~\ref{fig:gloves}. In this technique each finger is labeled is labelled separately. Therefore each pixel can have a total of seven labels - six for the hand, and one for the background.
+
+\begin{figure}
+\begin{center}
+\includeimage{35mm}{figures/gesture1.png}
+\includeimage{35mm}{figures/gesture2.png}
+\includeimage{35mm}{figures/gesture3.png}
+\includeimage{35mm}{figures/gesture4.png}
+\end{center}
+\caption{The four gestures seen above were chosen because of their potential applicability to data visualization interaction systems. For example, the first figure may be used to instruct the application to translate the visualization along with the hand. The second image could lock the image in place while the other hand forms gestures.}
+\label{fig:gestures}
+\end{figure}
+
+With the labelled training set, we extracted features used for classification algorithms. In practice we expect to encounter a large variation in the lighting, depth offset, and shape of hands. To account for these variations, \cite{lepetit2005} propose a feature extraction that only depends on the depth image. This technique is also used by \cite{shotton2011} for classifying pixels in inferring skeletal structure from the Kinect's depth image. The feature extraction for each pixel \textbf{x} calculates the difference in depth between two points offset from \textbf{x} normalized by its depth. The details are presented in equation~\ref{eqn:feature}. $\theta$ is a set of two offsets that can be applied to the pixel of interest.  
+
+\begin{equation} 
+\label{eqn:feature}
+f_{\theta}(x) = d\left(\bf{x} + \frac{\bf{u}}{d(\bf{x})}\right) - d\left(\bf{x} + \frac{\bf{v}}{d(\bf{x})}\right)
+\end{equation}
+
+Using this feature extraction, we train different classifiers to learn and label each pixel of the image. We are exploring two different classifiers. First, as a baseline approach we are exploring an SVM classifier from LIBLINEAR \cite{liblinear}. We are also interested in exploring a randomized forest classifer. This is our main interest and is detailed in \cite{lepetit2005}. A randomized forest randomly samples the features and builds multiple decision trees depending on which of the sampled features results in the largest information gain of the labelled training points. By creating the vertices of the tree through random sampling, and by generating multiple trees, this ensemble technique is less prone to overfitting and thus more likely to perform well in test cases. 
+
+\section{Related work}
+Related work for this project falls in two main area - information visualization and, more pertinent to this aspect of the project, novel interface engineering.
+
+\textbf{Information visualization} studies the structure of different kinds of data, methods of visualizing them, and interesting modes of interaction and manipulation of those visualizations. \cite{schneiderman1996} presents a taxonomy of different data formats (e.g. 1 dimensional, time-dependent, spatial, etc.) and seven common ways of interaction with the data. The work motivates this taxonomy with case studies and examples. \cite{keim2002} presents new kinds of data formats that have emerged since the writing of \cite{schneiderman1996} and surveys some techniques for visualizing and interacting with the visualizations. The unanimous message across these works is the amount of data is undergoing rapid growth, and using well thought-out visualization can leverage human visual processing to reveal patterns in the data. 
+
+As advance sensor technology has become more accessible, many developers and researchers are taking up \textbf{novel interface engineering}. \cite{stuerzlinger2010} overviews a variety of input devices for interfacing with 3D models including mouse designs with six degrees of freedom, haptics devices for simulating realistic forces, and computer vision based techniques for head and hand tracking. Very relevant to our project, \cite{hoffman2010} presents a method for identifying 25 gestures in 3D using the gyroscope and accelerometer in the Nintendo Wii remote. This falls in a more general category called ``spatially convenient input-devices''. 
+
+More specific to this project are works in interface engineering focusing on gesture recognition through depth-range cameras such as the Kinect. The work most similar to ours is from Microsoft \cite{shotton2011} on the details of the Kinect's appearance-based skeleton recognition algorithm. They classify each pixel as belonging to some portion of the body and then pool all pixels from each portion to determine the joint positions. Their training set is generated from synthetic 3D images of body orientations. The feature extraction technique and the random forest classification algorithm used in this work is borrowed from \cite{lepetit2005}. Our project differs from this in the method for generating training samples, and the scale of classification. \cite{wang2009} present another appearance-based method for detecting hand gestures using just an RGB camera. Their solution requires the user wear a glove with a special pattern imprinted on it. The camera pictures the hand in different orientations, normalizes the image, and identifies the nearest neighbor in a database of common hand gestures. Unlike this approach, our technique only uses a color glove for training purposes. \cite{oikonomidis2011} present a model-based approach using the Kinect. They first generate a set of hypotheses with knowledge of inverse kinematics, and approximate shape of fingers and hands. They evaluate these hypotheses and pick the most likely one based on the depth image from the Kinect. This technique is able to detect hand gestures even in the place of occlusions and is implemented efficiently reaching up to 15 updates per second. However, being model-based, this technique may be vulnerable to differences in hand shapes, and still lags behind in speed compared to appearance-based techniques. 
+
+\section{Experimental results}
+
+The results are divided between generation of training samples using the colored glove, and the extraction of features.
+
+\textbf{Color glove training generation.} We first attempted to use a multi-colored glove to label each finger as a separate class. We encountered a major difficulty with this attempt and still haven't satisfactorily solved it. To label each finger as a separate label, we first sampled pixels in the image and manually hard coded a set of RGB values for each finger and the background. Then we asked the program to highlight each pixel depending on which of the manually input colors to which it was most similar. The result is shown in figure~\ref{fig:manualcolor}. We noticed that there is a large variation in color even for the same finger which we, as humans, perceived to be the same color. This complicates color extraction for labeling purposes. Next we tried to automate the process in hopes of yielding better results. We used K-means to automatically detect distinct clusters in colors. The results of this are shown in figure~\ref{fig:kmeans}. Even in this scenario, there are several problems as colors overlap with the background and with other fingers. We need to conduct further experiments in colors used in the glove, and filtering techniques to get clear color extraction from the multi-colored glove technique.
+
+% FIGURE 123123123 -- using manually sampled colors
+% FIGURE 124565 -- using K means
+\begin{figure}
+\begin{center}
+\includeimage{50mm}{figures/manualcolor.png}
+\includeimage{50mm}{figures/kmeans.png}
+\end{center}
+\caption{The color classification on the left was achieved after manually picking colors from the image and matching the colors to the nearest match based on Euclidean distance. The image on the right was generated using K-means color clustering with K set to seven - six for the hand and one for the background.}
+\label{fig:kmeans}
+\label{fig:manualcolor}
+\end{figure}
+
+Neither of these techniques proved very effective, and we suspect more pre-processing is required before this technique can prove fruitful. Partially because of this difficulty, we refocused our attention on a different technique for detecting gestures. We decided to train each gesture at a time and label each pixel as belonging to a hand that was posing a gesture from a finite set of gestures, or as belonging to the background. This technique proved more fruitful so we generated training samples for four gestures, shown in figure~\ref{fig:gestures} and moved to the next phase of the project. We will return to the original approach after exploring this easier variant first.
+
+\textbf{Feature extraction.} Using the labelled images, we generated feature vectors as described above in equation~\ref{eqn:feature}. Following the approach in \cite{shotton2011} we generated 2000 features for each pixel from a set of training images. However, the resolution of the Kinect - $640 \times 480$ pixels - restricted us to sample pixels randomly from the image instead of exhaustively generating feature vectors for all pixels. We sampled 2000 pixels but this is a variable that can be tweaked if it proves to be inadequate. We plan on using this feature set for ALGLIB \cite{alglib}, a random forest implementation, and LIBLINEAR \cite{liblinear}, an SVM implementation. 
+
+\section{Future milestones}
+The next area of focus is to \textbf{train classifiers}, namely ALGLIB's random forest implementation, and LIBLINEAR's SVM implementation. This result of this step will likely determine the future course of this project as we will discover whether our approach thus far has been satisfactory for gesture recognition. Depending on the results of this phase, and after we tune the system to accurately recognize gestures using a single-colored glove, we will revisit the technique of \textbf{multi-colored training}. We believe this kind of classification is much more powerful as it will not be necessary to retrain the system whenever a new gesture needs to be added. A gesture can simply be defined as a function of the finger positions. Finally, we plan on applying all these techniques in building a \textbf{system for data visualization interaction}.
+
+\section{Conclusion}
+A fundamental step in the process of building data visualization interaction systems, and an interesting research problem on its own, is hand gesture recognition. With the release of affordable range capture cameras such as the Kinect, we can revisit hand gesture recognition and make it accessible to the masses. In this project, we are focusing on building an appearance-based gesture recognition technique that applies an algorithm similar to the one used in the Kinect for the new domain of hand gesture recognition. Our contributions are in a technique for rapidly generating training samples, and an adaptation of a depth-invariant feature extraction technique for hand gesture recognition.
+
+\bibliographystyle{unsrt}
+\begin{thebibliography}{9}
+
+\bibitem{shotton2011} J. Shotton, A. Fitzgibbon, M. Cook, T. Sharp, M. Finocchio, R. Moore, A. Kipman, A. Blake. Real-time human pose recognition in parts from single depth images. CVPR, 2011.
+
+\bibitem{wang2009} R. Wang and J. Popovi\'c. Real-time hand-tracking with a color glove. In Proc. ACM SIGGRAPH, 2009.
+
+\bibitem{oikonomidis2011} I. Oikonomidis, N. Kyriazis, and A. Argyros. Efficient model-based 3D tracking of hand articulations using kinect. In BMVC, Aug 2011.
+
+\bibitem{lepetit2005} V. Lepetit, P. Lagger, and P. Fua. Randomized trees for real-time keypoint recognition. In Proc. CVPR, pages 2:775-781, 2005. 
+
+\bibitem{liblinear} R.-E. Fan, K.-W. Chang, C.-J. Hsieh, X.-R. Wang, and C.-J. Lin. LIBLINEAR: A library for large linear classification Journal of Machine Learning Research 9(2008), 1871-1874.
+
+\bibitem{schneiderman1996} B. Schneiderman. The eyes have it: a task by data type taxonomy for information visualizations. Visual Languages, 1996.
+
+\bibitem{keim2002} D.A. Keim. Information visualization and visual data mining. Visualization and Computer Graphics, IEEE Transactions. Vol 8, no.1, pp. 1-8, Jan 2002.
+
+\bibitem{stuerzlinger2010} W. Stuerzlinger, C Wingrave. The value of constraints for 3D user interfaces. Dagstuhl Seminar on VR, 2010.
+
+\bibitem{hoffman2010} M. Hoffman, P. Varcholik, and J. LaViola. Breaking the status quo: improving 3D gesture recognition with spatially convenient input devices. IEEE VR, 2010.
+
+\bibitem{alglib} V. Bystritsky. ALGLIB. 14 Aug 1999. Web. \url{http://www.alglib.net}.
+
+\end{thebibliography}
+
+\end{document}
