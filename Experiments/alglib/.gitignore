@@ -1,2 +1,4 @@
+*.model
+*.features.txt
 *.exe
 *.o
