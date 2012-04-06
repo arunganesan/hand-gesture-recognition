@@ -107,12 +107,7 @@ namespace ColorGlove
         private float[] predict_output_;
         private int[] predict_labels_;
         List<Tuple<byte, byte, byte>> label_colors;
-        private enum PoolType
-        {
-            Centroid,
-            Median,
-        };
-        
+                
         private readonly byte[] targetColor = new byte[] { 255, 0, 0 };
         private readonly byte[] backgroundColor = new byte[] { 255, 255, 255 };
 
@@ -896,32 +891,17 @@ namespace ColorGlove
                 case Filter.Step.EnablePredict:
                 case Filter.Step.EnableFeatureExtract:
                 case Filter.Step.ShowOverlay:
+                case Filter.Step.PredictOnEnable:
                     Type type = typeof(Filter);
                     MethodInfo Filtermethod = type.GetMethod(step.ToString());
                     Filtermethod.Invoke(null, new object[]{state});
                     break;
-                case Filter.Step.Denoise: Denoise(); break;
                 case Filter.Step.FeatureExtractOnEnable: FeatureExtractOnEnable(); break;
-                case Filter.Step.PredictOnEnable: PredictOnEnable(); break;
             }
         }
 
         #region Filter functions
-
-        // Runs the prediction algorithm for each pixel and pools the results. 
-        // The classes are drawn onto the overlay layer, and overlay is turned 
-        // on. 
-        private void PredictOnEnable()
-        {
-            if (predict_on_enable_ == false) return;
-            AdjustDepth();
-            PredictGPU();
-            DrawPredictionOverlay();
-            Pooled gesture = Pool(PoolType.Median);
-            SendToSockets(gesture);
-            predict_on_enable_ = false;
-        }
-
+        
         private void FeatureExtractOnEnable()
         {
             if (feature_extract_on_enable_ == false) return;
@@ -956,271 +936,6 @@ namespace ColorGlove
             feature_extract_on_enable_ = false;
         }
 
-        // Scales all values in the depth image by the bitmaskshift.
-        private void AdjustDepth()
-        {
-            for (int i = 0; i < depth_.Length; i++)
-                depth_[i] = (short)(depth_[i] >> DepthImageFrame.PlayerIndexBitmaskWidth);
-        }
-
-        // Uses (awesome) GPU code for prediction, and counts the majority 
-        // class for each point. Stores the probability distr in predict_output_
-        // and the majority value in predict_labels_.
-        private void PredictGPU()
-        {
-            Feature.PredictGPU(depth_, ref predict_output_);
-            ShowAverageAndVariance(predict_output_);
-
-            for (int y = crop.Y; y <= crop.Y + crop.Height; y++)
-            {
-                for (int x = crop.X; x <= crop.X + crop.Width; x++)
-                {
-                    int depth_index = Util.toID(x, y, width, height, kDepthStride);
-                    int predict_label = 0;
-                    int y_index = depth_index * Feature.num_classes_;
-
-                    for (int i = 1; i < Feature.num_classes_; i++)
-                        if (predict_output_[y_index + i] > predict_output_[y_index + predict_label])
-                            predict_label = i;
-
-                    predict_labels_[depth_index] = predict_label;
-                }
-            }
-        }
-
-        // Uses the prediction output from PredictGPU to color in the overlay.
-        // If the point belongs to the background, doesn't draw anything.
-        private void DrawPredictionOverlay()
-        {
-            ResetOverlay();
-
-            for (int y = crop.Y; y <= crop.Y + crop.Height; y++)
-            {
-                for (int x = crop.X; x <= crop.X + crop.Width; x++)
-                {
-                    int depth_index = Util.toID(x, y, width, height, kDepthStride);
-                    int predict_label = predict_labels_[depth_index];
-
-                    int bitmap_index = depth_index * 4;
-                    if (predict_label != (int)Util.HandGestureFormat.Background)
-                    {
-                        overlay_bitmap_bits_[bitmap_index + 2] = (int)label_colors[predict_label].Item1;
-                        overlay_bitmap_bits_[bitmap_index + 1] = (int)label_colors[predict_label].Item2;
-                        overlay_bitmap_bits_[bitmap_index + 0] = (int)label_colors[predict_label].Item3;
-                    }
-                }
-            }
-
-            overlayStart = true;
-        }
-
-        // Uses the per-pixel classes from PredictGPU to pool the location of 
-        // gestures. Supports multiple types of pooling algorithms. Each 
-        // algorithm is described before each section.
-        private Pooled Pool(PoolType type)
-        {
-            // Median pooling. The median X, Y and depths are calculated
-            // for the majority class. The pooled location takes on these
-            // values.
-
-            int[] label_counts = new int[Feature.num_classes_];
-            Array.Clear(label_counts, 0, label_counts.Length);
-
-            List<int>[] label_sorted_x = new List<int>[Feature.num_classes_];
-            List<int>[] label_sorted_y = new List<int>[Feature.num_classes_];
-            List<int>[] label_sorted_depth = new List<int>[Feature.num_classes_];
-
-            for (int i = 1; i < Feature.num_classes_; i++)
-            {
-                label_sorted_x[i] = new List<int>();
-                label_sorted_y[i] = new List<int>();
-                label_sorted_depth[i] = new List<int>();
-            }
-
-            for (int y = crop.Y; y <= crop.Y + crop.Height; y++)
-            {
-                for (int x = crop.X; x <= crop.X + crop.Width; x++)
-                {
-                    int depth_index = Util.toID(x, y, width, height, kDepthStride);
-                    int predict_label = predict_labels_[depth_index];
-
-                    label_counts[predict_label]++;
-                    if (predict_label != (int)Util.HandGestureFormat.Background)
-                    {
-                        label_sorted_x[predict_label].Add(x);
-                        label_sorted_y[predict_label].Add(y);
-                        label_sorted_depth[predict_label].Add(depth_[depth_index]);
-                    }
-                }
-            }
-
-            Tuple<int, int> max = Util.MaxNonBackground(label_counts);
-            int max_index = max.Item1, max_value = max.Item2;
-            int total_non_background = label_counts.Sum() - label_counts[0];
-
-            Console.WriteLine("Most common gesture is {0} (appears {1}/{2} times).",
-                ((Util.HandGestureFormat)max_index).ToString(),
-                max_value, total_non_background);
-
-            System.Drawing.Point center = new System.Drawing.Point();
-            int center_depth = 0;
-
-            if (type == PoolType.Centroid)
-            {
-                center.X = (int)(label_sorted_x[max_index].Average());
-                center.Y = (int)(label_sorted_y[max_index].Average());
-                center_depth = (int)(label_sorted_depth[max_index].Average());
-            }
-            else if (type == PoolType.Median)
-            {
-                label_sorted_x[max_index].Sort();
-                label_sorted_y[max_index].Sort();
-                label_sorted_depth[max_index].Sort();
-
-                center.X = (int)(label_sorted_x[max_index].ElementAt(max_value / 2));
-                center.Y = (int)(label_sorted_y[max_index].ElementAt(max_value / 2));
-                center_depth = (int)(label_sorted_depth[max_index].ElementAt(max_value / 2));
-            }
-
-            Pooled gesture = new Pooled(center, center_depth, (Util.HandGestureFormat)max_index);
-            Console.WriteLine("Center: ({0}px, {1}px, {2}cm)", center.X, center.Y, center_depth);
-            DrawCrosshairAt(center, center_depth);
-            return gesture;
-        }
-
-        // Draws a crosshair at the specific point in the overlay buffer
-        private void DrawCrosshairAt(System.Drawing.Point xy, int depth)
-        {
-            int box_length = 20;
-            int x, y;
-            System.Drawing.Color paint = System.Drawing.Color.Black;
-
-            x = xy.X - box_length / 2;
-            for (int i = 0; i < box_length; i++)
-            {
-                PaintAt(x + i, xy.Y - 1, paint);
-                PaintAt(x + i, xy.Y, paint);
-                PaintAt(x + i, xy.Y + 1, paint);
-            }
-
-            y = xy.Y - box_length / 2;
-            for (int i = 0; i < box_length; i++)
-            {
-                PaintAt(xy.X - 1, y + i, paint);
-                PaintAt(xy.X, y + i, paint);
-                PaintAt(xy.X + 1, y + i, paint);
-            }
-        }
-
-        // Helper function for drawing custom    shapes on the overlay buffer
-        private void PaintAt(int x, int y, System.Drawing.Color paint)
-        {
-            int idx = Util.toID(x, y, width, height, kColorStride);
-
-            overlay_bitmap_bits_[idx] = paint.B;
-            overlay_bitmap_bits_[idx + 1] = paint.G;
-            overlay_bitmap_bits_[idx + 2] = paint.R;
-        }
-
-        private void SendToSockets(Pooled gesture)
-        {
-            string message = gesture.ToString();
-            Console.WriteLine("Sending: {0}", message);
-            foreach (var socket in all_sockets_.ToList()) socket.Send(message);
-        }
-
-        private void Denoise()
-        {
-            int x, y;
-            int totalSurrounding = 0;
-            int width = 640, height = 480;
-            int[] sumSurrounding = new int[] { 0, 0, 0 };
-
-            // XXX: Doesn't work with cropping.
-            for (int i = 0; i < bitmap_bits_.Length; i += 4)
-            {
-                x = i / 4 % width;
-                y = i / 4 / width;
-
-                // Average of surrounding points
-                sumSurrounding[0] = 0;
-                sumSurrounding[1] = 0;
-                sumSurrounding[2] = 0;
-                totalSurrounding = 0;
-
-                if (y != 0 && x != 0)
-                {
-                    sumSurrounding[0] += bitmap_bits_[((y - 1) * width + (x - 1)) * 4];
-                    sumSurrounding[1] += bitmap_bits_[((y - 1) * width + (x - 1)) * 4 + 1];
-                    sumSurrounding[2] += bitmap_bits_[((y - 1) * width + (x - 1)) * 4 + 2];
-                    totalSurrounding++;
-                }
-
-                if (y != 0)
-                {
-                    sumSurrounding[0] += bitmap_bits_[((y - 1) * width + (x)) * 4];
-                    sumSurrounding[1] += bitmap_bits_[((y - 1) * width + (x)) * 4 + 1];
-                    sumSurrounding[2] += bitmap_bits_[((y - 1) * width + (x)) * 4 + 2];
-                    totalSurrounding++;
-                }
-
-                if (y != 0 && x != width - 1)
-                {
-                    sumSurrounding[0] += bitmap_bits_[((y - 1) * width + (x + 1)) * 4];
-                    sumSurrounding[1] += bitmap_bits_[((y - 1) * width + (x + 1)) * 4 + 1];
-                    sumSurrounding[2] += bitmap_bits_[((y - 1) * width + (x + 1)) * 4 + 2];
-                    totalSurrounding++;
-                }
-
-                if (x != width - 1)
-                {
-                    sumSurrounding[0] += bitmap_bits_[((y) * width + (x + 1)) * 4];
-                    sumSurrounding[1] += bitmap_bits_[((y) * width + (x + 1)) * 4 + 1];
-                    sumSurrounding[2] += bitmap_bits_[((y) * width + (x + 1)) * 4 + 2];
-                    totalSurrounding++;
-                }
-
-                if (y != height - 1 && x != width - 1)
-                {
-                    sumSurrounding[0] += bitmap_bits_[((y + 1) * width + (x + 1)) * 4];
-                    sumSurrounding[1] += bitmap_bits_[((y + 1) * width + (x + 1)) * 4 + 1];
-                    sumSurrounding[2] += bitmap_bits_[((y + 1) * width + (x + 1)) * 4 + 2];
-                    totalSurrounding++;
-                }
-
-                if (y != height - 1)
-                {
-                    sumSurrounding[0] += bitmap_bits_[((y + 1) * width + (x)) * 4];
-                    sumSurrounding[1] += bitmap_bits_[((y + 1) * width + (x)) * 4 + 1];
-                    sumSurrounding[2] += bitmap_bits_[((y + 1) * width + (x)) * 4 + 2];
-                    totalSurrounding++;
-                }
-
-                if (y != height - 1 && x != 0)
-                {
-                    sumSurrounding[0] += bitmap_bits_[((y + 1) * width + (x - 1)) * 4];
-                    sumSurrounding[1] += bitmap_bits_[((y + 1) * width + (x - 1)) * 4 + 1];
-                    sumSurrounding[2] += bitmap_bits_[((y + 1) * width + (x - 1)) * 4 + 2];
-                    totalSurrounding++;
-                }
-
-                if (x != 0)
-                {
-                    sumSurrounding[0] += bitmap_bits_[((y) * width + (x - 1)) * 4];
-                    sumSurrounding[1] += bitmap_bits_[((y) * width + (x - 1)) * 4 + 1];
-                    sumSurrounding[2] += bitmap_bits_[((y) * width + (x - 1)) * 4 + 2];
-                    totalSurrounding++;
-                }
-
-                tmp_buffer_[i] = (byte)(sumSurrounding[0] / totalSurrounding);
-                tmp_buffer_[i + 1] = (byte)(sumSurrounding[1] / totalSurrounding);
-                tmp_buffer_[i + 2] = (byte)(sumSurrounding[2] / totalSurrounding);
-                tmp_buffer_[i + 3] = 255;
-            }
-
-            Array.Copy(tmp_buffer_, bitmap_bits_, tmp_buffer_.Length);
-        }
-
         #endregion
 
         private void PackageState()
@@ -1244,7 +959,12 @@ namespace ColorGlove
                 feature_extract_on_enable_ref_,
                 overlay_start_ref_,
                 kNoOverlay,
-                overlay_bitmap_bits_);
+                overlay_bitmap_bits_,
+                kEmptyOverlay,
+                Feature,
+                predict_output_,
+                predict_labels_,
+                all_sockets_);
         }
 
         private void updateHelper()

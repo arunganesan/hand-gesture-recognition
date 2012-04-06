@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using FeatureExtractionLib;
 using Microsoft.Kinect;
+using Fleck;
 
 namespace ColorGlove
 {
@@ -30,6 +31,13 @@ namespace ColorGlove
         public Ref<bool> overlay_start_;
         public int kNoOverlay;
         public int[] overlay_bitmap_bits_;
+        public int[] kEmptyOverlay;
+
+        public FeatureExtractionLib.FeatureExtraction feature;
+        public float[] predict_output_;
+        public int[] predict_labels_;
+
+        public List<IWebSocketConnection> all_sockets_;
 
         public ProcessorState(
             Ref<System.Drawing.Rectangle> crop, Ref<System.Drawing.Rectangle> crop_values, 
@@ -38,7 +46,9 @@ namespace ColorGlove
             Dictionary<Tuple<byte, byte, byte>, byte> nearest_cache_, Dictionary<byte, byte[]> label_color_,
             byte kBackgroundLabel, List<byte[]> centroid_colors_, List<byte> centroid_labels,
             Ref<bool> predict_on_enable_, Ref<bool>feature_extract_on_enable_,
-            Ref<bool> overlay_start_, int kNoOverlay, int[] overlay_bitmap_bits_)
+            Ref<bool> overlay_start_, int kNoOverlay, int[] overlay_bitmap_bits_, int[] kEmptyOverlay,
+            FeatureExtractionLib.FeatureExtraction feature, float[] predict_output_, int[] predict_labels_,
+            List<IWebSocketConnection> all_sockets_)
         {
             this.crop = crop;
             this.crop_values = crop_values;
@@ -62,6 +72,13 @@ namespace ColorGlove
             this.overlay_start_ = overlay_start_;
             this.kNoOverlay = kNoOverlay;
             this.overlay_bitmap_bits_ = overlay_bitmap_bits_;
+            this.kEmptyOverlay = kEmptyOverlay;
+
+            this.feature = feature;
+            this.predict_output_ = predict_output_;
+            this.predict_labels_ = predict_labels_;
+
+            this.all_sockets_ = all_sockets_;
         }
     }
 }
