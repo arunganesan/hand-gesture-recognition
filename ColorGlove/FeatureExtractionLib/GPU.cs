@@ -102,10 +102,11 @@ short GetNewDepth(int cur_x, int cur_y, int cur_index, int dx, int dy, global re
 } 
 kernel void Predict(
     global read_only short* meta_tree,     
-    global read_only int* trees, 
-    global read_only const int* offset_list,
-    global write_only float* y,    
-    global read_only short* depth)
+    global read_only int* trees, // 12 MB
+    global read_only const int* offset_list, // 32 KB
+    global write_only float* y, // 3.6MB   
+    global read_only short* depth // 1.2 MB
+)
 {
     
     int index= get_global_id(0), y_index =index* meta_tree[0];    
@@ -132,11 +133,11 @@ kernel void Predict(
         visit_count = 0;   
         while (1){            
             visit_count ++;
-            /*
+             
             // limit the depth      
             if (visit_count>20)
                 break;
-            */
+            
             if (trees[k] == -1)
             {                
                 y[y_index + trees[k+1]]++;
@@ -577,6 +578,7 @@ kernel void AddVectorWithTrees(
 
     }
 }
+
 
 
 
