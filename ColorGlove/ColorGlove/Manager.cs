@@ -78,7 +78,7 @@ namespace ColorGlove
                     // Show the rgb image
                     // Processor.Step.CopyColor
                     // Show the depth image                                         
-                                            Processor.Step.Depth,
+                                            Processor.Step.CopyDepth,
                     // Show overlap offest
                                             Processor.Step.OverlayOffset
                     // Show Mapped Depth Using RGB
@@ -106,9 +106,9 @@ namespace ColorGlove
 
                 processors[1].SetTestModule(Processor.ShowExtractedFeatureFormat.PredictAllPixelsGPU);
                 processors[1].updatePipeline(
-                    //Processor.Step.PaintGreen,
+                    Processor.Step.PaintGreen,
                     Processor.Step.Crop,
-                    Processor.Step.Depth,
+                    Processor.Step.CopyDepth,
                     //Processor.Step.EnablePredict,
                     Processor.Step.PredictOnEnable,
                     Processor.Step.OverlayOffset);

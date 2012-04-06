@@ -77,7 +77,7 @@ namespace ColorGlove
             PaintWhite,
             PaintGreen,
             CopyColor,
-            Depth,
+            CopyDepth,
             Crop,
             MappedDepth,
             ColorMatch,
@@ -888,8 +888,7 @@ namespace ColorGlove
         {
             switch (step)
             {
-                case Step.Depth: CopyDepth(); break;
-                case Step.CopyColor: 
+                case Step.CopyColor: case Step.CopyDepth: case Step.PaintWhite: case Step.PaintGreen:
                     //Filter.CopyColor(crop, depth_, rgb_, bitmap_bits_); 
                     //string s = Step.CopyColor.ToString();
                     //Console.WriteLine(s);
@@ -898,8 +897,6 @@ namespace ColorGlove
                     Filtermethod.Invoke(null, new object[]{crop, depth_, rgb_, bitmap_bits_});
                     break;
                 case Step.Crop: Crop(); break;
-                case Step.PaintWhite: Paint(System.Drawing.Color.White); break;
-                case Step.PaintGreen: Paint(System.Drawing.Color.PaleGreen); break;
                 case Step.ColorMatch: MatchColors(); break;
                 case Step.ColorLabelingInRGB: ColorLabellingInRGB(); break;
                 case Step.OverlayOffset: ShowOverlay(); break;
@@ -1226,22 +1223,6 @@ namespace ColorGlove
             Array.Copy(tmp_buffer_, bitmap_bits_, tmp_buffer_.Length);
         }
 
-        // Copies over the depth value to the buffer, normalized for the range of shorts.
-        private void CopyDepth()
-        {
-            for (int x = crop.X; x <= crop.Width + crop.X; x++)
-            {
-                for (int y = crop.Y; y <= crop.Height + crop.Y; y++)
-                {
-                    int idx = Util.toID(x, y, width, height, kDepthStride);
-                    bitmap_bits_[4 * idx] =
-                    bitmap_bits_[4 * idx + 1] =
-                    bitmap_bits_[4 * idx + 2] =
-                    bitmap_bits_[4 * idx + 3] = (byte)(255 * (short.MaxValue - depth_[idx]) / short.MaxValue);
-                }
-            }
-        }
-
         // Adjusts the cropping parameters
         private void Crop()
         {
@@ -1249,21 +1230,6 @@ namespace ColorGlove
             crop.Width = cropValues.Width; crop.Height = cropValues.Height;
         }
 
-        // Sets everything within the crop to white.
-        private void Paint(System.Drawing.Color color)
-        {
-            for (int x = crop.X; x <= crop.Width + crop.X; x++)
-            {
-                for (int y = crop.Y; y <= crop.Height + crop.Y; y++)
-                {
-                    int idx = Util.toID(x, y, width, height, kColorStride);
-                    bitmap_bits_[idx] = color.B;
-                    bitmap_bits_[idx + 1] = color.G;
-                    bitmap_bits_[idx + 2] = color.R;
-                }
-            }
-        }
-        
         // This function is used mainly for labelling. It serves two purposes. 
         // First, it finds the nearest color match to each pixel within some 
         // threshold. Then, it records the label based on the color matching 
