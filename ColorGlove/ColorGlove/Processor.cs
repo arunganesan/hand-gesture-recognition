@@ -236,7 +236,8 @@ namespace ColorGlove
 
             // User dependent. Notice that this is important
             //FeatureExtraction.ModeFormat MyMode = FeatureExtraction.ModeFormat.F1000; 
-            FeatureExtraction.ModeFormat MyMode = FeatureExtraction.ModeFormat.Blue;
+            //FeatureExtraction.ModeFormat MyMode = FeatureExtraction.ModeFormat.Blue;
+            FeatureExtraction.ModeFormat MyMode = FeatureExtraction.ModeFormat.F1000;
             //Feature = new FeatureExtractionLib.FeatureExtraction(MyMode, "D:\\gr\\training\\blue");            
             Feature = new FeatureExtractionLib.FeatureExtraction(MyMode);
             

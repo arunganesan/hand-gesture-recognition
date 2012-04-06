@@ -181,7 +181,9 @@ namespace FeatureExtractionLib
                     kinect_mode_ = KinectModeFormat.Default;
                     traningFilename = "F1000";
                     RandomGenerationMode = RandomGenerationModeFormat.Circular;
-                    RFModelFilePath = directory + "\\FeatureVectorF1000.400.rf.model";
+                    //RFModelFilePath = directory + "\\FeatureVectorF1000.400.rf.model";
+                    RFModelFilePath = directory + "\\RF.1000.100.3.model";
+                    
                     num_classes_ = 5;
                     break;
                 case ModeFormat.F2000:
@@ -391,7 +393,8 @@ namespace FeatureExtractionLib
                 }
             }
             catch {
-                Console.WriteLine("Something wrong");
+                Console.WriteLine("Something wrong. Couldn't read the file {0}", filename);
+              
             }
 
         }

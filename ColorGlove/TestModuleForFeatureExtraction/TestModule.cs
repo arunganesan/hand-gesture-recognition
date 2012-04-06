@@ -73,7 +73,7 @@ namespace TestModuleNamespace
 
             // General test on GPU
             // ########################
-            FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.Blue);
+            FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.F1000);
             FeatureExtractionTest.GeneralTestGPU();
             // ########################
 
@@ -124,7 +124,8 @@ namespace TestModuleNamespace
             Random _r = new Random();
             for (int i = 0; i < depth.Length; i++)
                 depth[i] = (short) (_r.Next(10000)  + 1);
-            float[] y = new float[count * 3];
+            //float[] y = new float[count * 3];
+            float[] y = new float[count * feature_lib_obj_.num_classes_];  
 
             const int maxTmp = 10;
             DateTime ExecutionStartTime; //Var will hold Execution Starting Time
