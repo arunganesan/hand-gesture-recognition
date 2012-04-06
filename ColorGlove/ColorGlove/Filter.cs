@@ -140,6 +140,25 @@ namespace ColorGlove
             state.feature_extract_on_enable_.Value = val;
         }
 
+        
+        public static void ShowOverlay(ProcessorState state)
+        {
+            if (state.overlay_start_.Value)
+            {
+                for (int x = state.crop.Value.X; x <= state.crop.Value.Width + state.crop.Value.X; x++)
+                {
+                    for (int y = state.crop.Value.Y; y <= state.crop.Value.Height + state.crop.Value.Y; y++)
+                    {
+                        int idx = Util.toID(x, y, width, height, kColorStride);
+                        if (state.overlay_bitmap_bits_[idx] != state.kNoOverlay) state.bitmap_bits[idx] = (byte)state.overlay_bitmap_bits_[idx];
+                        if (state.overlay_bitmap_bits_[idx + 1] != state.kNoOverlay) state.bitmap_bits[idx + 1] = (byte)state.overlay_bitmap_bits_[idx + 1];
+                        if (state.overlay_bitmap_bits_[idx + 2] != state.kNoOverlay) state.bitmap_bits[idx + 2] = (byte)state.overlay_bitmap_bits_[idx + 2];
+                        if (state.overlay_bitmap_bits_[idx + 3] != state.kNoOverlay) state.bitmap_bits[idx + 3] = (byte)state.overlay_bitmap_bits_[idx + 3];
+                    }
+                }
+            }
+        }
+
         #endregion
 
 

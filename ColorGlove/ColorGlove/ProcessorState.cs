@@ -24,9 +24,12 @@ namespace ColorGlove
         public List<byte[]> centroid_colors_;
         public List<byte> centroid_labels_;
 
-
         public Ref<bool> predict_on_enable_;
         public Ref<bool> feature_extract_on_enable_;
+
+        public Ref<bool> overlay_start_;
+        public int kNoOverlay;
+        public int[] overlay_bitmap_bits_;
 
         public ProcessorState(
             Ref<System.Drawing.Rectangle> crop, Ref<System.Drawing.Rectangle> crop_values, 
@@ -34,7 +37,8 @@ namespace ColorGlove
             KinectData data_, short[] depth, byte[] depth_label_, byte[] rgb, byte[] bitmap_bits,
             Dictionary<Tuple<byte, byte, byte>, byte> nearest_cache_, Dictionary<byte, byte[]> label_color_,
             byte kBackgroundLabel, List<byte[]> centroid_colors_, List<byte> centroid_labels,
-            Ref<bool> predict_on_enable_, Ref<bool>feature_extract_on_enable_)
+            Ref<bool> predict_on_enable_, Ref<bool>feature_extract_on_enable_,
+            Ref<bool> overlay_start_, int kNoOverlay, int[] overlay_bitmap_bits_)
         {
             this.crop = crop;
             this.crop_values = crop_values;
@@ -51,6 +55,13 @@ namespace ColorGlove
             this.kBackgroundLabel = kBackgroundLabel;
             this.centroid_colors_ = centroid_colors_;
             this.centroid_labels_ = centroid_labels;
+
+            this.predict_on_enable_ = predict_on_enable_;
+            this.feature_extract_on_enable_ = feature_extract_on_enable_;
+
+            this.overlay_start_ = overlay_start_;
+            this.kNoOverlay = kNoOverlay;
+            this.overlay_bitmap_bits_ = overlay_bitmap_bits_;
         }
     }
 }

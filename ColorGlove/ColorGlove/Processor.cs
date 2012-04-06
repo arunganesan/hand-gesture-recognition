@@ -138,6 +138,7 @@ namespace ColorGlove
         private Ref<int> lower_ref_;
         private Ref<bool> predict_on_enable_ref_;
         private Ref<bool> feature_extract_on_enable_ref_;
+        private Ref<bool> overlay_start_ref_;
         #endregion
 
         public Processor(Manager manager)
@@ -166,7 +167,9 @@ namespace ColorGlove
 
             predict_on_enable_ref_ = new Ref<bool>(() => predict_on_enable_, val => { predict_on_enable_ = val; });
             feature_extract_on_enable_ref_ = new Ref<bool>(() => feature_extract_on_enable_, val => {feature_extract_on_enable_ = val; });
-            
+
+            overlay_start_ref_ = new Ref<bool>(() => overlayStart, val => { overlayStart = val; });
+
             overlayStart = false;
             kEmptyOverlay = new int[width * height * 4];
             for (int i = 0; i < kEmptyOverlay.Length; i++) kEmptyOverlay[i] = kNoOverlay;
@@ -892,14 +895,11 @@ namespace ColorGlove
                 case Filter.Step.MatchColors:
                 case Filter.Step.EnablePredict:
                 case Filter.Step.EnableFeatureExtract:
-                    //Filter.Process(step, state);
-                    //break;
+                case Filter.Step.ShowOverlay:
                     Type type = typeof(Filter);
                     MethodInfo Filtermethod = type.GetMethod(step.ToString());
                     Filtermethod.Invoke(null, new object[]{state});
                     break;
-                case Filter.Step.ColorLabelingInRGB: ColorLabellingInRGB(); break;
-                case Filter.Step.ShowOverlay: ShowOverlay(); break;
                 case Filter.Step.Denoise: Denoise(); break;
                 case Filter.Step.FeatureExtractOnEnable: FeatureExtractOnEnable(); break;
                 case Filter.Step.PredictOnEnable: PredictOnEnable(); break;
@@ -1221,43 +1221,6 @@ namespace ColorGlove
             Array.Copy(tmp_buffer_, bitmap_bits_, tmp_buffer_.Length);
         }
 
-        // Label the RGB image without involving depth image
-        private void ColorLabellingInRGB()
-        {
-            byte[] bgr = rgb_;
-            byte[] rgb_tmp = new byte[3];
-            for (int i = 0; i < bgr.Length; i += 4)
-            {
-                bitmap_bits_[i + 3] = 255;
-                rgb_tmp[0] = bgr[i + 2];
-                rgb_tmp[1] = bgr[i + 1];
-                rgb_tmp[2] = bgr[i];
-
-                setLabel(rgb_tmp); // do the labeling
-
-                bitmap_bits_[i] = rgb_tmp[2];
-                bitmap_bits_[i + 1] = rgb_tmp[1];
-                bitmap_bits_[i + 2] = rgb_tmp[0];
-            }
-        }
-
-        private void ShowOverlay() {
-            if (overlayStart)
-            {
-                for (int x = crop.X; x <= crop.Width + crop.X; x++)
-                {
-                    for (int y = crop.Y; y <= crop.Height + crop.Y; y++)
-                    {
-                        int idx = Util.toID(x, y, width, height, kColorStride);
-                        if (overlay_bitmap_bits_[idx] != kNoOverlay) bitmap_bits_[idx] = (byte)overlay_bitmap_bits_[idx];
-                        if (overlay_bitmap_bits_[idx + 1] != kNoOverlay) bitmap_bits_[idx + 1] = (byte)overlay_bitmap_bits_[idx + 1];
-                        if (overlay_bitmap_bits_[idx + 2] != kNoOverlay) bitmap_bits_[idx + 2] = (byte)overlay_bitmap_bits_[idx + 2];
-                        if (overlay_bitmap_bits_[idx + 3] != kNoOverlay) bitmap_bits_[idx + 3] = (byte)overlay_bitmap_bits_[idx + 3];
-                    }
-                }
-            }
-        }
-
         #endregion
 
         private void PackageState()
@@ -1278,7 +1241,10 @@ namespace ColorGlove
                 centroidColor,
                 centroidLabel,
                 predict_on_enable_ref_,
-                feature_extract_on_enable_ref_);
+                feature_extract_on_enable_ref_,
+                overlay_start_ref_,
+                kNoOverlay,
+                overlay_bitmap_bits_);
         }
 
         private void updateHelper()
@@ -1309,26 +1275,5 @@ namespace ColorGlove
             
             updateHelper();
         }
-
-        #region Color matching
-
-        void setLabel(byte[] point)
-        {
-            // Using HSV for color labeling
-
-            System.Drawing.Color color = System.Drawing.Color.FromArgb(point[0], point[1], point[2]);
-            float hue = color.GetHue();
-            float sat = color.GetSaturation();
-            if (hue >= DesiredMinHue && hue <= DesiredMaxHue && sat >= DesiredMinSat && sat <= DesiredMaxSat)
-            {
-                //Array.Copy(targetColor, point, 3);                
-            }
-            else
-            {
-                Array.Copy(backgroundColor, point, 3);
-            }
-        }
-        #endregion
-
     }
 }
