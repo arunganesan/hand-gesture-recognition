@@ -70,6 +70,20 @@ namespace FeatureExtractionLib
             }
             return Tuple.Create<int, T>(maxIndex, maxValue);
         }
+        
+        public static double EuclideanDistance(double[] point1, double[] point2)
+        {
+            return Math.Sqrt(Math.Pow(point1[0] - point2[0], 2) +
+                Math.Pow(point1[1] - point2[1], 2) +
+                Math.Pow(point1[2] - point2[2], 2));
+        }
+
+        public static double EuclideanDistance(byte[] point1, byte[] point2)
+        {
+            return Math.Sqrt(Math.Pow(point1[0] - point2[0], 2) +
+                Math.Pow(point1[1] - point2[1], 2) +
+                Math.Pow(point1[2] - point2[2], 2));
+        }
     }
 
     /* Reference wrapper from 

@@ -71,24 +71,7 @@ namespace ColorGlove
         private System.Windows.Controls.Image image;
         private Manager manager;
         public int lower, upper; // range for thresholding in show_mapped_depth(),  show_color_depth(). Set by the manager.
-        public enum Step
-        {
-            PaintWhite,
-            PaintGreen,
-            CopyColor,
-            CopyDepth,
-            Crop,
-            MappedDepth,
-            ColorMatch,
-            ColorLabelingInRGB,
-            OverlayOffset,
-            Denoise,
-            EnableFeatureExtract,
-            FeatureExtractOnEnable,
-            EnablePredict,
-            PredictOnEnable,
-        };
-
+        
         // *OnEnable counters
         bool predict_on_enable_ = false;
         bool feature_extract_on_enable_ = false;
@@ -120,7 +103,6 @@ namespace ColorGlove
 
         private static System.Drawing.Rectangle cropValues;
         private System.Drawing.Rectangle crop;
-        private Ref<System.Drawing.Rectangle> crop_ref_;
         private int width, height;
         private int kColorStride, kDepthStride;
         private System.Drawing.Point startDrag, endDrag;
@@ -130,7 +112,7 @@ namespace ColorGlove
         double[] tmp_point = new double[3];
         double[] tmp_point2 = new double[3];
         byte[] tmp_byte = new byte[3];
-        private Step[] pipeline = new Step[0];
+        private Filter.Step[] pipeline = new Filter.Step[0];
         
         // predict output for each pixel. It is used when using GPU.
         private float[] predict_output_;
@@ -149,13 +131,21 @@ namespace ColorGlove
         static private List<byte> centroidLabel = new List<byte>(); // the label of the centroid
         private Dictionary<byte, byte[]> labelColor = new Dictionary<byte, byte[]>();
 
-        byte targetLabel, backgroundLabel;
+        byte targetLabel;
+        readonly byte kBackgroundLabel = 0;
 
         private static WebSocketServer server = null;
         private static List<IWebSocketConnection> all_sockets_ = new List<IWebSocketConnection>();
 
         private static FeatureExtractionLib.FeatureExtraction Feature = null;
         List<int[]> listOfTransformedPairPosition;
+
+
+        // References used for passing into Filter
+        private Ref<System.Drawing.Rectangle> crop_val_ref_;
+        private Ref<System.Drawing.Rectangle> crop_ref_;
+        private Ref<int> upper_ref_;
+        private Ref<int> lower_ref_;
         #endregion
 
         public Processor(Manager manager)
@@ -177,7 +167,11 @@ namespace ColorGlove
 
             crop = new System.Drawing.Rectangle(0, 0, width - 1, height - 1);
             crop_ref_ = new Ref<System.Drawing.Rectangle>(() => crop, val => { crop = val; });
-            
+            crop_val_ref_ = new Ref<System.Drawing.Rectangle>(() => cropValues, val => { cropValues = val; });
+
+            upper_ref_ = new Ref<int>(() => upper, val => { upper = val; });
+            lower_ref_ = new Ref<int>(() => lower, val => { lower = val; });
+
             overlayStart = false;
             kEmptyOverlay = new int[width * height * 4];
             for (int i = 0; i < kEmptyOverlay.Length; i++) kEmptyOverlay[i] = kNoOverlay;
@@ -197,9 +191,8 @@ namespace ColorGlove
             image.MouseRightButtonDown += StartDrag;
             image.MouseMove += Drag;
             image.MouseRightButtonUp += EndDrag;
-            
-            SetCentroidColorAndLabel();
 
+            SetCentroidColorAndLabel();
             
             FleckLog.Level = LogLevel.Debug;
             if (server == null)
@@ -260,9 +253,8 @@ namespace ColorGlove
             // Set which hand gesture to use in the contruct function
             targetLabel = (byte)HandGestureValue;  // numerical value
             Console.WriteLine("targetLabel: {0}", targetLabel);
-            backgroundLabel = 0;
             labelColor.Add(targetLabel, new byte[] { 255, 0, 0 }); // target is red
-            labelColor.Add(backgroundLabel, new byte[] { 255, 255, 255 }); // background is white
+            labelColor.Add(kBackgroundLabel, new byte[] { 255, 255, 255 }); // background is white
             // Then add arbitrary labeled centroids.
             // For target color (blue)
 
@@ -288,17 +280,17 @@ namespace ColorGlove
             
 
             // For background color 
-            AddCentroid(80, 80, 80, backgroundLabel);
-            AddCentroid(250, 240, 240, backgroundLabel);
-            AddCentroid(210, 180, 150, backgroundLabel);
-            
-            AddCentroid(110, 86, 244, backgroundLabel);
-            AddCentroid(75, 58, 151, backgroundLabel);
-            AddCentroid(153, 189, 206, backgroundLabel);
-            AddCentroid(214, 207, 206, backgroundLabel);
-            AddCentroid(122, 124, 130, backgroundLabel);
+            AddCentroid(80, 80, 80, kBackgroundLabel);
+            AddCentroid(250, 240, 240, kBackgroundLabel);
+            AddCentroid(210, 180, 150, kBackgroundLabel);
 
-            AddCentroid(124, 102, 11, backgroundLabel);
+            AddCentroid(110, 86, 244, kBackgroundLabel);
+            AddCentroid(75, 58, 151, kBackgroundLabel);
+            AddCentroid(153, 189, 206, kBackgroundLabel);
+            AddCentroid(214, 207, 206, kBackgroundLabel);
+            AddCentroid(122, 124, 130, kBackgroundLabel);
+
+            AddCentroid(124, 102, 11, kBackgroundLabel);
             
         }
 
@@ -400,7 +392,7 @@ namespace ColorGlove
                         tmp_point2[1] = kMeans_clusters[idx, 1];
                         tmp_point2[2] = kMeans_clusters[idx, 2];
 
-                        double distance = euc_distance(point, tmp_point2);
+                        double distance = Util.EuclideanDistance(point, tmp_point2);
                         if (distance < minDistance)
                         {
                             minCluster = idx;
@@ -444,7 +436,7 @@ namespace ColorGlove
                     tmp_point2[1] = g;
                     tmp_point2[2] = b;
 
-                    cluster_deltas[i] = euc_distance(tmp_point, tmp_point2);
+                    cluster_deltas[i] = Util.EuclideanDistance(tmp_point, tmp_point2);
 
                     kMeans_clusters[i, 0] = r;
                     kMeans_clusters[i, 1] = g;
@@ -503,7 +495,7 @@ namespace ColorGlove
                 {
                     byte label;
                     if (kMeans_assignments[baseIndex] == i) label = this.targetLabel;
-                    else label = this.backgroundLabel;
+                    else label = kBackgroundLabel;
 
                     if (label == this.targetLabel)
                     {
@@ -882,35 +874,37 @@ namespace ColorGlove
 
         public System.Windows.Controls.Image getImage() { return image; }
 
-        public void updatePipeline(params Step[] steps)
+        public void updatePipeline(params Filter.Step [] steps)
         {
-            pipeline = new Step[steps.Length];
+            pipeline = new Filter.Step[steps.Length];
             for (int i = 0; i < steps.Length; i++) pipeline[i] = steps[i];
         }
 
-        private void process(Step step)
+        private void process(Filter.Step step)
         {
             // Wrap object.
             //Console.WriteLine("crop: {0}, depth_: {1}, rgb: {2}, bitmap: {3}", &crop, &depth_, &rgb_, &bitmap_bits_);
             switch (step)
             {
-                case Step.CopyColor:
-                case Step.CopyDepth:
-                case Step.PaintWhite:
-                case Step.PaintGreen:
+                case Filter.Step.CopyColor:
+                case Filter.Step.CopyDepth:
+                case Filter.Step.PaintWhite:
+                case Filter.Step.PaintGreen:
+                case Filter.Step.Crop:
+                case Filter.Step.MatchColors:
+                    //Filter.Process(step, state);
+                    //break;
                     Type type = typeof(Filter);
                     MethodInfo Filtermethod = type.GetMethod(step.ToString());
                     Filtermethod.Invoke(null, new object[]{state});
                     break;
-                case Step.Crop: Crop(); break;
-                case Step.ColorMatch: MatchColors(); break;
-                case Step.ColorLabelingInRGB: ColorLabellingInRGB(); break;
-                case Step.OverlayOffset: ShowOverlay(); break;
-                case Step.Denoise: Denoise(); break;
-                case Step.EnablePredict: Enable(ref predict_on_enable_); break;
-                case Step.EnableFeatureExtract: Enable(ref feature_extract_on_enable_); break;
-                case Step.FeatureExtractOnEnable: FeatureExtractOnEnable(); break;
-                case Step.PredictOnEnable: PredictOnEnable(); break;
+                case Filter.Step.ColorLabelingInRGB: ColorLabellingInRGB(); break;
+                case Filter.Step.OverlayOffset: ShowOverlay(); break;
+                case Filter.Step.Denoise: Denoise(); break;
+                case Filter.Step.EnablePredict: Enable(ref predict_on_enable_); break;
+                case Filter.Step.EnableFeatureExtract: Enable(ref feature_extract_on_enable_); break;
+                case Filter.Step.FeatureExtractOnEnable: FeatureExtractOnEnable(); break;
+                case Filter.Step.PredictOnEnable: PredictOnEnable(); break;
             }
         }
 
@@ -933,9 +927,9 @@ namespace ColorGlove
         private void FeatureExtractOnEnable()
         {
             if (feature_extract_on_enable_ == false) return;
-            
-            int color_match_index = Array.IndexOf(pipeline, Step.ColorMatch);
-            int this_index = Array.IndexOf(pipeline, Step.FeatureExtractOnEnable);
+
+            int color_match_index = Array.IndexOf(pipeline, Filter.Step.MatchColors);
+            int this_index = Array.IndexOf(pipeline, Filter.Step.FeatureExtractOnEnable);
             Debug.Assert(color_match_index != -1 && this_index > color_match_index, "ColorMatch must precede this step in the pipeline.");
             
             var directory = "D:\\gr\\training\\blue\\" + HandGestureValue + RangeModeValue;
@@ -1229,48 +1223,6 @@ namespace ColorGlove
             Array.Copy(tmp_buffer_, bitmap_bits_, tmp_buffer_.Length);
         }
 
-        // Adjusts the cropping parameters
-        private void Crop()
-        {
-            crop.X = cropValues.X; crop.Y = cropValues.Y;
-            crop.Width = cropValues.Width; crop.Height = cropValues.Height;
-        }
-
-        // This function is used mainly for labelling. It serves two purposes. 
-        // First, it finds the nearest color match to each pixel within some 
-        // threshold. Then, it records the label based on the color matching 
-        // which is later used for creating the training file.
-        // 
-        // This function writes the color match
-        private void MatchColors()
-        {
-            Array.Clear(depth_label_, 0, depth_label_.Length);  // background label is 0. So can use Clear method.
-            for (int i = 0; i < depth_.Length; i++)
-            {
-                int depthVal = depth_[i] >> DepthImageFrame.PlayerIndexBitmaskWidth;
-                if ((depthVal <= upper) && (depthVal > lower))
-                {
-                    ColorImagePoint point = data_.mapped()[i];
-                    int baseIndex = Util.toID(point.X, point.Y, width, height, kColorStride);
-                    
-                    if (point.X > crop.X && point.X <= (crop.X + crop.Width) &&
-                        point.Y > crop.Y && point.Y <= (crop.Y + crop.Height))
-                    {
-                        rgb_tmp[0] = rgb_[baseIndex + 2];
-                        rgb_tmp[1] = rgb_[baseIndex + 1];
-                        rgb_tmp[2] = rgb_[baseIndex];
-
-                        byte label = nearest_color(rgb_tmp);
-                        depth_label_[i] = label;
-
-                        bitmap_bits_[baseIndex] = rgb_tmp[2];
-                        bitmap_bits_[baseIndex + 1] = rgb_tmp[1];
-                        bitmap_bits_[baseIndex + 2] = rgb_tmp[0];
-                    }
-                }
-            }
-        }
-
         // Label the RGB image without involving depth image
         private void ColorLabellingInRGB()
         {
@@ -1310,6 +1262,25 @@ namespace ColorGlove
 
         #endregion
 
+        private void PackageState()
+        {
+            state = new ProcessorState(
+                crop_ref_,
+                crop_val_ref_,
+                upper_ref_,
+                lower_ref_,
+                data_,
+                depth_,
+                depth_label_,
+                rgb_,
+                bitmap_bits_,
+                nearest_cache,
+                labelColor,
+                kBackgroundLabel,
+                centroidColor,
+                centroidLabel);
+        }
+
         private void updateHelper()
         {
             bitmap_.Dispatcher.Invoke(new Action(() =>
@@ -1326,19 +1297,14 @@ namespace ColorGlove
                 this.data_ = data;
                 this.depth_ = data.depth();
                 this.rgb_ = data.color();
-                
-                // Package the state
-                state = new ProcessorState(
-                    crop_ref_, 
-                    depth_, 
-                    rgb_, 
-                    bitmap_bits_);
+
+                PackageState();
             }
 
             lock (bitmap_lock_)
             {
                 if (paused) return;
-                foreach (Step step in pipeline) process(step);
+                foreach (Filter.Step step in pipeline) process(step);
             }
             
             updateHelper();
@@ -1361,68 +1327,6 @@ namespace ColorGlove
             {
                 Array.Copy(backgroundColor, point, 3);
             }
-        }
-
-        byte nearest_color(byte[] point)
-        {
-            // In place rewriting of the array
-            //if (nearest_cache.ContainsKey(point))
-            Tuple<byte, byte, byte> t = new Tuple<byte, byte, byte>(point[0], point[1], point[2]);
-            if (nearest_cache.ContainsKey(t))
-            {
-                //Console.WriteLine("Actually matching.");
-                Array.Copy(labelColor[nearest_cache[t]], point, 3);
-                return nearest_cache[t]; // should return the label
-            }
-
-            //int minIdx = 0;
-            double minDistance = 1000000;
-            byte minColorLabel = backgroundLabel;
-
-            lock (centroidColor)
-            {
-                for (int idx = 0; idx < centroidColor.Count; idx++)
-                {
-                    double distance = EuclideanDistance(point, centroidColor[idx]);
-                    if (distance < minDistance)
-                    {
-                        minColorLabel = centroidLabel[idx];
-                        minDistance = distance;
-                    }
-                }
-            }
-
-            nearest_cache.Add(new Tuple<byte, byte, byte>(point[0], point[1], point[2]),
-                minColorLabel);
-
-
-            //Console.WriteLine(nearest_cache.Count());
-            Array.Copy(labelColor[minColorLabel], point, 3);
-            return minColorLabel;
-        }
-
-        double euc_distance(double[] point, double[] point2)
-        {
-            return Math.Sqrt(Math.Pow(point[0] - point2[0], 2) +
-                Math.Pow(point[1] - point2[1], 2) +
-                Math.Pow(point[2] - point2[2], 2));
-        }
-        
-        double ColorDistance(byte[] point1, byte[] point2) // using human perception for the color metric
-        {
-
-            long rmean = ((long)point1[0] + (long)point2[0]) / 2;
-            long r = (long)point1[0] - (long)point2[0];
-            long g = (long)point1[1] - (long)point2[1];
-            long b = (long)point2[2] - (long)point2[2];
-            return Math.Sqrt((((512 + rmean) * r * r) >> 8) + 4 * g * g + (((767 - rmean) * b * b) >> 8));
-        }
-
-        double EuclideanDistance(byte[] point1, byte[] point2)
-        {
-            return Math.Sqrt(Math.Pow(point1[0] - point2[0], 2) +
-                Math.Pow(point1[1] - point2[1], 2) +
-                Math.Pow(point1[2] - point2[2], 2));
         }
         #endregion
 

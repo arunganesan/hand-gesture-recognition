@@ -60,13 +60,13 @@ namespace ColorGlove
             {
                 processors[0].updatePipeline(
                     // Show the rgb image
-                                            Processor.Step.CopyColor
+                                            Filter.Step.CopyColor
                     // Show the depth image                                         
                     // Processor.Step.Depth    
 
                     // Show the Color Labelling                                         
                     // Processor.Step.PaintWhite,
-                    // Processor.Step.ColorMatch
+                    // Processor.Step.MatchColors
                     );
 
 
@@ -78,15 +78,15 @@ namespace ColorGlove
                     // Show the rgb image
                     // Processor.Step.CopyColor
                     // Show the depth image                                         
-                                            Processor.Step.CopyDepth,
+                                            Filter.Step.CopyDepth,
                     // Show overlap offest
-                                            Processor.Step.OverlayOffset
+                                            Filter.Step.OverlayOffset
                     // Show Mapped Depth Using RGB
                     // Processor.Step.PaintWhite,
                     // Processor.Step.MappedDepth
                     // Show the Color Labelling
                     // Processor.Step.PaintWhite,
-                    // Processor.Step.ColorMatch
+                    // Processor.Step.MatchColors
                     // Denoise
                     //                        Processor.Step.Denoise
                 );
@@ -94,24 +94,24 @@ namespace ColorGlove
             else if (ProcessorMode == ProcessorModeFormat.Arun) {
                 processors[0].SetTestModule(Processor.ShowExtractedFeatureFormat.ShowTransformedForOnePixel); 
                 processors[0].updatePipeline(
-                    Processor.Step.PaintWhite,
-                    Processor.Step.Crop,
-                    Processor.Step.PaintGreen,
-                    Processor.Step.CopyColor,
-                    //Processor.Step.ColorMatch,
+                    Filter.Step.PaintWhite,
+                    Filter.Step.Crop,
+                    Filter.Step.PaintGreen,
+                    Filter.Step.CopyColor,
+                    //Processor.Step.MatchColors,
                     //Processor.Step.FeatureExtractOnEnable,
-                    Processor.Step.OverlayOffset
+                    Filter.Step.OverlayOffset
                 );
 
 
                 processors[1].SetTestModule(Processor.ShowExtractedFeatureFormat.PredictAllPixelsGPU);
                 processors[1].updatePipeline(
-                    Processor.Step.PaintGreen,
-                    Processor.Step.Crop,
-                    Processor.Step.CopyDepth,
+                    Filter.Step.PaintGreen,
+                    Filter.Step.Crop,
+                    Filter.Step.CopyDepth,
                     //Processor.Step.EnablePredict,
-                    Processor.Step.PredictOnEnable,
-                    Processor.Step.OverlayOffset);
+                    Filter.Step.PredictOnEnable,
+                    Filter.Step.OverlayOffset);
                 
                  
                 /*processors[1].SetTestModule(Processor.ShowExtractedFeatureFormat.ShowTransformedForOnePixel);
