@@ -97,9 +97,9 @@ namespace ColorGlove
                     Processor.Step.PaintWhite,
                     Processor.Step.Crop,
                     Processor.Step.PaintGreen,
-                    //Processor.Step.Depth,
-                    Processor.Step.ColorMatch,
-                    Processor.Step.FeatureExtractOnEnable,
+                    Processor.Step.Color,
+                    //Processor.Step.ColorMatch,
+                    //Processor.Step.FeatureExtractOnEnable,
                     Processor.Step.OverlayOffset
                 );
 
@@ -108,9 +108,8 @@ namespace ColorGlove
                 processors[1].updatePipeline(
                     //Processor.Step.PaintGreen,
                     Processor.Step.Crop,
-                    Processor.Step.Color,
-                    //Processor.Step.Depth,
-                    //Processor.Step.EnablePredict,
+                    Processor.Step.Depth,
+                    Processor.Step.EnablePredict,
                     Processor.Step.PredictOnEnable,
                     Processor.Step.OverlayOffset);
                 

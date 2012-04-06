@@ -29,19 +29,19 @@ namespace TestModuleNamespace
             TestModule FeatureExtractionTest = new TestModule();
             //FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.F1000);
             //FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.F2000);
-            FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.F3000);
+            //FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.F3000);
             //FeatureExtractionTest.TestGenerateOffset();
             
             // Generating feature files for different training set sizes
-            FeatureExtractionTest.TestGenerateFeatures("10");
-            FeatureExtractionTest.TestGenerateFeatures("50");
-            FeatureExtractionTest.TestGenerateFeatures("100");
-            FeatureExtractionTest.TestGenerateFeatures("150");
-            FeatureExtractionTest.TestGenerateFeatures("200");
-            FeatureExtractionTest.TestGenerateFeatures("250");
-            FeatureExtractionTest.TestGenerateFeatures("300");
-            FeatureExtractionTest.TestGenerateFeatures("350");
-            FeatureExtractionTest.TestGenerateFeatures("test");
+            //FeatureExtractionTest.TestGenerateFeatures("10");
+            //FeatureExtractionTest.TestGenerateFeatures("50");
+            //FeatureExtractionTest.TestGenerateFeatures("100");
+            //FeatureExtractionTest.TestGenerateFeatures("150");
+            //FeatureExtractionTest.TestGenerateFeatures("200");
+            //FeatureExtractionTest.TestGenerateFeatures("250");
+            //FeatureExtractionTest.TestGenerateFeatures("300");
+            //FeatureExtractionTest.TestGenerateFeatures("350");
+            //FeatureExtractionTest.TestGenerateFeatures("test");
             Console.WriteLine("Generated features.");
             // Test Random Forest
             // ##################

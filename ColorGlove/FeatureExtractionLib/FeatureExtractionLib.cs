@@ -100,13 +100,13 @@ namespace FeatureExtractionLib
             SetDirectory(varDirectory);
             SetMode(setMode);
             
-            //LoadRFModel();
-            //RFfeatureVector = new double[numOfOffsetPairs];
-            //RFfeatureVectorShort = new short[numOfOffsetPairs];
-            //xPU_mode_ = to_set_xPU_mode;
-            //if (xPU_mode_ == CPUorGPUFormat.GPU) {
-            //    InitGPU();
-            //}
+            LoadRFModel();
+            RFfeatureVector = new double[numOfOffsetPairs];
+            RFfeatureVectorShort = new short[numOfOffsetPairs];
+            xPU_mode_ = to_set_xPU_mode;
+            if (xPU_mode_ == CPUorGPUFormat.GPU) {
+                InitGPU();
+            }
         }
 
         private void SetMode(ModeFormat setMode) {

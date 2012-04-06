@@ -235,8 +235,9 @@ namespace ColorGlove
             // To setup the mode, see README in the library
 
             // User dependent. Notice that this is important
-            FeatureExtraction.ModeFormat MyMode = FeatureExtraction.ModeFormat.F1000; 
+            //FeatureExtraction.ModeFormat MyMode = FeatureExtraction.ModeFormat.F1000; 
             //FeatureExtraction.ModeFormat MyMode = FeatureExtraction.ModeFormat.Blue;
+            FeatureExtraction.ModeFormat MyMode = FeatureExtraction.ModeFormat.BlueDefault;
             Feature = new FeatureExtractionLib.FeatureExtraction(MyMode, "D:\\gr\\training\\blue");
             label_colors = Util.GiveMeNColors(Feature.num_classes_);
             Feature.ReadOffsetPairsFromStorage();
@@ -875,7 +876,6 @@ namespace ColorGlove
         }
 
         #region Filter functions
-        
         // Runs the prediction algorithm for each pixel and pools the results. 
         // The classes are drawn onto the overlay layer, and overlay is turned 
         // on. 
