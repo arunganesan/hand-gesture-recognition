@@ -103,7 +103,7 @@ short GetNewDepth(int cur_x, int cur_y, int cur_index, int dx, int dy, global re
 kernel void Predict(
     global read_only short* meta_tree,     
     global read_only int* trees, 
-    global read_only int* offset_list,
+    global read_only const int* offset_list,
     global write_only float* y,    
     global read_only short* depth)
 {
@@ -133,10 +133,10 @@ kernel void Predict(
         while (1){            
             visit_count ++;
             // limit the depth     
-            /*                   
+            /*                         
             if (visit_count>20)
                 break;
-            */
+            */ 
             if (trees[k] == -1)
             {                
                 y[y_index + trees[k+1]]++;
