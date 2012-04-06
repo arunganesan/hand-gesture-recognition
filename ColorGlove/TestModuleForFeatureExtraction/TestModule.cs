@@ -73,7 +73,7 @@ namespace TestModuleNamespace
 
             // General test on GPU
             // ########################
-            FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.F1000);
+            FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.Blue);
             FeatureExtractionTest.GeneralTestGPU();
             // ########################
 
@@ -127,7 +127,7 @@ namespace TestModuleNamespace
             //float[] y = new float[count * 3];
             float[] y = new float[count * feature_lib_obj_.num_classes_];  
 
-            const int maxTmp = 10;
+            const int maxTmp = 100;
             DateTime ExecutionStartTime; //Var will hold Execution Starting Time
             DateTime ExecutionStopTime;//Var will hold Execution Stopped Time
             TimeSpan ExecutionTime;//Var will count Total Execution Time-Our Main Hero

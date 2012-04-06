@@ -132,11 +132,11 @@ kernel void Predict(
         visit_count = 0;   
         while (1){            
             visit_count ++;
-            // limit the depth     
-            /*                         
+            /*
+            // limit the depth      
             if (visit_count>20)
                 break;
-            */ 
+            */
             if (trees[k] == -1)
             {                
                 y[y_index + trees[k+1]]++;
