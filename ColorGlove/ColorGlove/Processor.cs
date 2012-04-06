@@ -107,10 +107,9 @@ namespace ColorGlove
         */
         private ProcessorState state;
 
+        private KinectData data_;
         private short[] depth_;
         private byte[] rgb_;
-        
-        private KinectData data_;
 
         private byte[] rgb_tmp = new byte[3];
         private byte[] depth_label_;
@@ -893,9 +892,6 @@ namespace ColorGlove
         {
             // Wrap object.
             //Console.WriteLine("crop: {0}, depth_: {1}, rgb: {2}, bitmap: {3}", &crop, &depth_, &rgb_, &bitmap_bits_);
-
-            state = new ProcessorState(crop_ref_, depth_, rgb_, bitmap_bits_);
-
             switch (step)
             {
                 case Step.CopyColor:
@@ -1329,14 +1325,25 @@ namespace ColorGlove
         {
             // XXX: Bitmap locking should be unnecessary when working with 
             // the pipeline!
-            lock (bitmap_lock_)
-            {
-                if (paused) return;
 
+
+            if (data_ == null)
+            {
                 this.data_ = data;
                 this.depth_ = data.depth();
                 this.rgb_ = data.color();
+                
+                // Package the state
+                state = new ProcessorState(
+                    crop_ref_, 
+                    depth_, 
+                    rgb_, 
+                    bitmap_bits_);
+            }
 
+            lock (bitmap_lock_)
+            {
+                if (paused) return;
                 foreach (Step step in pipeline) process(step);
             }
             // The helper always runs in the MainThread anyway (dispatch). If 
