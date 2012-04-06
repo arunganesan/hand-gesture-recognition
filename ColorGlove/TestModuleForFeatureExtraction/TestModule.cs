@@ -71,7 +71,7 @@ namespace TestModuleNamespace
 
             // General test on GPU
             // ########################
-            //FeatureExtractionTest.GeneralTestGPU();
+            FeatureExtractionTest.GeneralTestGPU();
             // ########################
             Console.ReadKey();
         }

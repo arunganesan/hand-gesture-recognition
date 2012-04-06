@@ -113,9 +113,14 @@ kernel void Predict(
     for (i=0; i< meta_tree[0]; i++)
         y[y_index + i] = 0;
     for (i=0; i< meta_tree[1]; i++){
-        k = offs +1;        
+        k = offs +1;     
+        visit_count = 0;   
         while (1){            
             visit_count ++;
+            // limit the depth
+            
+            if (visit_count>2)
+                break;
             if (trees[k] == -1)
             {                
                 y[y_index + trees[k+1]]++;

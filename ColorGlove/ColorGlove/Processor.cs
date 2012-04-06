@@ -644,7 +644,36 @@ namespace ColorGlove
 
             // Predict all pixels using GPU
             if ((ShowExtractedFeatureMode & ShowExtractedFeatureFormat.PredictAllPixelsGPU) == ShowExtractedFeatureFormat.PredictAllPixelsGPU) 
-                EnablePool();
+            {
+                List<Tuple<byte, byte, byte>> label_colors = Util.GiveMeNColors(Feature.num_classes_);
+                DateTime ExecutionStartTime;  
+                DateTime ExecutionStopTime;  
+                TimeSpan ExecutionTime; 
+                ExecutionStartTime = DateTime.Now;  
+
+                Feature.PredictGPU(depth_, ref predict_output_);
+                ShowAverageAndVariance(predict_output_); // used for debug
+                
+                ExecutionStopTime = DateTime.Now;
+                ExecutionTime = ExecutionStopTime - ExecutionStartTime;
+                Console.WriteLine("Use {0} ms for getting prediction", ExecutionTime.TotalMilliseconds.ToString());
+                for (int depth_index = 0; depth_index < depth_.Length; depth_index++)
+                {
+                    int predict_label = 0,  bitmap_index = depth_index * 4, y_index= depth_index * Feature.num_classes_;
+                    for (int i = 1; i < Feature.num_classes_; i++)
+                        if (predict_output_[y_index  + i] > predict_output_[y_index + predict_label])
+                            predict_label = i;
+                    overlay_bitmap_bits_[bitmap_index + 2] = (int)label_colors[predict_label].Item1;
+                    overlay_bitmap_bits_[bitmap_index + 1] = (int)label_colors[predict_label].Item2;
+                    overlay_bitmap_bits_[bitmap_index + 0] = (int)label_colors[predict_label].Item3;
+                }
+                
+                overlayStart = true;
+                update(data_);
+                Pause((PauseDelegate)HideOverlayDelegate);
+            }
+                
+            EnablePool(); // ??? Need condition?
             
             if ((ShowExtractedFeatureMode & ShowExtractedFeatureFormat.ShowTransformedForOnePixel) == ShowExtractedFeatureFormat.ShowTransformedForOnePixel)
             {
