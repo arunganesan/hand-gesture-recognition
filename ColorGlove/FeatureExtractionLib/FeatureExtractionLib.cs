@@ -69,7 +69,7 @@ namespace FeatureExtractionLib
         // random forest object from Alglib
         private dforest.decisionforest decisionForest;
         // trees in int type
-        private int[] treesInt;
+        private int[] trees_int_;
         private GPUCompute myGPU_; // GPU
         private int uMin, uMax;        
         private RandomGenerationModeFormat RandomGenerationMode;
@@ -219,14 +219,97 @@ namespace FeatureExtractionLib
             // initialize the GPU compute, including compiling. You can set which source to use in the construct function. See the default setting. 
             myGPU_ = new GPUCompute(); 
             // turn the tree from double type to int type to make it more efficient
-            treesInt = new int [decisionForest.trees.Length];
-            Console.WriteLine("Length of the tree: {0}", treesInt.Length);
+            trees_int_ = new int [decisionForest.trees.Length];
+            Console.WriteLine("Length of the tree: {0}", trees_int_.Length);
             for (int i = 0; i < decisionForest.trees.Length; i++)                 
-                treesInt[i] = (int) Math.Ceiling(decisionForest.trees[i]);
-            myGPU_.LoadTrees(treesInt, (short)decisionForest.nclasses, (short)decisionForest.ntrees, decisionForest.nvars);
-            Console.WriteLine("Successfuly load the trained random forest into GPU");
+                trees_int_[i] = (int) Math.Ceiling(decisionForest.trees[i]);
 
+            
+            int[] new_trees = new int[trees_int_.Length];
+            TransformTrees(new_trees, trees_int_, decisionForest.ntrees);
+            // maybe need to clear the memory?
+            trees_int_ = new_trees;
+            Console.WriteLine("Successfuly transform the trees");
+            
+            myGPU_.LoadTrees(trees_int_, (short)decisionForest.nclasses, (short)decisionForest.ntrees, decisionForest.nvars);
+            Console.WriteLine("Successfuly load the trained random forest into GPU");
         }
+
+        // This function trasform the tree data structure from Alglib to breadth-first data structure.
+        public void TransformTrees(int []new_tree, int [] old_tree, int num_trees)
+        {
+            //int [] new_trees = new int[trees_int_.Length];
+
+            // Alglib TREE FORMAT (Very important-Michael)
+            // W[Offs]      -   size of sub-array
+            //     node info:
+            // W[K+0]       -   variable number        (-1 for leaf mode)
+            // W[K+1]       -   threshold              (class/value for leaf node)
+            // W[K+2]       -   ">=" branch index      (absent for leaf node)
+            // K+3            -   left child
+
+            // New tree format in breadth-first 
+            // W[Offs]      -   size of sub-array
+            //     node info:
+            // W[K+0]       -   variable number        (-1 for leaf mode)
+            // W[K+1]       -   threshold              (class/value for leaf node)
+            // W[K+2]       -   "<" branch index      (absent for leaf node)
+            // W[K+2], W[K+2]+1            -   left child and right child index
+            int offset = 0;
+            for (int i = 0; i < num_trees; i++)
+            {
+                HelperTransformSingleTree(new_tree, old_tree, offset);
+                offset += old_tree[offset];
+            }
+        }
+
+        public void HelperTransformSingleTree(int[] new_tree, int[] old_tree, int new_tree_off)
+        {            
+            Queue<int> my_queue = new Queue<int>();            
+            int new_tree_index = new_tree_off,                 
+                new_tree_last_index = 0;
+            // copy the size 
+            new_tree[new_tree_index] = old_tree[new_tree_index];
+            new_tree_index++;
+
+            new_tree_last_index +=4;
+            my_queue.Enqueue(new_tree_index);
+            while (my_queue.Count != 0) {
+                int top_index = my_queue.Dequeue();
+                // copy the feature value and threshold
+                new_tree[new_tree_index] = old_tree[top_index];
+                new_tree[new_tree_index + 1] = old_tree[top_index + 1];
+                // if the current node is not a leaf node
+                if (new_tree[new_tree_index] != -1)
+                {
+                    // update the new tree branch
+                    new_tree[new_tree_index + 2] = new_tree_last_index;
+                    // if the left children is not a leaf node
+                    if (old_tree[top_index + 3  ] != -1)
+                        new_tree_last_index += 3;
+                    // if the left children is a leaf node
+                    else
+                        new_tree_last_index += 2;
+                    // make the left child and right child locate nearby
+                    // if the right children is not a leaf node
+                    if (old_tree[old_tree[top_index + 2  ] + new_tree_off ] != -1)
+                        new_tree_last_index += 3;
+                    else
+                        // if the right children is a leaf node
+                        new_tree_last_index += 2;
+                    // advance the current node 
+                    new_tree_index += 3;
+                    // enqueue the node's children
+                    my_queue.Enqueue(top_index + 3);
+                    my_queue.Enqueue(old_tree[top_index + 2] + new_tree_off);
+                }
+                else
+                    new_tree_index += 2;
+            }
+            //Console.WriteLine("Done"); //debug
+        }
+
+       
 
         private void SetDirectory(string dir)
         // set working directory
@@ -477,9 +560,9 @@ namespace FeatureExtractionLib
         { 
             int count= input_array.Length;
             // true: if something wrong.
-            if (input_array[0] != output_array[0] - (short)(treesInt[0]) || input_array[count - 1] != output_array[count - 1] - (short)(treesInt[count - 1])) {
-                Console.WriteLine("Somethign wrong. treesInt[0]:{0} Before[0]: {1}, After[0]: {2};", (short)(treesInt[0]), input_array[0], output_array[0]);
-                Console.WriteLine("Somethign wrong. treesInt[{0}]:{1} Before[{0}]: {2}, After[{0}]: {3};", count - 1, (short)(treesInt[count - 1]), input_array[count - 1], output_array[count - 1]);
+            if (input_array[0] != output_array[0] - (short)(trees_int_[0]) || input_array[count - 1] != output_array[count - 1] - (short)(trees_int_[count - 1])) {
+                Console.WriteLine("Somethign wrong. treesInt[0]:{0} Before[0]: {1}, After[0]: {2};", (short)(trees_int_[0]), input_array[0], output_array[0]);
+                Console.WriteLine("Somethign wrong. treesInt[{0}]:{1} Before[{0}]: {2}, After[{0}]: {3};", count - 1, (short)(trees_int_[count - 1]), input_array[count - 1], output_array[count - 1]);
                 return true;
             }
             return false;
@@ -619,33 +702,6 @@ namespace FeatureExtractionLib
             for (int i = 0; i < Math.Min(numerPerClass, listOfTargetPosition.Count); i++)
                 ExtractFeatureFromOneDepthPointAndWriteToFile(listOfTargetPosition[i]);
         }
- 
-
-        public void testEnum()
-        {
-            Array values = Enum.GetValues(typeof(Util.HandGestureFormat));
-            foreach (Util.HandGestureFormat val in values)
-            {
-                Console.WriteLine("Name: {0}, numerical value: {1}", val, (byte)val);
-            }
-        }
-
-        public void testSplit()
-        {
-            string s = "(-1,0) (123,1)";
-            char[] delimiters = new char[] { '(', ')', ',', ' ' };
-            string[] parts = s.Split(delimiters,
-                             StringSplitOptions.RemoveEmptyEntries);
-            Console.Write(parts.Length);
-            for (int i = 0; i < parts.Length; i++)
-            {
-                Console.WriteLine(parts[i]);
-            }
-        }
-
-        public void testSample()
-        {
-            RandomSample(100);
-        }
+         
     }
 }

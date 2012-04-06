@@ -109,7 +109,7 @@ kernel void Predict(
 {
     
     int index= get_global_id(0), y_index =index* meta_tree[0];    
-    int offs = 0, k, offset_list_index, visit_count = 0;    
+    int offs = 0, k, offset_list_index, visit_count = 0, new_k;    
     short u_depth, v_depth, i;    
     int cur_x= index % 640, cur_y=index / 640;
     float v;        
@@ -132,10 +132,11 @@ kernel void Predict(
         visit_count = 0;   
         while (1){            
             visit_count ++;
-            // limit the depth                        
+            // limit the depth     
+            /*                   
             if (visit_count>20)
                 break;
-            
+            */
             if (trees[k] == -1)
             {                
                 y[y_index + trees[k+1]]++;
@@ -148,22 +149,36 @@ kernel void Predict(
             //v_depth = 0;
             u_depth = GetNewDepth(cur_x, cur_y, index, offset_list[offset_list_index], offset_list[offset_list_index+1], depth);
             v_depth = GetNewDepth(cur_x, cur_y, index, offset_list[offset_list_index + 2], offset_list[offset_list_index+3], depth);                  
-            
-             
+            // use Alglib tree
+            /* 
             if (u_depth - v_depth < trees[k+1] )
                 k+=3;
             else
                 k = offs + trees[k+2];
-            
+            */
+            // use breadth-first tree
+            // first go to the left child by default
+            new_k = trees[k+2] + offs;
+            if (u_depth - v_depth >= trees[k+1] )
+            {                
+                // if the left child is not a leaf
+                if (trees[new_k] != -1)
+                    new_k+=3;
+                else
+                    new_k+=2;                
+            }    
+            k = new_k;
             // just traverse 
-            //k = offs + trees[k];
+            /*
+            k = offs + trees[k];
+            */
         }
         offs = offs + trees[offs];
     }
 
     for (i=0; i< meta_tree[0]; i++)
-        //y[y_index + i] = v* y[y_index + i];
-        y[y_index + i] = visit_count;
+        y[y_index + i] = v* y[y_index + i];
+        //y[y_index + i] = visit_count;
     
 }
 ";
@@ -562,5 +577,6 @@ kernel void AddVectorWithTrees(
 
     }
 }
+
 
 

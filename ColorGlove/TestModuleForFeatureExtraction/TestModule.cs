@@ -76,11 +76,44 @@ namespace TestModuleNamespace
             FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.Blue);
             FeatureExtractionTest.GeneralTestGPU();
             // ########################
+
+            // Test on transform tree
+            //FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.Blue);
+            //FeatureExtractionTest.TestTransformTree();
             Console.ReadKey();
         }
 
         public TestModule() { 
             //myGPU = new GPUCompute();
+        }
+
+        private void HelperTestTransformTree(int [] new_tree, int[] old_tree, int[] new_tree_correct)
+        {
+            //feature_lib_obj_.HelperTransformSingleTree(new_tree, old_tree, 2);
+            feature_lib_obj_.TransformTrees(new_tree, old_tree, 2);
+            bool correct = true;
+            for (int i = 0; i < new_tree.Length; i++)
+            {
+                if (new_tree_correct[i] != new_tree[i])
+                {
+                    correct = false;
+                    break;
+                }
+            }
+            if (correct)
+            {
+                Console.WriteLine("Succeessfuly test case!");
+            }
+            else
+                Console.WriteLine("Fail to test case!");
+        }
+
+        public void TestTransformTree()
+        {
+            int[] old_tree = new int[] { 13, 1, 2, 11, 4, 5, 9, -1, 8, -1, 10, -1, 12, 13, 1, 2, 6, -1, 5, 6, 7, 11, -1, 10, -1, 12 };
+            int[] new_tree = new int[old_tree.Length];
+            int[] new_tree_correct = new int[] { 13, 1, 2, 4, 4, 5, 9, -1, 12, -1, 8, -1, 10, 13, 1, 2, 4, -1, 5, 6, 7, 9, -1, 10, -1, 12 };
+            HelperTestTransformTree(new_tree, old_tree, new_tree_correct);            
         }
 
         public void GeneralTestGPU()
