@@ -1,14 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
+using System.Diagnostics;
 using FeatureExtractionLib;
 using Microsoft.Kinect;
 
 namespace ColorGlove
 {
-
-
     public class Filter
     {
         public enum Step
@@ -185,6 +185,40 @@ namespace ColorGlove
             state.predict_on_enable_.Value = false;
         }
 
+        private void FeatureExtractOnEnable(ProcessorState state)
+        {
+            if (state.feature_extract_on_enable_.Value == false) return;
+
+            int color_match_index = Array.IndexOf(state.pipeline, Filter.Step.MatchColors);
+            int this_index = Array.IndexOf(state.pipeline, Filter.Step.FeatureExtractOnEnable);
+            Debug.Assert(color_match_index != -1 && this_index > color_match_index, "ColorMatch must precede this step in the pipeline.");
+
+            var directory = "D:\\gr\\training\\blue\\" + state.hand_gesture_value_ + state.range_mode_value_;
+            //var directory = "..\\..\\..\\Data" + "\\" + HandGestureValue + RangeModeValue;  // assume the directory exist
+            TimeSpan t = (DateTime.UtcNow - new DateTime(1970, 1, 1));
+            string filename = t.TotalSeconds.ToString();
+
+
+            List<int[]> depthAndLabel = new List<int[]>(); // -1 means non-hand 
+            using (StreamWriter filestream = new StreamWriter(directory + "\\" + "depthLabel_" + filename + ".txt"))
+            {
+                for (int i = 0; i < state.depth.Length; i++)
+                {
+                    int depthVal = state.depth[i] >> DepthImageFrame.PlayerIndexBitmaskWidth; // notice that the depth has been processed
+                    byte label = state.depth_label_[i];
+                    depthAndLabel.Add(new int[] { depthVal, label });
+                }
+
+                // Output file format:
+                //(depthVal, label) (depthVal, label) (depthVal, label) (depthVal, label) ...
+
+                filestream.Write("({0},{1})", depthAndLabel[0][0], depthAndLabel[0][1]);
+                for (int i = 1; i < depthAndLabel.Count; i++) filestream.Write(" ({0},{1})", depthAndLabel[i][0], depthAndLabel[i][1]);
+            }
+
+            state.feature_extract_on_enable_.Value = false;
+        }
+        
 
         #endregion
 

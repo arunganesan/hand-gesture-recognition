@@ -24,15 +24,17 @@ using Fleck;
 
 namespace ColorGlove
 {
+    public enum RangeModeFormat
+    {
+        Default = 0, // If you're using Kinect Xbox you should use Default
+        Near = 1,
+    };
+    
     public partial class Processor
     {
         #region Object properties
         //private Dictionary<Tuple<byte, byte, byte>, byte[]> nearest_cache = new Dictionary<Tuple<byte, byte, byte>, byte[]>();
-        private enum RangeModeFormat
-        {
-            Default = 0, // If you're using Kinect Xbox you should use Default
-            Near = 1,
-        };
+        
 
         public enum ShowExtractedFeatureFormat { 
             // use power of two to allow multiple selection
@@ -138,6 +140,7 @@ namespace ColorGlove
 
         public Processor(Manager manager)
         {
+
             Debug.WriteLine("Start processor contruction");
             this.manager = manager;
             width = 640; height = 480;
@@ -878,93 +881,22 @@ namespace ColorGlove
 
         private void process(Filter.Step step)
         {
-            // Wrap object.
-            //Console.WriteLine("crop: {0}, depth_: {1}, rgb: {2}, bitmap: {3}", &crop, &depth_, &rgb_, &bitmap_bits_);
-            switch (step)
-            {
-                case Filter.Step.CopyColor:
-                case Filter.Step.CopyDepth:
-                case Filter.Step.PaintWhite:
-                case Filter.Step.PaintGreen:
-                case Filter.Step.Crop:
-                case Filter.Step.MatchColors:
-                case Filter.Step.EnablePredict:
-                case Filter.Step.EnableFeatureExtract:
-                case Filter.Step.ShowOverlay:
-                case Filter.Step.PredictOnEnable:
-                    Type type = typeof(Filter);
-                    MethodInfo Filtermethod = type.GetMethod(step.ToString());
-                    Filtermethod.Invoke(null, new object[]{state});
-                    break;
-                case Filter.Step.FeatureExtractOnEnable: FeatureExtractOnEnable(); break;
-            }
+            Type type = typeof(Filter);
+            MethodInfo Filtermethod = type.GetMethod(step.ToString());
+            Filtermethod.Invoke(null, new object[]{state});
         }
-
-        #region Filter functions
-        
-        private void FeatureExtractOnEnable()
-        {
-            if (feature_extract_on_enable_ == false) return;
-
-            int color_match_index = Array.IndexOf(pipeline, Filter.Step.MatchColors);
-            int this_index = Array.IndexOf(pipeline, Filter.Step.FeatureExtractOnEnable);
-            Debug.Assert(color_match_index != -1 && this_index > color_match_index, "ColorMatch must precede this step in the pipeline.");
-            
-            var directory = "D:\\gr\\training\\blue\\" + HandGestureValue + RangeModeValue;
-            //var directory = "..\\..\\..\\Data" + "\\" + HandGestureValue + RangeModeValue;  // assume the directory exist
-            TimeSpan t = (DateTime.UtcNow - new DateTime(1970, 1, 1));
-            string filename = t.TotalSeconds.ToString();
-
-
-            List<int[]> depthAndLabel = new List<int[]>(); // -1 means non-hand 
-            using (StreamWriter filestream = new StreamWriter(directory + "\\" + "depthLabel_" + filename + ".txt"))
-            {
-                for (int i = 0; i < depth_.Length; i++)
-                {
-                    int depthVal = depth_[i] >> DepthImageFrame.PlayerIndexBitmaskWidth; // notice that the depth has been processed
-                    byte label = depth_label_[i];
-                    depthAndLabel.Add(new int[] { depthVal, label });
-                }
-
-                // Output file format:
-                //(depthVal, label) (depthVal, label) (depthVal, label) (depthVal, label) ...
-
-                filestream.Write("({0},{1})", depthAndLabel[0][0], depthAndLabel[0][1]);
-                for (int i = 1; i < depthAndLabel.Count; i++) filestream.Write(" ({0},{1})", depthAndLabel[i][0], depthAndLabel[i][1]);
-            }
-
-            feature_extract_on_enable_ = false;
-        }
-
-        #endregion
 
         private void PackageState()
         {
             state = new ProcessorState(
-                crop_ref_,
-                crop_val_ref_,
-                upper_ref_,
-                lower_ref_,
-                data_,
-                depth_,
-                depth_label_,
-                rgb_,
-                bitmap_bits_,
-                nearest_cache,
-                labelColor,
-                kBackgroundLabel,
-                centroidColor,
-                centroidLabel,
-                predict_on_enable_ref_,
-                feature_extract_on_enable_ref_,
-                overlay_start_ref_,
-                kNoOverlay,
-                overlay_bitmap_bits_,
-                kEmptyOverlay,
-                Feature,
-                predict_output_,
-                predict_labels_,
-                all_sockets_);
+                crop_ref_, crop_val_ref_, upper_ref_, lower_ref_,
+                data_, depth_, depth_label_, rgb_, bitmap_bits_,
+                nearest_cache, labelColor, kBackgroundLabel, centroidColor, centroidLabel,
+                predict_on_enable_ref_, feature_extract_on_enable_ref_,
+                overlay_start_ref_, kNoOverlay, overlay_bitmap_bits_, kEmptyOverlay,
+                Feature, predict_output_, predict_labels_,
+                all_sockets_, pipeline,
+                HandGestureValue, RangeModeValue);
         }
 
         private void updateHelper()
