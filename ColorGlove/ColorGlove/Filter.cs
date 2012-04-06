@@ -20,44 +20,46 @@ namespace ColorGlove
         #region Filter functions
         
         // Copies over the RGB value to the buffer.
-        public static void CopyColor(System.Drawing.Rectangle crop, short[] depth, byte[] rgb, byte[] bitmap_bits)
+        public static void CopyColor(ProcessorState state)
         {
-            for (int x = crop.X; x <= crop.Width + crop.X; x++)
+            for (int x = state.crop.Value.X; x <= state.crop.Value.Width + state.crop.Value.X; x++)
             {
-                for (int y = crop.Y; y <= crop.Height + crop.Y; y++)
+                for (int y = state.crop.Value.Y; y <= state.crop.Value.Height + state.crop.Value.Y; y++)
                 {
                     int idx = Util.toID(x, y, width, height, kColorStride);
-                    Array.Copy(rgb, idx, bitmap_bits, idx, kColorStride);
+                    Array.Copy(state.rgb, idx, state.bitmap_bits, idx, kColorStride);
                 }
             }
         }
 
 
         // Copies over the depth value to the buffer, normalized for the range of shorts.
-        public static void CopyDepth(System.Drawing.Rectangle crop, short[] depth, byte[] rgb, byte[] bitmap_bits)
+        public static void CopyDepth(ProcessorState state)
         {
-            for (int x = crop.X; x <= crop.Width + crop.X; x++)
+            for (int x = state.crop.Value.X; x <= state.crop.Value.Width + state.crop.Value.X; x++)
             {
-                for (int y = crop.Y; y <= crop.Height + crop.Y; y++)
+                for (int y = state.crop.Value.Y; y <= state.crop.Value.Height + state.crop.Value.Y; y++)
                 {
                     int idx = Util.toID(x, y, width, height, kDepthStride);
-                    bitmap_bits[4 * idx] =
-                    bitmap_bits[4 * idx + 1] =
-                    bitmap_bits[4 * idx + 2] =
-                    bitmap_bits[4 * idx + 3] = (byte)(255 * (short.MaxValue - depth[idx]) / short.MaxValue);
+                    
+                    state.bitmap_bits[4 * idx] =
+                    state.bitmap_bits[4 * idx + 1] =
+                    state.bitmap_bits[4 * idx + 2] =
+                    state.bitmap_bits[4 * idx + 3] = (byte)(255 * (short.MaxValue - state.depth[idx]) / short.MaxValue);
                 }
             }
         }
 
         // Calls helper function with white.
-        public static void PaintWhite(System.Drawing.Rectangle crop, short[] depth, byte[] rgb, byte[] bitmap_bits) {
-            Paint(crop, bitmap_bits, System.Drawing.Color.White);
+        public static void PaintWhite(ProcessorState state)
+        {
+            Paint(state, System.Drawing.Color.White);
         }
 
         // Calls helper function with green.
-        public static void PaintGreen(System.Drawing.Rectangle crop, short[] depth, byte[] rgb, byte[] bitmap_bits)
+        public static void PaintGreen(ProcessorState state)
         {
-            Paint(crop, bitmap_bits, System.Drawing.Color.PaleGreen);
+            Paint(state, System.Drawing.Color.PaleGreen);
         }
 
         #endregion
@@ -70,16 +72,16 @@ namespace ColorGlove
         #region Helper functions
         
         // Sets everything within the crop to specified color.
-        private static void Paint(System.Drawing.Rectangle crop, byte[] bitmap_bits, System.Drawing.Color color)
+        private static void Paint(ProcessorState state, System.Drawing.Color color)
         {
-            for (int x = crop.X; x <= crop.Width + crop.X; x++)
+            for (int x = state.crop.Value.X; x <= state.crop.Value.Width + state.crop.Value.X; x++)
             {
-                for (int y = crop.Y; y <= crop.Height + crop.Y; y++)
+                for (int y = state.crop.Value.Y; y <= state.crop.Value.Height + state.crop.Value.Y; y++)
                 {
                     int idx = Util.toID(x, y, width, height, kColorStride);
-                    bitmap_bits[idx] = color.B;
-                    bitmap_bits[idx + 1] = color.G;
-                    bitmap_bits[idx + 2] = color.R;
+                    state.bitmap_bits[idx] = color.B;
+                    state.bitmap_bits[idx + 1] = color.G;
+                    state.bitmap_bits[idx + 2] = color.R;
                 }
             }
         }

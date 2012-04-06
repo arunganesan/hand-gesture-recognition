@@ -24,9 +24,8 @@ using Fleck;
 
 namespace ColorGlove
 {
-    public class Processor
+    public partial class Processor
     {
-
         #region Object properties
         //private Dictionary<Tuple<byte, byte, byte>, byte[]> nearest_cache = new Dictionary<Tuple<byte, byte, byte>, byte[]>();
         private enum RangeModeFormat
@@ -59,7 +58,7 @@ namespace ColorGlove
         // It seems not necessary to save the mapped result as byte[], byte should be enough.
         static private Dictionary<Tuple<byte, byte, byte>, byte> nearest_cache = new Dictionary<Tuple<byte, byte, byte>, byte>();         
         private WriteableBitmap bitmap_;
-        private byte[] bitmap_bits_;
+        public byte[] bitmap_bits_;
         private byte[] tmp_buffer_;
         private int[] overlay_bitmap_bits_;
         private readonly int kNoOverlay = -1;
@@ -106,6 +105,8 @@ namespace ColorGlove
             
         }
         */
+        private ProcessorState state;
+
         private short[] depth_;
         private byte[] rgb_;
         
@@ -120,6 +121,7 @@ namespace ColorGlove
 
         private static System.Drawing.Rectangle cropValues;
         private System.Drawing.Rectangle crop;
+        private Ref<System.Drawing.Rectangle> crop_ref_;
         private int width, height;
         private int kColorStride, kDepthStride;
         private System.Drawing.Point startDrag, endDrag;
@@ -175,6 +177,8 @@ namespace ColorGlove
                 Properties.Settings.Default.CropSize.Height);
 
             crop = new System.Drawing.Rectangle(0, 0, width - 1, height - 1);
+            crop_ref_ = new Ref<System.Drawing.Rectangle>(() => crop, val => { crop = val; });
+            
             overlayStart = false;
             kEmptyOverlay = new int[width * height * 4];
             for (int i = 0; i < kEmptyOverlay.Length; i++) kEmptyOverlay[i] = kNoOverlay;
@@ -194,10 +198,10 @@ namespace ColorGlove
             image.MouseRightButtonDown += StartDrag;
             image.MouseMove += Drag;
             image.MouseRightButtonUp += EndDrag;
-
-
+            
             SetCentroidColorAndLabel();
 
+            
             FleckLog.Level = LogLevel.Debug;
             if (server == null)
             {
@@ -225,6 +229,7 @@ namespace ColorGlove
             }
 
             listOfTransformedPairPosition = new List<int[]>(); // remember to clear.
+
             Debug.WriteLine("Pass processor setting");
         }
 
@@ -886,15 +891,20 @@ namespace ColorGlove
 
         private void process(Step step)
         {
+            // Wrap object.
+            //Console.WriteLine("crop: {0}, depth_: {1}, rgb: {2}, bitmap: {3}", &crop, &depth_, &rgb_, &bitmap_bits_);
+
+            state = new ProcessorState(crop_ref_, depth_, rgb_, bitmap_bits_);
+
             switch (step)
             {
-                case Step.CopyColor: case Step.CopyDepth: case Step.PaintWhite: case Step.PaintGreen:
-                    //Filter.CopyColor(crop, depth_, rgb_, bitmap_bits_); 
-                    //string s = Step.CopyColor.ToString();
-                    //Console.WriteLine(s);
+                case Step.CopyColor:
+                case Step.CopyDepth:
+                case Step.PaintWhite:
+                case Step.PaintGreen:
                     Type type = typeof(Filter);
                     MethodInfo Filtermethod = type.GetMethod(step.ToString());
-                    Filtermethod.Invoke(null, new object[]{crop, depth_, rgb_, bitmap_bits_});
+                    Filtermethod.Invoke(null, new object[]{state});
                     break;
                 case Step.Crop: Crop(); break;
                 case Step.ColorMatch: MatchColors(); break;
