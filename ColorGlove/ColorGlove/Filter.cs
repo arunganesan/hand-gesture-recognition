@@ -21,7 +21,7 @@ namespace ColorGlove
             MappedDepth,
             MatchColors,
             ColorLabelingInRGB,
-            OverlayOffset,
+            ShowOverlay,
             Denoise,
             EnableFeatureExtract,
             FeatureExtractOnEnable,
@@ -126,6 +126,20 @@ namespace ColorGlove
             }
         }
 
+        public static void EnablePredict(ProcessorState state) 
+        {
+            bool val = state.predict_on_enable_.Value;
+            Enable(ref val);
+            state.predict_on_enable_.Value = val;
+        }
+
+        public static void EnableFeatureExtract(ProcessorState state) 
+        {
+            bool val = state.feature_extract_on_enable_.Value;
+            Enable(ref val);
+            state.feature_extract_on_enable_.Value = val;
+        }
+
         #endregion
 
 
@@ -203,6 +217,10 @@ namespace ColorGlove
             Array.Copy(state.label_color_[minColorLabel], point, 3);
             return minColorLabel;
         }
+
+        // Just may be *the dumbest* function...
+        private static void Enable(ref bool enable_variable) { enable_variable = true; }
+
         #endregion
     }
 }

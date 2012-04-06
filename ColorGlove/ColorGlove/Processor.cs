@@ -78,18 +78,7 @@ namespace ColorGlove
 
         //private FeatureExtractionLib.Util.HandGestureFormat HandGestureValue;
         private FeatureExtractionLib.Util.HandGestureFormat HandGestureValue;
-        /*
-        public enum TestNewFeatureFormat { 
-            Default,
-            ShowHSLOrHSV,
-        };
-
-        public enum TestNewFeatureValue { 
-            
-        }
-        */
-        private ProcessorState state;
-
+        
         private KinectData data_;
         private short[] depth_;
         private byte[] rgb_;
@@ -141,11 +130,14 @@ namespace ColorGlove
         List<int[]> listOfTransformedPairPosition;
 
 
-        // References used for passing into Filter
+        // References used for ProcessorState
+        private ProcessorState state;
         private Ref<System.Drawing.Rectangle> crop_val_ref_;
         private Ref<System.Drawing.Rectangle> crop_ref_;
         private Ref<int> upper_ref_;
         private Ref<int> lower_ref_;
+        private Ref<bool> predict_on_enable_ref_;
+        private Ref<bool> feature_extract_on_enable_ref_;
         #endregion
 
         public Processor(Manager manager)
@@ -172,6 +164,9 @@ namespace ColorGlove
             upper_ref_ = new Ref<int>(() => upper, val => { upper = val; });
             lower_ref_ = new Ref<int>(() => lower, val => { lower = val; });
 
+            predict_on_enable_ref_ = new Ref<bool>(() => predict_on_enable_, val => { predict_on_enable_ = val; });
+            feature_extract_on_enable_ref_ = new Ref<bool>(() => feature_extract_on_enable_, val => {feature_extract_on_enable_ = val; });
+            
             overlayStart = false;
             kEmptyOverlay = new int[width * height * 4];
             for (int i = 0; i < kEmptyOverlay.Length; i++) kEmptyOverlay[i] = kNoOverlay;
@@ -668,8 +663,10 @@ namespace ColorGlove
                 update(data_);
                 Pause((PauseDelegate)HideOverlayDelegate);
             }
-                
-            EnablePool(); // ??? Need condition?
+            
+            // This got messed up in merging. This should be inside 
+            // the above if condition.
+            // EnablePool(); // ??? Need condition?
             
             if ((ShowExtractedFeatureMode & ShowExtractedFeatureFormat.ShowTransformedForOnePixel) == ShowExtractedFeatureFormat.ShowTransformedForOnePixel)
             {
@@ -740,11 +737,7 @@ namespace ColorGlove
             System.IO.File.WriteAllText(Feature.directory+ "\\visited_levels.txt", tmp);
         }
 
-        // Enables the prediction step in the pipeline
-        public void EnablePool() { Enable(ref predict_on_enable_); }
-        public void EnableFeatureExtract() { Enable(ref feature_extract_on_enable_); }
-        public void Enable(ref bool enable_variable) { enable_variable = true; }
-
+        
         public void UpdateCropSettings()
         {
             Properties.Settings.Default.CropOffset = cropValues.Location;
@@ -880,6 +873,11 @@ namespace ColorGlove
             for (int i = 0; i < steps.Length; i++) pipeline[i] = steps[i];
         }
 
+        // Relay functions into filter
+        public void EnableFeatureExtract() { Filter.EnableFeatureExtract(state); }
+        public void EnablePredict() { Filter.EnablePredict(state); }
+        // End.
+
         private void process(Filter.Step step)
         {
             // Wrap object.
@@ -892,6 +890,8 @@ namespace ColorGlove
                 case Filter.Step.PaintGreen:
                 case Filter.Step.Crop:
                 case Filter.Step.MatchColors:
+                case Filter.Step.EnablePredict:
+                case Filter.Step.EnableFeatureExtract:
                     //Filter.Process(step, state);
                     //break;
                     Type type = typeof(Filter);
@@ -899,10 +899,8 @@ namespace ColorGlove
                     Filtermethod.Invoke(null, new object[]{state});
                     break;
                 case Filter.Step.ColorLabelingInRGB: ColorLabellingInRGB(); break;
-                case Filter.Step.OverlayOffset: ShowOverlay(); break;
+                case Filter.Step.ShowOverlay: ShowOverlay(); break;
                 case Filter.Step.Denoise: Denoise(); break;
-                case Filter.Step.EnablePredict: Enable(ref predict_on_enable_); break;
-                case Filter.Step.EnableFeatureExtract: Enable(ref feature_extract_on_enable_); break;
                 case Filter.Step.FeatureExtractOnEnable: FeatureExtractOnEnable(); break;
                 case Filter.Step.PredictOnEnable: PredictOnEnable(); break;
             }
@@ -1278,7 +1276,9 @@ namespace ColorGlove
                 labelColor,
                 kBackgroundLabel,
                 centroidColor,
-                centroidLabel);
+                centroidLabel,
+                predict_on_enable_ref_,
+                feature_extract_on_enable_ref_);
         }
 
         private void updateHelper()

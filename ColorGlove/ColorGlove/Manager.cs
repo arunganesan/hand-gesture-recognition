@@ -80,7 +80,7 @@ namespace ColorGlove
                     // Show the depth image                                         
                                             Filter.Step.CopyDepth,
                     // Show overlap offest
-                                            Filter.Step.OverlayOffset
+                                            Filter.Step.ShowOverlay
                     // Show Mapped Depth Using RGB
                     // Processor.Step.PaintWhite,
                     // Processor.Step.MappedDepth
@@ -100,7 +100,7 @@ namespace ColorGlove
                     Filter.Step.CopyColor,
                     //Processor.Step.MatchColors,
                     //Processor.Step.FeatureExtractOnEnable,
-                    Filter.Step.OverlayOffset
+                    Filter.Step.ShowOverlay
                 );
 
 
@@ -111,7 +111,7 @@ namespace ColorGlove
                     Filter.Step.CopyDepth,
                     //Processor.Step.EnablePredict,
                     Filter.Step.PredictOnEnable,
-                    Filter.Step.OverlayOffset);
+                    Filter.Step.ShowOverlay);
                 
                  
                 /*processors[1].SetTestModule(Processor.ShowExtractedFeatureFormat.ShowTransformedForOnePixel);
@@ -187,7 +187,7 @@ namespace ColorGlove
         // added to the pipeline will then perform that action.
         public void Pool() 
         {
-            processors[1].EnablePool(); 
+            processors[1].EnablePredict(); 
         }
     }
 }

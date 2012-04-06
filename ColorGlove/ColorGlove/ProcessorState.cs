@@ -24,12 +24,17 @@ namespace ColorGlove
         public List<byte[]> centroid_colors_;
         public List<byte> centroid_labels_;
 
+
+        public Ref<bool> predict_on_enable_;
+        public Ref<bool> feature_extract_on_enable_;
+
         public ProcessorState(
             Ref<System.Drawing.Rectangle> crop, Ref<System.Drawing.Rectangle> crop_values, 
             Ref<int> upper, Ref<int> lower,
             KinectData data_, short[] depth, byte[] depth_label_, byte[] rgb, byte[] bitmap_bits,
             Dictionary<Tuple<byte, byte, byte>, byte> nearest_cache_, Dictionary<byte, byte[]> label_color_,
-            byte kBackgroundLabel, List<byte[]> centroid_colors_, List<byte> centroid_labels)
+            byte kBackgroundLabel, List<byte[]> centroid_colors_, List<byte> centroid_labels,
+            Ref<bool> predict_on_enable_, Ref<bool>feature_extract_on_enable_)
         {
             this.crop = crop;
             this.crop_values = crop_values;
