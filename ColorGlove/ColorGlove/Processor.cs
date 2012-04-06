@@ -1294,7 +1294,6 @@ namespace ColorGlove
         private void ShowOverlay() {
             if (overlayStart)
             {
-                //Console.WriteLine("Overlay enabled. Drawing overlay.");
                 for (int x = crop.X; x <= crop.Width + crop.X; x++)
                 {
                     for (int y = crop.Y; y <= crop.Height + crop.Y; y++)
@@ -1313,7 +1312,6 @@ namespace ColorGlove
 
         private void updateHelper()
         {
-            //Console.WriteLine("Thread {0} about to dispatch.", Thread.CurrentThread.ManagedThreadId);
             bitmap_.Dispatcher.Invoke(new Action(() =>
             {
                 bitmap_.WritePixels(new Int32Rect(0, 0, bitmap_.PixelWidth, bitmap_.PixelHeight),
@@ -1323,10 +1321,6 @@ namespace ColorGlove
 
         public void update(KinectData data)
         {
-            // XXX: Bitmap locking should be unnecessary when working with 
-            // the pipeline!
-
-
             if (data_ == null)
             {
                 this.data_ = data;
@@ -1346,11 +1340,8 @@ namespace ColorGlove
                 if (paused) return;
                 foreach (Step step in pipeline) process(step);
             }
-            // The helper always runs in the MainThread anyway (dispatch). If 
-            // this is inside the critical section, and the main thread sleeps
-            // deadlock in a strage way!
+            
             updateHelper();
-            //Thread.Sleep(5000);
         }
 
         #region Color matching

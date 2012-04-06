@@ -76,7 +76,9 @@ namespace FeatureExtractionLib
      * http://stackoverflow.com/questions/2760087/storing-a-reference-to-an-object-in-c-sharp
      *
      * Basically, uses a lambda function on creation to refer to the same 
-     * object even if it is normally copied by value. 
+     * object even if it is normally copied by value. The technical term for 
+     * this is "closures". Check this out for an explanation: 
+     * http://www.codethinked.com/c-closures-explained
      */
     public class Ref<T>
     {
