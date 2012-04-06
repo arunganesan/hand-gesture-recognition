@@ -60,7 +60,7 @@ namespace ColorGlove
             {
                 processors[0].updatePipeline(
                     // Show the rgb image
-                                            Processor.Step.Color
+                                            Processor.Step.CopyColor
                     // Show the depth image                                         
                     // Processor.Step.Depth    
 
@@ -76,7 +76,7 @@ namespace ColorGlove
                 processors[1].SetTestModule(Processor.ShowExtractedFeatureFormat.PredictAllPixelsGPU); 
                 processors[1].updatePipeline(
                     // Show the rgb image
-                    // Processor.Step.Color
+                    // Processor.Step.CopyColor
                     // Show the depth image                                         
                                             Processor.Step.Depth,
                     // Show overlap offest
@@ -97,7 +97,7 @@ namespace ColorGlove
                     Processor.Step.PaintWhite,
                     Processor.Step.Crop,
                     Processor.Step.PaintGreen,
-                    Processor.Step.Color,
+                    Processor.Step.CopyColor,
                     //Processor.Step.ColorMatch,
                     //Processor.Step.FeatureExtractOnEnable,
                     Processor.Step.OverlayOffset
@@ -109,7 +109,7 @@ namespace ColorGlove
                     //Processor.Step.PaintGreen,
                     Processor.Step.Crop,
                     Processor.Step.Depth,
-                    Processor.Step.EnablePredict,
+                    //Processor.Step.EnablePredict,
                     Processor.Step.PredictOnEnable,
                     Processor.Step.OverlayOffset);
                 

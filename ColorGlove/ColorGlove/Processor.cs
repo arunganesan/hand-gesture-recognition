@@ -19,7 +19,7 @@ using Microsoft.Kinect;
 using FeatureExtractionLib;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Threading;
-
+using System.Reflection;
 using Fleck;
 
 namespace ColorGlove
@@ -76,7 +76,7 @@ namespace ColorGlove
         {
             PaintWhite,
             PaintGreen,
-            Color,
+            CopyColor,
             Depth,
             Crop,
             MappedDepth,
@@ -889,7 +889,14 @@ namespace ColorGlove
             switch (step)
             {
                 case Step.Depth: CopyDepth(); break;
-                case Step.Color: CopyColor(); break;
+                case Step.CopyColor: 
+                    //Filter.CopyColor(crop, depth_, rgb_, bitmap_bits_); 
+                    //string s = Step.CopyColor.ToString();
+                    //Console.WriteLine(s);
+                    Type type = typeof(Filter);
+                    MethodInfo Filtermethod = type.GetMethod(step.ToString());
+                    Filtermethod.Invoke(null, new object[]{crop, depth_, rgb_, bitmap_bits_});
+                    break;
                 case Step.Crop: Crop(); break;
                 case Step.PaintWhite: Paint(System.Drawing.Color.White); break;
                 case Step.PaintGreen: Paint(System.Drawing.Color.PaleGreen); break;
@@ -905,6 +912,7 @@ namespace ColorGlove
         }
 
         #region Filter functions
+
         // Runs the prediction algorithm for each pixel and pools the results. 
         // The classes are drawn onto the overlay layer, and overlay is turned 
         // on. 
@@ -1230,19 +1238,6 @@ namespace ColorGlove
                     bitmap_bits_[4 * idx + 1] =
                     bitmap_bits_[4 * idx + 2] =
                     bitmap_bits_[4 * idx + 3] = (byte)(255 * (short.MaxValue - depth_[idx]) / short.MaxValue);
-                }
-            }
-        }
-
-        // Copies over the RGB value to the buffer.
-        private void CopyColor()
-        {
-            for (int x = crop.X; x <= crop.Width + crop.X; x++) 
-            {
-                for (int y = crop.Y; y <= crop.Height + crop.Y; y++)
-                {
-                    int idx = Util.toID(x, y, width, height, kColorStride);
-                    Array.Copy(rgb_, idx, bitmap_bits_, idx, kColorStride);
                 }
             }
         }
