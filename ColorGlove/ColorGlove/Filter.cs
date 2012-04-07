@@ -31,15 +31,18 @@ namespace ColorGlove
 
         private enum PoolType
         {
-            Centroid,
-            Median,
+            MeanMajority,
+            MedianMajority,
+            KMeans,
+            KMedoids,
+            KMedians,
+            DBSCAN
         };
         
-
         private static int width = 640, height = 480;
         private static readonly int kColorStride = 4, kDepthStride = 1;
-
-
+        
+        
 
         /*********************************/
         /* FILTER FUNCTIONS              */
@@ -179,9 +182,13 @@ namespace ColorGlove
             if (state.predict_on_enable_.Value == false) return;
             AdjustDepth(state);
             PredictGPU(state);
-            DrawPredictionOverlay(state);
-            Pooled gesture = Pool(PoolType.Median, state);
+            //DrawPredictionOverlay(state);
+            //Pooled gesture = Pool(PoolType.MedianMajority, state);
+            Pooled gesture = Pool(PoolType.KMeans, state);
             SendToSockets(gesture, state);
+
+            DBSCAN.Test();
+
             state.predict_on_enable_.Value = false;
         }
 
@@ -219,10 +226,8 @@ namespace ColorGlove
             state.feature_extract_on_enable_.Value = false;
         }
         
-
         #endregion
-
-
+        
 
         /*********************************/
         /* HELPER FUNCTIONS              */
@@ -386,72 +391,164 @@ namespace ColorGlove
         // algorithm is described before each section.
         private static Pooled Pool(PoolType type, ProcessorState state)
         {
-            // Median pooling. The median X, Y and depths are calculated
-            // for the majority class. The pooled location takes on these
-            // values.
+            Pooled gesture = new Pooled(new System.Drawing.Point(100, 100), 0, (Util.HandGestureFormat)2);
 
-            int[] label_counts = new int[state.feature.num_classes_];
-            Array.Clear(label_counts, 0, label_counts.Length);
-
-            List<int>[] label_sorted_x = new List<int>[state.feature.num_classes_];
-            List<int>[] label_sorted_y = new List<int>[state.feature.num_classes_];
-            List<int>[] label_sorted_depth = new List<int>[state.feature.num_classes_];
-
-            for (int i = 1; i < state.feature.num_classes_; i++)
+            switch (type)
             {
-                label_sorted_x[i] = new List<int>();
-                label_sorted_y[i] = new List<int>();
-                label_sorted_depth[i] = new List<int>();
-            }
+                case PoolType.KMeans:
+                    Random rand = new Random();
+                    Point3 p = new Point3(0, 0, 0);
+                    int K = 10, num_changes = 10, iterations = 0;
 
-            for (int y = state.crop.Value.Y; y <= state.crop.Value.Y + state.crop.Value.Height; y++)
-            {
-                for (int x = state.crop.Value.X; x <= state.crop.Value.X + state.crop.Value.Width; x++)
-                {
-                    int depth_index = Util.toID(x, y, width, height, kDepthStride);
-                    int predict_label = state.predict_labels_[depth_index];
+                    List<Point3> centroids = new List<Point3>(K);
+                    for (int i = 0; i < K; i++)
+                        centroids.Insert(i, new Point3(
+                            rand.Next(width),
+                            rand.Next(height),
+                            rand.Next(400, 1500)
+                            ));
 
-                    label_counts[predict_label]++;
-                    if (predict_label != (int)Util.HandGestureFormat.Background)
+                    List<HashSet<int>> clusters = new List<HashSet<int>>(K);
+                    for (int i = 0; i < K; i++) clusters.Insert(i, new HashSet<int>());
+
+                    Dictionary<int, int> assignments = new Dictionary<int,int>();
+                    for (int i = 0; i < state.depth.Length; i++)
+                        if (state.predict_labels_[i] != (int)Util.HandGestureFormat.Background)
+                        {
+                            int cluster = rand.Next(K);
+                            assignments.Add(i, cluster);
+                            clusters[cluster].Add(i);
+                        }
+                    
+                    List<int> points = new List<int>(assignments.Keys);
+
+                    while (num_changes > 0)
                     {
-                        label_sorted_x[predict_label].Add(x);
-                        label_sorted_y[predict_label].Add(y);
-                        label_sorted_depth[predict_label].Add(state.depth[depth_index]);
+                        num_changes = 0;
+                        iterations++;
+
+                        if (iterations % 10 == 0)
+                            Console.WriteLine("Iteration {0}\n", iterations);
+
+                        // Expectation
+                        foreach (int point in points)
+                        {
+                            System.Drawing.Point xy = Util.toXY(point, width, height, kDepthStride);
+                            p.update(xy.X, xy.Y, state.depth[point]);
+                            int nearest = 0;
+                            double nearest_distance = Util.EuclideanDistance(centroids[nearest], p);
+                            for (int i = 1; i < K; i++)
+                            {
+                                double distance = Util.EuclideanDistance(centroids[i], p);
+                                if (distance < nearest_distance)
+                                {
+                                    nearest = i;
+                                    nearest_distance = distance;
+                                }
+                            }
+
+
+                            if (assignments[point] != nearest && clusters[assignments[point]].Count != 1)
+                            {
+                                num_changes++;
+                                clusters[assignments[point]].Remove(point);
+                                clusters[nearest].Add(point);
+                                assignments[point] = nearest;
+                            }
+                        }
+
+                        // Maximization
+                        for (int i = 0; i < K; i++)
+                        {
+                            int x = (int)clusters[i].Average(point => Util.toXY(point, width, height, kDepthStride).X);
+                            int y = (int)clusters[i].Average(point => Util.toXY(point, width, height, kDepthStride).Y);
+                            int depth = (int)clusters[i].Average(point => state.depth[point]);
+
+                            centroids[i].update(x, y, depth);
+                        }
                     }
-                }
+
+                    break;
+                case PoolType.MedianMajority:
+                case PoolType.MeanMajority:
+                    // Median and mean pooling for the majority class.
+                    //
+                    // The majority class may have a lot of noise. The noise may 
+                    // itself cause a false majority class. An improvement can be 
+                    // a density based clustering method.
+                    int[] label_counts = new int[state.feature.num_classes_];
+                    Array.Clear(label_counts, 0, label_counts.Length);
+
+                    List<int>[] label_sorted_x = new List<int>[state.feature.num_classes_];
+                    List<int>[] label_sorted_y = new List<int>[state.feature.num_classes_];
+                    List<int>[] label_sorted_depth = new List<int>[state.feature.num_classes_];
+
+                    for (int i = 1; i < state.feature.num_classes_; i++)
+                    {
+                        label_sorted_x[i] = new List<int>();
+                        label_sorted_y[i] = new List<int>();
+                        label_sorted_depth[i] = new List<int>();
+                    }
+
+                    for (int y = state.crop.Value.Y; y <= state.crop.Value.Y + state.crop.Value.Height; y++)
+                    {
+                        for (int x = state.crop.Value.X; x <= state.crop.Value.X + state.crop.Value.Width; x++)
+                        {
+                            int depth_index = Util.toID(x, y, width, height, kDepthStride);
+                            int predict_label = state.predict_labels_[depth_index];
+
+                            label_counts[predict_label]++;
+                            if (predict_label != (int)Util.HandGestureFormat.Background)
+                            {
+                                label_sorted_x[predict_label].Add(x);
+                                label_sorted_y[predict_label].Add(y);
+                                label_sorted_depth[predict_label].Add(state.depth[depth_index]);
+                            }
+                        }
+                    }
+
+                    Tuple<int, int> max = Util.MaxNonBackground(label_counts);
+                    int max_index = max.Item1, max_value = max.Item2;
+                    int total_non_background = label_counts.Sum() - label_counts[0];
+
+                    Console.WriteLine("Most common gesture is {0} (appears {1}/{2} times).",
+                        ((Util.HandGestureFormat)max_index).ToString(),
+                        max_value, total_non_background);
+
+                    System.Drawing.Point center = new System.Drawing.Point();
+                    int center_depth = 0;
+
+                    if (max_value == 0)
+                    {
+                        center.X = width / 2; center.Y = height / 2;
+                        center_depth = 0;
+                    }
+                    else if (type == PoolType.MeanMajority)
+                    {
+                        center.X = (int)(label_sorted_x[max_index].Average());
+                        center.Y = (int)(label_sorted_y[max_index].Average());
+                        center_depth = (int)(label_sorted_depth[max_index].Average());
+                    }
+                    else if (type == PoolType.MedianMajority)
+                    {
+                        label_sorted_x[max_index].Sort();
+                        label_sorted_y[max_index].Sort();
+                        label_sorted_depth[max_index].Sort();
+
+                        center.X = (int)(label_sorted_x[max_index].ElementAt(max_value / 2));
+                        center.Y = (int)(label_sorted_y[max_index].ElementAt(max_value / 2));
+                        center_depth = (int)(label_sorted_depth[max_index].ElementAt(max_value / 2));
+                    }
+
+                    gesture = new Pooled(center, center_depth, (Util.HandGestureFormat)max_index);
+                    Console.WriteLine("Center: ({0}px, {1}px, {2}cm)", center.X, center.Y, center_depth);
+                    DrawCrosshairAt(center, center_depth, state);
+
+                    // Adding in DBscan for a simple speed test
+                    //DBSCAN.Test();
+                    break;
             }
 
-            Tuple<int, int> max = Util.MaxNonBackground(label_counts);
-            int max_index = max.Item1, max_value = max.Item2;
-            int total_non_background = label_counts.Sum() - label_counts[0];
-
-            Console.WriteLine("Most common gesture is {0} (appears {1}/{2} times).",
-                ((Util.HandGestureFormat)max_index).ToString(),
-                max_value, total_non_background);
-
-            System.Drawing.Point center = new System.Drawing.Point();
-            int center_depth = 0;
-
-            if (type == PoolType.Centroid)
-            {
-                center.X = (int)(label_sorted_x[max_index].Average());
-                center.Y = (int)(label_sorted_y[max_index].Average());
-                center_depth = (int)(label_sorted_depth[max_index].Average());
-            }
-            else if (type == PoolType.Median)
-            {
-                label_sorted_x[max_index].Sort();
-                label_sorted_y[max_index].Sort();
-                label_sorted_depth[max_index].Sort();
-
-                center.X = (int)(label_sorted_x[max_index].ElementAt(max_value / 2));
-                center.Y = (int)(label_sorted_y[max_index].ElementAt(max_value / 2));
-                center_depth = (int)(label_sorted_depth[max_index].ElementAt(max_value / 2));
-            }
-
-            Pooled gesture = new Pooled(center, center_depth, (Util.HandGestureFormat)max_index);
-            Console.WriteLine("Center: ({0}px, {1}px, {2}cm)", center.X, center.Y, center_depth);
-            DrawCrosshairAt(center, center_depth, state);
             return gesture;
         }
 
@@ -478,7 +575,6 @@ namespace ColorGlove
                 PaintAt(xy.X + 1, y + i, paint, state);
             }
         }
-
 
         // Helper function for drawing custom    shapes on the overlay buffer
         private static void PaintAt(int x, int y, System.Drawing.Color paint, ProcessorState state)

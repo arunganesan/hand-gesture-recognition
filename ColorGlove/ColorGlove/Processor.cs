@@ -240,56 +240,7 @@ namespace ColorGlove
             
             //Feature.GenerateOffsetPairs(); // use this to test the offset pairs parameters setting
         }
-
-        private void SetCentroidColorAndLabel()
-        {
-            // First add label
-            HandGestureValue = Util.HandGestureFormat.Fist;
-            //HandGestureValue = HandGestureFormat.OpenHand;
-            // Set which hand gesture to use in the contruct function
-            targetLabel = (byte)HandGestureValue;  // numerical value
-            Console.WriteLine("targetLabel: {0}", targetLabel);
-            labelColor.Add(targetLabel, new byte[] { 255, 0, 0 }); // target is red
-            labelColor.Add(kBackgroundLabel, new byte[] { 255, 255, 255 }); // background is white
-            // Then add arbitrary labeled centroids.
-            // For target color (blue)
-
-            AddCentroid(145, 170, 220, targetLabel);
-            AddCentroid(170, 190, 250, targetLabel);
-            AddCentroid(96, 152, 183, targetLabel);
-            AddCentroid(180, 211, 230, targetLabel);
-            AddCentroid(156, 196, 221, targetLabel);
-            AddCentroid(80, 112, 144, targetLabel);
-            AddCentroid(68, 99, 133, targetLabel);
-            AddCentroid(76, 103, 141, targetLabel);
-            AddCentroid(122, 154, 173, targetLabel);
-            AddCentroid(120, 138, 162, targetLabel);
-            AddCentroid(109, 118, 137, targetLabel);
-            AddCentroid(94, 124, 145, targetLabel);
-            AddCentroid(78, 127, 153, targetLabel);
-            AddCentroid(146, 177, 200, targetLabel);
-            AddCentroid(155, 195, 199, targetLabel);
-            AddCentroid(142, 182, 195, targetLabel);
-            AddCentroid(146, 189, 211, targetLabel);
-            AddCentroid(159, 198, 214, targetLabel);
-            AddCentroid(147, 196, 210, targetLabel);
-            
-
-            // For background color 
-            AddCentroid(80, 80, 80, kBackgroundLabel);
-            AddCentroid(250, 240, 240, kBackgroundLabel);
-            AddCentroid(210, 180, 150, kBackgroundLabel);
-
-            AddCentroid(110, 86, 244, kBackgroundLabel);
-            AddCentroid(75, 58, 151, kBackgroundLabel);
-            AddCentroid(153, 189, 206, kBackgroundLabel);
-            AddCentroid(214, 207, 206, kBackgroundLabel);
-            AddCentroid(122, 124, 130, kBackgroundLabel);
-
-            AddCentroid(124, 102, 11, kBackgroundLabel);
-            
-        }
-
+        
         public void IncreaseRange()
         {
             upper += 10;
@@ -466,7 +417,21 @@ namespace ColorGlove
             update(data_);
             Pause(new PauseDelegate(this.UpdateKMeansCentroid));
         }
+        
+        #region Pause functionality
+        private void Pause(PauseDelegate func)
+        {
+            pauseDelegate = func;
+            paused = true;
+        }
 
+        private void UnPause(MouseButtonEventArgs e = null)
+        {
+            pauseDelegate(e);
+            Console.WriteLine("Unpausing.");
+            paused = false;
+        }
+        
         private void UpdateKMeansCentroid(MouseButtonEventArgs e)
         {
             Console.WriteLine("Click acquired.");
@@ -486,7 +451,7 @@ namespace ColorGlove
                 }
 
                 int baseIndex = Util.toID((int)click_position.X - crop.X, (int)click_position.Y - crop.Y, crop.Width, crop.Height, 1);
-                
+
                 for (int i = 0; i < k; i++)
                 {
                     byte label;
@@ -505,9 +470,60 @@ namespace ColorGlove
             overlayStart = false;
         }
 
-        private void DummyPauseDelegate(MouseButtonEventArgs e) {}
+        private void DummyPauseDelegate(MouseButtonEventArgs e) { }
 
         private void HideOverlayDelegate(MouseButtonEventArgs e) { overlayStart = false; }
+        #endregion
+
+        #region Centroid coloring
+        private void SetCentroidColorAndLabel()
+        {
+            // First add label
+            HandGestureValue = Util.HandGestureFormat.Fist;
+            //HandGestureValue = HandGestureFormat.OpenHand;
+            // Set which hand gesture to use in the contruct function
+            targetLabel = (byte)HandGestureValue;  // numerical value
+            Console.WriteLine("targetLabel: {0}", targetLabel);
+            labelColor.Add(targetLabel, new byte[] { 255, 0, 0 }); // target is red
+            labelColor.Add(kBackgroundLabel, new byte[] { 255, 255, 255 }); // background is white
+            // Then add arbitrary labeled centroids.
+            // For target color (blue)
+
+            AddCentroid(145, 170, 220, targetLabel);
+            AddCentroid(170, 190, 250, targetLabel);
+            AddCentroid(96, 152, 183, targetLabel);
+            AddCentroid(180, 211, 230, targetLabel);
+            AddCentroid(156, 196, 221, targetLabel);
+            AddCentroid(80, 112, 144, targetLabel);
+            AddCentroid(68, 99, 133, targetLabel);
+            AddCentroid(76, 103, 141, targetLabel);
+            AddCentroid(122, 154, 173, targetLabel);
+            AddCentroid(120, 138, 162, targetLabel);
+            AddCentroid(109, 118, 137, targetLabel);
+            AddCentroid(94, 124, 145, targetLabel);
+            AddCentroid(78, 127, 153, targetLabel);
+            AddCentroid(146, 177, 200, targetLabel);
+            AddCentroid(155, 195, 199, targetLabel);
+            AddCentroid(142, 182, 195, targetLabel);
+            AddCentroid(146, 189, 211, targetLabel);
+            AddCentroid(159, 198, 214, targetLabel);
+            AddCentroid(147, 196, 210, targetLabel);
+
+
+            // For background color 
+            AddCentroid(80, 80, 80, kBackgroundLabel);
+            AddCentroid(250, 240, 240, kBackgroundLabel);
+            AddCentroid(210, 180, 150, kBackgroundLabel);
+
+            AddCentroid(110, 86, 244, kBackgroundLabel);
+            AddCentroid(75, 58, 151, kBackgroundLabel);
+            AddCentroid(153, 189, 206, kBackgroundLabel);
+            AddCentroid(214, 207, 206, kBackgroundLabel);
+            AddCentroid(122, 124, 130, kBackgroundLabel);
+
+            AddCentroid(124, 102, 11, kBackgroundLabel);
+
+        }
 
         private void AddCentroid(byte R, byte G, byte B, byte label)  // a helper function for adding labled centroid
         {
@@ -520,209 +536,11 @@ namespace ColorGlove
             centroidColor.Clear();
             centroidLabel.Clear();
         }
-
-        private void Pause(PauseDelegate func)
-        {
-            pauseDelegate = func;
-            paused = true;
-        }
-
-        private void UnPause(MouseButtonEventArgs e = null)
-        {
-            pauseDelegate(e);
-            Console.WriteLine("Unpausing.");
-            paused = false;
-        }
+        #endregion
 
         private void ResetOverlay()
         {
             kEmptyOverlay.CopyTo(overlay_bitmap_bits_, 0);
-        }
-
-        private void ImageClick(object sender, MouseButtonEventArgs e)
-        {
-            if (paused)
-            {
-                UnPause(e);
-                return;
-            }
-
-            System.Windows.Point click_position = e.GetPosition(image);
-            int baseIndex = ((int)click_position.Y * 640 + (int)click_position.X) * 4;
-            Console.WriteLine("(x,y): (" + click_position.X + ", " + click_position.Y + ") RGB: {" + bitmap_bits_[baseIndex + 2] + ", " + bitmap_bits_[baseIndex + 1] + ", " + bitmap_bits_[baseIndex] + "}");
-            
-            
-            if ((ShowExtractedFeatureMode & ShowExtractedFeatureFormat.Extract30FeacturesForEveryPixel) == ShowExtractedFeatureFormat.Extract30FeacturesForEveryPixel )
-            {
-                int depthIndex = (int)click_position.Y * 640 + (int)click_position.X;
-                for (int i = 0; i < depth_.Length; i++)
-                    depth_[i] = (short)(depth_[i] >> DepthImageFrame.PlayerIndexBitmaskWidth); // remember this
-                int depthVal = depth_[depthIndex]; // >> DepthImageFrame.PlayerIndexBitmaskWidth;
-                // Show offsets pair 
-                Console.WriteLine("depth: {0}, baseIndex: {1}", depthVal, depthIndex);
-                GetAllFeatures();
-            }
-
-            // Predict one pixel using CPU
-            if ((ShowExtractedFeatureMode & ShowExtractedFeatureFormat.PredictOnePixelCPU) == ShowExtractedFeatureFormat.PredictOnePixelCPU) {
-                int depthIndex = (int)click_position.Y * 640 + (int)click_position.X;
-                for (int i = 0; i < depth_.Length; i++)
-                    depth_[i] = (short)(depth_[i] >> DepthImageFrame.PlayerIndexBitmaskWidth); // remember this
-                int depthVal = depth_[depthIndex]; // >> DepthImageFrame.PlayerIndexBitmaskWidth;
-                // Show offsets pair 
-                Console.WriteLine("depth: {0}, baseIndex: {1}", depthVal, depthIndex);
-                // timer start
-                DateTime ExecutionStartTime; //Var will hold Execution Starting Time
-                DateTime ExecutionStopTime;//Var will hold Execution Stopped Time
-                TimeSpan ExecutionTime;//Var will count Total Execution Time-Our Main Hero                
-                ExecutionStartTime = DateTime.Now; //Gets the system Current date time expressed as local time
-                                
-                double [] predictOutput = new double[0];
-
-                Feature.PredictOnePixelCPU(depthIndex, depth_, ref predictOutput); 
-                Console.WriteLine("background: {0}, open hand: {1}, close hand: {2}",predictOutput[0], predictOutput[1], predictOutput[2]);
-                ExecutionStopTime = DateTime.Now;
-                ExecutionTime = ExecutionStopTime - ExecutionStartTime;
-                Console.WriteLine("Use {0} ms for getting prediction", ExecutionTime.TotalMilliseconds.ToString());
-            }
-
-            // Predict all pixels using CPU
-            if ((ShowExtractedFeatureMode & ShowExtractedFeatureFormat.PredictAllPixelsCPU) == ShowExtractedFeatureFormat.PredictAllPixelsCPU) {
-                int depthIndex = (int)click_position.Y * 640 + (int)click_position.X;
-                for (int i = 0; i < depth_.Length; i++)
-                    depth_[i] = (short)(depth_[i] >> DepthImageFrame.PlayerIndexBitmaskWidth); // remember this
-                int depthVal = depth_[depthIndex]; // >> DepthImageFrame.PlayerIndexBitmaskWidth;
-                // Show offsets pair 
-                Console.WriteLine("depth: {0}, baseIndex: {1}", depthVal, depthIndex);
-                DateTime ExecutionStartTime; //Var will hold Execution Starting Time
-                DateTime ExecutionStopTime;//Var will hold Execution Stopped Time
-                TimeSpan ExecutionTime;//Var will count Total Execution Time-Our Main Hero                
-                ExecutionStartTime = DateTime.Now; //Gets the system Current date time expressed as local time
-
-                double[] predictOutput = new double[0];
-                List<Tuple<byte, byte, byte>> label_colors = Util.GiveMeNColors(Feature.num_classes_);
-                ResetOverlay();
-
-                for (int y = crop.Y; y <= crop.Y + crop.Height; y++)
-                {
-                    for (int x = crop.X; x <= crop.X + crop.Width; x++)
-                    {
-                        if (x == crop.X) Console.WriteLine("Processing {0}% ({1}/{2})", (float)(y - crop.Y) / crop.Height * 100, (y - crop.Y), crop.Height);
-                        depthIndex = Util.toID(x, y, width, height, kDepthStride);
-
-                        int bitmap_index = depthIndex * 4;
-                        Feature.PredictOnePixelCPU(depthIndex, depth_, ref predictOutput);
-                        int predict_label = 0;
-                        
-                        for (int i = 1; i < Feature.num_classes_; i++)
-                            if (predictOutput[i] > predictOutput[predict_label])
-                                predict_label = i;
-
-                        overlay_bitmap_bits_[bitmap_index + 2] = (int)label_colors[predict_label].Item1;
-                        overlay_bitmap_bits_[bitmap_index + 1] = (int)label_colors[predict_label].Item2;
-                        overlay_bitmap_bits_[bitmap_index + 0] = (int)label_colors[predict_label].Item3;
-                    }
-                }
-
-                //System.Threading.Thread.Sleep(1000);                
-                ExecutionStopTime = DateTime.Now;
-                ExecutionTime = ExecutionStopTime - ExecutionStartTime;
-                Console.WriteLine("Use {0} ms for getting prediction", ExecutionTime.TotalMilliseconds.ToString());
-                
-                overlayStart = true; 
-                update(data_);
-                Pause((PauseDelegate)HideOverlayDelegate);
-            }
-
-            // Predict all pixels using GPU
-            if ((ShowExtractedFeatureMode & ShowExtractedFeatureFormat.PredictAllPixelsGPU) == ShowExtractedFeatureFormat.PredictAllPixelsGPU) 
-            {
-                List<Tuple<byte, byte, byte>> label_colors = Util.GiveMeNColors(Feature.num_classes_);
-                DateTime ExecutionStartTime;  
-                DateTime ExecutionStopTime;  
-                TimeSpan ExecutionTime; 
-                ExecutionStartTime = DateTime.Now;  
-
-                Feature.PredictGPU(depth_, ref predict_output_);
-                ShowAverageAndVariance(predict_output_); // used for debug
-                
-                ExecutionStopTime = DateTime.Now;
-                ExecutionTime = ExecutionStopTime - ExecutionStartTime;
-                Console.WriteLine("Use {0} ms for getting prediction", ExecutionTime.TotalMilliseconds.ToString());
-                for (int depth_index = 0; depth_index < depth_.Length; depth_index++)
-                {
-                    int predict_label = 0,  bitmap_index = depth_index * 4, y_index= depth_index * Feature.num_classes_;
-                    for (int i = 1; i < Feature.num_classes_; i++)
-                        if (predict_output_[y_index  + i] > predict_output_[y_index + predict_label])
-                            predict_label = i;
-                    overlay_bitmap_bits_[bitmap_index + 2] = (int)label_colors[predict_label].Item1;
-                    overlay_bitmap_bits_[bitmap_index + 1] = (int)label_colors[predict_label].Item2;
-                    overlay_bitmap_bits_[bitmap_index + 0] = (int)label_colors[predict_label].Item3;
-                }
-                
-                overlayStart = true;
-                update(data_);
-                Pause((PauseDelegate)HideOverlayDelegate);
-            }
-            
-            // This got messed up in merging. This should be inside 
-            // the above if condition.
-            // EnablePool(); // ??? Need condition?
-            
-            if ((ShowExtractedFeatureMode & ShowExtractedFeatureFormat.ShowTransformedForOnePixel) == ShowExtractedFeatureFormat.ShowTransformedForOnePixel)
-            {
-                int depthIndex = (int)click_position.Y * 640 + (int)click_position.X;
-                for (int i = 0; i < depth_.Length; i++)
-                    depth_[i] = (short)(depth_[i] >> DepthImageFrame.PlayerIndexBitmaskWidth); // remember this
-                int depthVal = depth_[depthIndex]; // >> DepthImageFrame.PlayerIndexBitmaskWidth;
-                // Show offsets pair 
-                Console.WriteLine("depth: {0}, baseIndex: {1}", depthVal, depthIndex);
-                DateTime ExecutionStartTime; //Var will hold Execution Starting Time
-                DateTime ExecutionStopTime;//Var will hold Execution Stopped Time
-                TimeSpan ExecutionTime;//Var will count Total Execution Time-Our Main Hero
-                ExecutionStartTime = DateTime.Now; //Gets the system Current date time expressed as local time             
-                depthVal = depth_[depthIndex]; // >> DepthImageFrame.PlayerIndexBitmaskWidth;
-                listOfTransformedPairPosition.Clear();
-                Feature.GetAllTransformedPairs(depthIndex, depthVal, listOfTransformedPairPosition);
-                int bitmapIndex, X, Y;
-
-                ResetOverlay();
-                //Array.Clear(overlayBitmapBits, 0, overlayBitmapBits.Length);
-                //bitmapBits.CopyTo(overlayBitmapBits, 0);
-                
-                for (int i = 0; i < listOfTransformedPairPosition.Count; i++)
-                {
-                    X = listOfTransformedPairPosition[i][0];
-                    Y = listOfTransformedPairPosition[i][1];
-                    if (X >= 0 && X < 640 && Y >= 0 && Y < 480)
-                    {
-                        bitmapIndex = (Y * 640 + X) * 4;
-                        overlay_bitmap_bits_[bitmapIndex + 0] =
-                        overlay_bitmap_bits_[bitmapIndex + 1] =
-                        overlay_bitmap_bits_[bitmapIndex + 3] =
-                        0;
-                        overlay_bitmap_bits_[bitmapIndex + 2] = 255;
-                        //bitmapBits[bitmapIndex + 2] = 255; // test
-                    }
-                    X = listOfTransformedPairPosition[i][2];
-                    Y = listOfTransformedPairPosition[i][3];
-                    if (X >= 0 && X < 640 && Y >= 0 && Y < 480)
-                    {
-                        bitmapIndex = (Y * 640 + X) * 4;
-                        overlay_bitmap_bits_[bitmapIndex + 0] =
-                        overlay_bitmap_bits_[bitmapIndex + 1] =
-                        overlay_bitmap_bits_[bitmapIndex + 3] =
-                        0;
-                        overlay_bitmap_bits_[bitmapIndex + 2] = 255;
-                    }
-                }
-
-                ExecutionStopTime = DateTime.Now;
-                ExecutionTime = ExecutionStopTime - ExecutionStartTime;
-                Console.WriteLine("Use {0} ms for getting transformed points", ExecutionTime.TotalMilliseconds.ToString());
-
-                overlayStart = true;
-            }
         }
 
         private void ShowAverageAndVariance(float[] a)
@@ -737,8 +555,7 @@ namespace ColorGlove
             string tmp =  string.Join(" ", per_tree_visited_level.Select(x => x.ToString()).ToArray());
             System.IO.File.WriteAllText(Feature.directory+ "\\visited_levels.txt", tmp);
         }
-
-        
+                
         public void UpdateCropSettings()
         {
             Properties.Settings.Default.CropOffset = cropValues.Location;
@@ -782,6 +599,194 @@ namespace ColorGlove
             ExecutionStopTime = DateTime.Now;
             ExecutionTime = ExecutionStopTime - ExecutionStartTime;
             Console.WriteLine("Use {0} ms for getting the 33 transformed points", ExecutionTime.TotalMilliseconds.ToString());
+        }
+        
+        private void ImageClick(object sender, MouseButtonEventArgs e)
+        {
+            if (paused)
+            {
+                UnPause(e);
+                return;
+            }
+
+            System.Windows.Point click_position = e.GetPosition(image);
+            int baseIndex = ((int)click_position.Y * 640 + (int)click_position.X) * 4;
+            Console.WriteLine("(x,y): (" + click_position.X + ", " + click_position.Y + ") RGB: {" + bitmap_bits_[baseIndex + 2] + ", " + bitmap_bits_[baseIndex + 1] + ", " + bitmap_bits_[baseIndex] + "}");
+
+
+            if ((ShowExtractedFeatureMode & ShowExtractedFeatureFormat.Extract30FeacturesForEveryPixel) == ShowExtractedFeatureFormat.Extract30FeacturesForEveryPixel)
+            {
+                int depthIndex = (int)click_position.Y * 640 + (int)click_position.X;
+                for (int i = 0; i < depth_.Length; i++)
+                    depth_[i] = (short)(depth_[i] >> DepthImageFrame.PlayerIndexBitmaskWidth); // remember this
+                int depthVal = depth_[depthIndex]; // >> DepthImageFrame.PlayerIndexBitmaskWidth;
+                // Show offsets pair 
+                Console.WriteLine("depth: {0}, baseIndex: {1}", depthVal, depthIndex);
+                GetAllFeatures();
+            }
+
+            // Predict one pixel using CPU
+            if ((ShowExtractedFeatureMode & ShowExtractedFeatureFormat.PredictOnePixelCPU) == ShowExtractedFeatureFormat.PredictOnePixelCPU)
+            {
+                int depthIndex = (int)click_position.Y * 640 + (int)click_position.X;
+                for (int i = 0; i < depth_.Length; i++)
+                    depth_[i] = (short)(depth_[i] >> DepthImageFrame.PlayerIndexBitmaskWidth); // remember this
+                int depthVal = depth_[depthIndex]; // >> DepthImageFrame.PlayerIndexBitmaskWidth;
+                // Show offsets pair 
+                Console.WriteLine("depth: {0}, baseIndex: {1}", depthVal, depthIndex);
+                // timer start
+                DateTime ExecutionStartTime; //Var will hold Execution Starting Time
+                DateTime ExecutionStopTime;//Var will hold Execution Stopped Time
+                TimeSpan ExecutionTime;//Var will count Total Execution Time-Our Main Hero                
+                ExecutionStartTime = DateTime.Now; //Gets the system Current date time expressed as local time
+
+                double[] predictOutput = new double[0];
+
+                Feature.PredictOnePixelCPU(depthIndex, depth_, ref predictOutput);
+                Console.WriteLine("background: {0}, open hand: {1}, close hand: {2}", predictOutput[0], predictOutput[1], predictOutput[2]);
+                ExecutionStopTime = DateTime.Now;
+                ExecutionTime = ExecutionStopTime - ExecutionStartTime;
+                Console.WriteLine("Use {0} ms for getting prediction", ExecutionTime.TotalMilliseconds.ToString());
+            }
+
+            // Predict all pixels using CPU
+            if ((ShowExtractedFeatureMode & ShowExtractedFeatureFormat.PredictAllPixelsCPU) == ShowExtractedFeatureFormat.PredictAllPixelsCPU)
+            {
+                int depthIndex = (int)click_position.Y * 640 + (int)click_position.X;
+                for (int i = 0; i < depth_.Length; i++)
+                    depth_[i] = (short)(depth_[i] >> DepthImageFrame.PlayerIndexBitmaskWidth); // remember this
+                int depthVal = depth_[depthIndex]; // >> DepthImageFrame.PlayerIndexBitmaskWidth;
+                // Show offsets pair 
+                Console.WriteLine("depth: {0}, baseIndex: {1}", depthVal, depthIndex);
+                DateTime ExecutionStartTime; //Var will hold Execution Starting Time
+                DateTime ExecutionStopTime;//Var will hold Execution Stopped Time
+                TimeSpan ExecutionTime;//Var will count Total Execution Time-Our Main Hero                
+                ExecutionStartTime = DateTime.Now; //Gets the system Current date time expressed as local time
+
+                double[] predictOutput = new double[0];
+                List<Tuple<byte, byte, byte>> label_colors = Util.GiveMeNColors(Feature.num_classes_);
+                ResetOverlay();
+
+                for (int y = crop.Y; y <= crop.Y + crop.Height; y++)
+                {
+                    for (int x = crop.X; x <= crop.X + crop.Width; x++)
+                    {
+                        if (x == crop.X) Console.WriteLine("Processing {0}% ({1}/{2})", (float)(y - crop.Y) / crop.Height * 100, (y - crop.Y), crop.Height);
+                        depthIndex = Util.toID(x, y, width, height, kDepthStride);
+
+                        int bitmap_index = depthIndex * 4;
+                        Feature.PredictOnePixelCPU(depthIndex, depth_, ref predictOutput);
+                        int predict_label = 0;
+
+                        for (int i = 1; i < Feature.num_classes_; i++)
+                            if (predictOutput[i] > predictOutput[predict_label])
+                                predict_label = i;
+
+                        overlay_bitmap_bits_[bitmap_index + 2] = (int)label_colors[predict_label].Item1;
+                        overlay_bitmap_bits_[bitmap_index + 1] = (int)label_colors[predict_label].Item2;
+                        overlay_bitmap_bits_[bitmap_index + 0] = (int)label_colors[predict_label].Item3;
+                    }
+                }
+
+                //System.Threading.Thread.Sleep(1000);                
+                ExecutionStopTime = DateTime.Now;
+                ExecutionTime = ExecutionStopTime - ExecutionStartTime;
+                Console.WriteLine("Use {0} ms for getting prediction", ExecutionTime.TotalMilliseconds.ToString());
+
+                overlayStart = true;
+                update(data_);
+                Pause((PauseDelegate)HideOverlayDelegate);
+            }
+
+            // Predict all pixels using GPU
+            if ((ShowExtractedFeatureMode & ShowExtractedFeatureFormat.PredictAllPixelsGPU) == ShowExtractedFeatureFormat.PredictAllPixelsGPU)
+            {
+                List<Tuple<byte, byte, byte>> label_colors = Util.GiveMeNColors(Feature.num_classes_);
+                DateTime ExecutionStartTime;
+                DateTime ExecutionStopTime;
+                TimeSpan ExecutionTime;
+                ExecutionStartTime = DateTime.Now;
+
+                Feature.PredictGPU(depth_, ref predict_output_);
+                ShowAverageAndVariance(predict_output_); // used for debug
+
+                ExecutionStopTime = DateTime.Now;
+                ExecutionTime = ExecutionStopTime - ExecutionStartTime;
+                Console.WriteLine("Use {0} ms for getting prediction", ExecutionTime.TotalMilliseconds.ToString());
+                for (int depth_index = 0; depth_index < depth_.Length; depth_index++)
+                {
+                    int predict_label = 0, bitmap_index = depth_index * 4, y_index = depth_index * Feature.num_classes_;
+                    for (int i = 1; i < Feature.num_classes_; i++)
+                        if (predict_output_[y_index + i] > predict_output_[y_index + predict_label])
+                            predict_label = i;
+                    overlay_bitmap_bits_[bitmap_index + 2] = (int)label_colors[predict_label].Item1;
+                    overlay_bitmap_bits_[bitmap_index + 1] = (int)label_colors[predict_label].Item2;
+                    overlay_bitmap_bits_[bitmap_index + 0] = (int)label_colors[predict_label].Item3;
+                }
+
+                overlayStart = true;
+                update(data_);
+                Pause((PauseDelegate)HideOverlayDelegate);
+            }
+
+            // This got messed up in merging. This should be inside 
+            // the above if condition.
+            // EnablePool(); // ??? Need condition?
+
+            if ((ShowExtractedFeatureMode & ShowExtractedFeatureFormat.ShowTransformedForOnePixel) == ShowExtractedFeatureFormat.ShowTransformedForOnePixel)
+            {
+                int depthIndex = (int)click_position.Y * 640 + (int)click_position.X;
+                for (int i = 0; i < depth_.Length; i++)
+                    depth_[i] = (short)(depth_[i] >> DepthImageFrame.PlayerIndexBitmaskWidth); // remember this
+                int depthVal = depth_[depthIndex]; // >> DepthImageFrame.PlayerIndexBitmaskWidth;
+                // Show offsets pair 
+                Console.WriteLine("depth: {0}, baseIndex: {1}", depthVal, depthIndex);
+                DateTime ExecutionStartTime; //Var will hold Execution Starting Time
+                DateTime ExecutionStopTime;//Var will hold Execution Stopped Time
+                TimeSpan ExecutionTime;//Var will count Total Execution Time-Our Main Hero
+                ExecutionStartTime = DateTime.Now; //Gets the system Current date time expressed as local time             
+                depthVal = depth_[depthIndex]; // >> DepthImageFrame.PlayerIndexBitmaskWidth;
+                listOfTransformedPairPosition.Clear();
+                Feature.GetAllTransformedPairs(depthIndex, depthVal, listOfTransformedPairPosition);
+                int bitmapIndex, X, Y;
+
+                ResetOverlay();
+                //Array.Clear(overlayBitmapBits, 0, overlayBitmapBits.Length);
+                //bitmapBits.CopyTo(overlayBitmapBits, 0);
+
+                for (int i = 0; i < listOfTransformedPairPosition.Count; i++)
+                {
+                    X = listOfTransformedPairPosition[i][0];
+                    Y = listOfTransformedPairPosition[i][1];
+                    if (X >= 0 && X < 640 && Y >= 0 && Y < 480)
+                    {
+                        bitmapIndex = (Y * 640 + X) * 4;
+                        overlay_bitmap_bits_[bitmapIndex + 0] =
+                        overlay_bitmap_bits_[bitmapIndex + 1] =
+                        overlay_bitmap_bits_[bitmapIndex + 3] =
+                        0;
+                        overlay_bitmap_bits_[bitmapIndex + 2] = 255;
+                        //bitmapBits[bitmapIndex + 2] = 255; // test
+                    }
+                    X = listOfTransformedPairPosition[i][2];
+                    Y = listOfTransformedPairPosition[i][3];
+                    if (X >= 0 && X < 640 && Y >= 0 && Y < 480)
+                    {
+                        bitmapIndex = (Y * 640 + X) * 4;
+                        overlay_bitmap_bits_[bitmapIndex + 0] =
+                        overlay_bitmap_bits_[bitmapIndex + 1] =
+                        overlay_bitmap_bits_[bitmapIndex + 3] =
+                        0;
+                        overlay_bitmap_bits_[bitmapIndex + 2] = 255;
+                    }
+                }
+
+                ExecutionStopTime = DateTime.Now;
+                ExecutionTime = ExecutionStopTime - ExecutionStartTime;
+                Console.WriteLine("Use {0} ms for getting transformed points", ExecutionTime.TotalMilliseconds.ToString());
+
+                overlayStart = true;
+            }
         }
 
         private void StartDrag(object sender, MouseButtonEventArgs e)

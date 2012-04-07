@@ -61,6 +61,7 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="DataFeed.cs" />
+    <Compile Include="Dbscan.cs" />
     <Compile Include="Filter.cs" />
     <Compile Include="KinectData.cs" />
     <Page Include="MainWindow.xaml">

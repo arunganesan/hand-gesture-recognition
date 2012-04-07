@@ -84,6 +84,13 @@ namespace FeatureExtractionLib
                 Math.Pow(point1[1] - point2[1], 2) +
                 Math.Pow(point1[2] - point2[2], 2));
         }
+
+        public static double EuclideanDistance(Point3 point1, Point3 point2)
+        {
+            return Math.Sqrt(Math.Pow(point1.x() - point2.x(), 2) +
+                Math.Pow(point1.y() - point2.y(), 2) +
+                Math.Pow(point1.depth() - point2.depth(), 2));
+        }
     }
 
     /* Reference wrapper from 
@@ -108,6 +115,25 @@ namespace FeatureExtractionLib
         {
             get { return getter(); }
             set { setter(value); }
+        }
+    }
+
+    public class Point3
+    {
+        private int x_, y_;
+        private int depth_;
+
+        public Point3(int x, int y, int depth) { x_ = x; y_ = y; depth_ = depth; }
+        
+        public int x() { return x_; }
+        public int y() { return y_; }
+        public int depth() { return depth_; }
+
+        public void update(int x, int y, int depth)
+        {
+            x_ = x;
+            y_ = y;
+            depth_ = depth;
         }
     }
 }

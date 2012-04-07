@@ -62,33 +62,32 @@ namespace ColorGlove
                     // Show the rgb image
                                             Filter.Step.CopyColor
                     // Show the depth image                                         
-                    // Processor.Step.Depth    
+                    // Filter.Step.Depth    
 
                     // Show the Color Labelling                                         
-                    // Processor.Step.PaintWhite,
-                    // Processor.Step.MatchColors
+                    // Filter.Step.PaintWhite,
+                    // Filter.Step.MatchColors
                     );
 
-
-                //processors[0].updatePipeline(Processor.Step.ColorMatch);
+                //processors[0].updatePipeline(Filter.Step.ColorMatch);
                 //processors[1].SetTestModule(Processor.ShowExtractedFeatureFormat.PredictOnePixelCPU | Processor.ShowExtractedFeatureFormat.ShowTransformedForOnePixel); // 
                 // one should call SetTestModule to active the FeatureExtractionLib
                 processors[1].SetTestModule(Processor.ShowExtractedFeatureFormat.PredictAllPixelsGPU); 
                 processors[1].updatePipeline(
                     // Show the rgb image
-                    // Processor.Step.CopyColor
+                    // Filter.Step.CopyColor
                     // Show the depth image                                         
                                             Filter.Step.CopyDepth,
                     // Show overlap offest
                                             Filter.Step.ShowOverlay
                     // Show Mapped Depth Using RGB
-                    // Processor.Step.PaintWhite,
-                    // Processor.Step.MappedDepth
+                    // Filter.Step.PaintWhite,
+                    // Filter.Step.MappedDepth
                     // Show the Color Labelling
-                    // Processor.Step.PaintWhite,
-                    // Processor.Step.MatchColors
+                    // Filter.Step.PaintWhite,
+                    // Filter.Step.MatchColors
                     // Denoise
-                    //                        Processor.Step.Denoise
+                    //                        Filter.Step.Denoise
                 );
             }
             else if (ProcessorMode == ProcessorModeFormat.Arun) {
@@ -98,8 +97,8 @@ namespace ColorGlove
                     Filter.Step.Crop,
                     Filter.Step.PaintGreen,
                     Filter.Step.CopyColor,
-                    //Processor.Step.MatchColors,
-                    //Processor.Step.FeatureExtractOnEnable,
+                    //Filter.Step.MatchColors,
+                    //Filter.Step.FeatureExtractOnEnable,
                     Filter.Step.ShowOverlay
                 );
 
@@ -109,7 +108,7 @@ namespace ColorGlove
                     Filter.Step.PaintGreen,
                     Filter.Step.Crop,
                     Filter.Step.CopyDepth,
-                    //Processor.Step.EnablePredict,
+                    Filter.Step.EnablePredict,
                     Filter.Step.PredictOnEnable,
                     Filter.Step.ShowOverlay);
                 
