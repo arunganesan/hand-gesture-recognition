@@ -187,7 +187,7 @@ namespace ColorGlove
             Pooled gesture = Pool(PoolType.KMeans, state);
             SendToSockets(gesture, state);
 
-            DBSCAN.Test();
+            //DBSCAN.Test();
 
             state.predict_on_enable_.Value = false;
         }
@@ -468,6 +468,20 @@ namespace ColorGlove
                         }
                     }
 
+                    // Draw clusters
+                    List<Tuple<byte, byte, byte>> label_colors = Util.GiveMeNColors(K);
+                    ResetOverlay(state);
+
+                    foreach (int point in points) {
+                        int cluster_label = assignments[point];
+                        
+                        int bitmap_index = point * 4;
+                        state.overlay_bitmap_bits_[bitmap_index + 2] = (int)label_colors[cluster_label].Item1;
+                        state.overlay_bitmap_bits_[bitmap_index + 1] = (int)label_colors[cluster_label].Item2;
+                        state.overlay_bitmap_bits_[bitmap_index + 0] = (int)label_colors[cluster_label].Item3;
+                    }
+
+                    state.overlay_start_.Value = true;
                     break;
                 case PoolType.MedianMajority:
                 case PoolType.MeanMajority:

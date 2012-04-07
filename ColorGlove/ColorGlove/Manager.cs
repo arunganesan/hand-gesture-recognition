@@ -108,7 +108,7 @@ namespace ColorGlove
                     Filter.Step.PaintGreen,
                     Filter.Step.Crop,
                     Filter.Step.CopyDepth,
-                    Filter.Step.EnablePredict,
+                    //Filter.Step.EnablePredict,
                     Filter.Step.PredictOnEnable,
                     Filter.Step.ShowOverlay);
                 
