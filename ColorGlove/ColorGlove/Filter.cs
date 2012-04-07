@@ -430,7 +430,17 @@ namespace ColorGlove
                         if (iterations % 10 == 0)
                             Console.WriteLine("Iteration {0}\n", iterations);
 
-                        // Expectation
+                        // Update centroids
+                        for (int i = 0; i < K; i++)
+                        {
+                            int x = (int)clusters[i].Average(point => Util.toXY(point, width, height, kDepthStride).X);
+                            int y = (int)clusters[i].Average(point => Util.toXY(point, width, height, kDepthStride).Y);
+                            int depth = (int)clusters[i].Average(point => state.depth[point]);
+
+                            centroids[i].update(x, y, depth);
+                        }
+
+                        // Update classifications
                         foreach (int point in points)
                         {
                             System.Drawing.Point xy = Util.toXY(point, width, height, kDepthStride);
@@ -456,17 +466,18 @@ namespace ColorGlove
                                 assignments[point] = nearest;
                             }
                         }
-
-                        // Maximization
-                        for (int i = 0; i < K; i++)
-                        {
-                            int x = (int)clusters[i].Average(point => Util.toXY(point, width, height, kDepthStride).X);
-                            int y = (int)clusters[i].Average(point => Util.toXY(point, width, height, kDepthStride).Y);
-                            int depth = (int)clusters[i].Average(point => state.depth[point]);
-
-                            centroids[i].update(x, y, depth);
-                        }
                     }
+
+                    // Get largest cluster
+                    int largest = 0;
+                    int largest_size = clusters[0].Count;
+                    for (int i = 1; i < clusters.Count; i++)
+                        if (clusters[i].Count > largest_size)
+                        {
+                            largest = i;
+                            largest_size = clusters[i].Count;
+                        }
+
 
                     // Draw clusters
                     List<Tuple<byte, byte, byte>> label_colors = Util.GiveMeNColors(K);
@@ -474,7 +485,8 @@ namespace ColorGlove
 
                     foreach (int point in points) {
                         int cluster_label = assignments[point];
-                        
+                        if (cluster_label != largest) continue; 
+
                         int bitmap_index = point * 4;
                         state.overlay_bitmap_bits_[bitmap_index + 2] = (int)label_colors[cluster_label].Item1;
                         state.overlay_bitmap_bits_[bitmap_index + 1] = (int)label_colors[cluster_label].Item2;
