@@ -397,7 +397,7 @@ namespace ColorGlove
             {
                 case PoolType.KMeans:
                     Random rand = new Random();
-                    Point3 p = new Point3(0, 0, 0);
+                    Point3 p = new Point3(0, 0, 0); 
                     int K = 10, num_changes = 10, iterations = 0;
 
                     List<Point3> centroids = new List<Point3>(K);
@@ -422,13 +422,16 @@ namespace ColorGlove
                     
                     List<int> points = new List<int>(assignments.Keys);
 
+                    // If there have been no changes, the centroids wont 
+                    // change either so KMeans has found a minimum. This may
+                    // be a local minimum. 
                     while (num_changes > 0)
                     {
                         num_changes = 0;
                         iterations++;
 
                         if (iterations % 10 == 0)
-                            Console.WriteLine("Iteration {0}\n", iterations);
+                            Console.WriteLine("Iteration {0}", iterations);
 
                         // Update centroids
                         for (int i = 0; i < K; i++)
