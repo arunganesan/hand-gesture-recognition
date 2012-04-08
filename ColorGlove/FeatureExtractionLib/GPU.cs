@@ -440,7 +440,7 @@ kernel void AddVectorWithTrees(
         };
         
         // Constructor function
-        public GPUCompute(ComputeModeFormat SetComputeMode = ComputeModeFormat.kTest)         
+        public GPUCompute(ComputeModeFormat SetComputeMode = ComputeModeFormat.kTest2D)         
         {
             ComputePlatform platform = ComputePlatform.Platforms[0];
             ComputeContextPropertyList properties = new ComputeContextPropertyList(platform);
