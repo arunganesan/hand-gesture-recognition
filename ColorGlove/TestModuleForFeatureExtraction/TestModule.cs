@@ -71,10 +71,10 @@ namespace TestModuleNamespace
             //FeatureExtractionTest.LoadTrainedRFModelToGPU();
             // ############################
 
-            // General test on GPU
+            // General test on GPU (per-pixel classification on a random image)
             // ########################
-            //FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.Blue);
-            //FeatureExtractionTest.GeneralTestGPU();
+            FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.Blue);
+            FeatureExtractionTest.GeneralTestGPU();
             // ########################
 
             // Test on transform tree
@@ -82,8 +82,8 @@ namespace TestModuleNamespace
             //FeatureExtractionTest.TestTransformTree();
 
             // Test on pruning trees
-            FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.Blue);
-            FeatureExtractionTest.TestPruneTree();
+            //FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.Blue);
+            //FeatureExtractionTest.TestPruneTree();
             Console.ReadKey();
         }
 
@@ -96,12 +96,14 @@ namespace TestModuleNamespace
             int[] old_tree = new int[] { 13, 1, 2, 11, 4, 5, 9, -1, 0, -1, 0, -1, 1, 13, 1, 2, 6, -1, 0, 6, 7, 11, -1, 1, -1, 1 };
             int[] new_tree = new int[old_tree.Length];
             int[] correct_tree = new int[] { 8, 1, 2, 6, -1, 0, -1, 1, 8, 1, 2, 6, -1, 0, -1, 1 };
-            feature_lib_obj_.PruneTrees(new_tree, old_tree, 2, 2);
-
+            feature_lib_obj_.PruneTrees(ref new_tree, old_tree, 2, 2);
+            
             bool fail=false;
             for (int i = 0; i < correct_tree.Length; i++)
                 if (correct_tree[i] != new_tree[i])
                     fail = true;
+            if (new_tree.Length != correct_tree.Length)
+                fail = true;
             if (fail)
                 Console.WriteLine("Test prune tree fail!");
             else

@@ -222,17 +222,32 @@ namespace FeatureExtractionLib
             myGPU_ = new GPUCompute(); 
             // turn the tree from double type to int type to make it more efficient
             trees_int_ = new int [decisionForest.trees.Length];
-            Console.WriteLine("Length of the tree: {0}", trees_int_.Length);
+            Console.WriteLine("Length of the original tree: {0}", trees_int_.Length);
             for (int i = 0; i < decisionForest.trees.Length; i++)                 
                 trees_int_[i] = (int) Math.Ceiling(decisionForest.trees[i]);
 
             
+            #region transform                        
+            /*
+            // Transform the tree into breath-first format            
             int[] new_trees = new int[trees_int_.Length];
             TransformTrees(new_trees, trees_int_, decisionForest.ntrees);
             // maybe need to clear the memory?
             trees_int_ = new_trees;
             Console.WriteLine("Successfuly transform the trees");
+            // End of transformation            
+             */ 
+            #endregion
+
+            #region prune
+            // Prune the tree
+            int[] new_trees = new int[trees_int_.Length];
+            PruneTrees(ref new_trees, trees_int_, 20, decisionForest.ntrees);
             
+            trees_int_ = new_trees;
+            Console.WriteLine("Successfully prune the trees, the resulting tree size is {0}", trees_int_.Length);
+            #endregion
+
             myGPU_.LoadTrees(trees_int_, (short)decisionForest.nclasses, (short)decisionForest.ntrees, decisionForest.nvars);
             Console.WriteLine("Successfuly load the trained random forest into GPU");
         }
@@ -312,7 +327,7 @@ namespace FeatureExtractionLib
         }
 
        // This function prune the Algbli-format tree to a depth-limit tree
-        public void PruneTrees(int[] new_tree, int[] old_tree, int max_depth, int num_tree)
+        public void PruneTrees(ref int[]  new_tree, int[] old_tree, int max_depth, int num_tree)
         {
             int new_offset = 0, old_offset = 0, new_tree_size = 0;
             for (int i = 0; i < num_tree; i++)
