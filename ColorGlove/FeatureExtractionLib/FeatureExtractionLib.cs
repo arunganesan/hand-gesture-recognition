@@ -69,7 +69,7 @@ namespace FeatureExtractionLib
         // random forest object from Alglib
         private dforest.decisionforest decisionForest;
         // trees in int type
-        private int[] treesInt;
+        private int[] trees_int_;
         private GPUCompute myGPU_; // GPU
         private int uMin, uMax;        
         private RandomGenerationModeFormat RandomGenerationMode;
@@ -181,7 +181,9 @@ namespace FeatureExtractionLib
                     kinect_mode_ = KinectModeFormat.Default;
                     traningFilename = "F1000";
                     RandomGenerationMode = RandomGenerationModeFormat.Circular;
-                    RFModelFilePath = directory + "\\FeatureVectorF1000.400.rf.model";
+                    //RFModelFilePath = directory + "\\FeatureVectorF1000.400.rf.model";
+                    RFModelFilePath = directory + "\\RF.1000.100.3.model";
+                    
                     num_classes_ = 5;
                     break;
                 case ModeFormat.F2000:
@@ -219,13 +221,178 @@ namespace FeatureExtractionLib
             // initialize the GPU compute, including compiling. You can set which source to use in the construct function. See the default setting. 
             myGPU_ = new GPUCompute(); 
             // turn the tree from double type to int type to make it more efficient
-            treesInt = new int [decisionForest.trees.Length];
+            trees_int_ = new int [decisionForest.trees.Length];
+            Console.WriteLine("Length of the original tree: {0}", trees_int_.Length);
             for (int i = 0; i < decisionForest.trees.Length; i++)                 
-                treesInt[i] = (int) Math.Ceiling(decisionForest.trees[i]);
-            myGPU_.LoadTrees(treesInt, (short)decisionForest.nclasses, (short)decisionForest.ntrees, decisionForest.nvars);
-            Console.WriteLine("Successfuly load the trained random forest into GPU");
+                trees_int_[i] = (int) Math.Ceiling(decisionForest.trees[i]);
 
+            
+            #region transform                        
+            /*
+            // Transform the tree into breath-first format            
+            int[] new_trees = new int[trees_int_.Length];
+            TransformTrees(new_trees, trees_int_, decisionForest.ntrees);
+            // maybe need to clear the memory?
+            trees_int_ = new_trees;
+            Console.WriteLine("Successfuly transform the trees");
+            // End of transformation            
+             */ 
+            #endregion
+
+            #region prune
+            // Prune the tree
+            int[] new_trees = new int[trees_int_.Length];
+            PruneTrees(ref new_trees, trees_int_, 20, decisionForest.ntrees);
+            
+            trees_int_ = new_trees;
+            Console.WriteLine("Successfully prune the trees, the resulting tree size is {0}", trees_int_.Length);
+            #endregion
+
+            myGPU_.LoadTrees(trees_int_, (short)decisionForest.nclasses, (short)decisionForest.ntrees, decisionForest.nvars);
+            Console.WriteLine("Successfuly load the trained random forest into GPU");
         }
+
+        // This function trasform the tree data structure from Alglib to breadth-first data structure.
+        public void TransformTrees(int []new_tree, int [] old_tree, int num_trees)
+        {
+            //int [] new_trees = new int[trees_int_.Length];
+
+            // Alglib TREE FORMAT (Very important-Michael)
+            // W[Offs]      -   size of sub-array
+            //     node info:
+            // W[K+0]       -   variable number        (-1 for leaf mode)
+            // W[K+1]       -   threshold              (class/value for leaf node)
+            // W[K+2]       -   ">=" branch index      (absent for leaf node)
+            // K+3            -   left child
+
+            // New tree format in breadth-first 
+            // W[Offs]      -   size of sub-array
+            //     node info:
+            // W[K+0]       -   variable number        (-1 for leaf mode)
+            // W[K+1]       -   threshold              (class/value for leaf node)
+            // W[K+2]       -   "<" branch index      (absent for leaf node)
+            // W[K+2], W[K+2]+1            -   left child and right child index
+            int offset = 0;
+            for (int i = 0; i < num_trees; i++)
+            {
+                HelperTransformSingleTree(new_tree, old_tree, offset);
+                offset += old_tree[offset];
+            }
+        }
+
+        public void HelperTransformSingleTree(int[] new_tree, int[] old_tree, int new_tree_off)
+        {            
+            Queue<int> my_queue = new Queue<int>();            
+            int new_tree_index = new_tree_off,                 
+                new_tree_last_index = 0;
+            // copy the size 
+            new_tree[new_tree_index] = old_tree[new_tree_index];
+            new_tree_index++;
+
+            new_tree_last_index +=4;
+            my_queue.Enqueue(new_tree_index);
+            while (my_queue.Count != 0) {
+                int top_index = my_queue.Dequeue();
+                // copy the feature value and threshold
+                new_tree[new_tree_index] = old_tree[top_index];
+                new_tree[new_tree_index + 1] = old_tree[top_index + 1];
+                // if the current node is not a leaf node
+                if (new_tree[new_tree_index] != -1)
+                {
+                    // update the new tree branch
+                    new_tree[new_tree_index + 2] = new_tree_last_index;
+                    // if the left children is not a leaf node
+                    if (old_tree[top_index + 3  ] != -1)
+                        new_tree_last_index += 3;
+                    // if the left children is a leaf node
+                    else
+                        new_tree_last_index += 2;
+                    // make the left child and right child locate nearby
+                    // if the right children is not a leaf node
+                    if (old_tree[old_tree[top_index + 2  ] + new_tree_off ] != -1)
+                        new_tree_last_index += 3;
+                    else
+                        // if the right children is a leaf node
+                        new_tree_last_index += 2;
+                    // advance the current node 
+                    new_tree_index += 3;
+                    // enqueue the node's children
+                    my_queue.Enqueue(top_index + 3);
+                    my_queue.Enqueue(old_tree[top_index + 2] + new_tree_off);
+                }
+                else
+                    new_tree_index += 2;
+            }
+            //Console.WriteLine("Done"); //debug
+        }
+
+       // This function prune the Algbli-format tree to a depth-limit tree
+        public void PruneTrees(ref int[]  new_tree, int[] old_tree, int max_depth, int num_tree)
+        {
+            int new_offset = 0, old_offset = 0, new_tree_size = 0;
+            for (int i = 0; i < num_tree; i++)
+            {
+                new_tree[new_offset] = HelperPruneSingleTree(new_tree, old_tree, new_offset, old_offset, 1, new_offset + 1, old_offset + 1, max_depth) - new_offset;
+                old_offset = old_tree[old_offset];
+                new_tree_size += new_tree[new_offset];
+                new_offset = new_tree[new_offset] + new_offset;
+            }
+            Array.Resize(ref new_tree, new_tree_size);
+        }
+
+        // Helper, return the last new index the tree array
+        public int HelperPruneSingleTree(int[] new_tree, int[] old_tree, int new_offset, int old_offset, int cur_depth, int index_new_tree, int index_old_tree, int max_depth)
+        { 
+            // first copy the feature value and threshold
+            new_tree[index_new_tree] = old_tree[index_old_tree];
+            new_tree[index_new_tree+1] = old_tree[index_old_tree+1];
+            // if the node is a leaf
+            if (old_tree[index_old_tree] == -1)
+            {
+                // return the last available index
+                return index_new_tree + 2;
+            }
+            // the node is non-leaf
+            // current depth is less than max
+            if (cur_depth < max_depth)
+            {
+                // first copy the left pruned tree
+                int last_index = HelperPruneSingleTree(new_tree, old_tree, new_offset, old_offset, cur_depth + 1, index_new_tree + 3, index_old_tree + 3, max_depth);
+                new_tree[index_new_tree + 2] = last_index - new_offset;
+                return HelperPruneSingleTree(new_tree, old_tree, new_offset, old_offset, cur_depth + 1, last_index, old_tree[index_old_tree + 2] + old_offset, max_depth);
+            }
+            // prune the tree, find the most probable labels in the subtree
+            else { 
+                int[] y=new int[decisionForest.nclasses];
+                HelperFindLablesInTree(old_tree, index_old_tree, old_offset, y);
+                int max_label_count = 0, y_max=0;
+                for (int i=0; i< decisionForest.nclasses; i++)
+                    if (y[i] > max_label_count)
+                    {
+                        max_label_count = y[i];
+                        y_max = i;
+                    }
+                new_tree[index_new_tree] = -1;
+                new_tree[index_new_tree + 1] = y_max;
+                return index_new_tree + 2;
+            }
+        }
+        // Helper, give a distribution of the labels in a given node
+        private void HelperFindLablesInTree(int[] tree, int index, int offset, int[] y) {
+            // is a leaf
+            if (tree[index] == -1)
+            {
+                y[tree[index + 1]]++;
+            }
+            else
+            { 
+                // traverse the left child
+                HelperFindLablesInTree(tree, index + 3, offset, y);
+                // traverse the right child
+                HelperFindLablesInTree(tree, tree[index + 2] + offset, offset, y);
+            }
+        }
+
 
         private void SetDirectory(string dir)
         // set working directory
@@ -307,7 +474,8 @@ namespace FeatureExtractionLib
                 }
             }
             catch {
-                Console.WriteLine("Something wrong");
+                Console.WriteLine("Something wrong. Couldn't read the file {0}", filename);
+              
             }
 
         }
@@ -476,9 +644,9 @@ namespace FeatureExtractionLib
         { 
             int count= input_array.Length;
             // true: if something wrong.
-            if (input_array[0] != output_array[0] - (short)(treesInt[0]) || input_array[count - 1] != output_array[count - 1] - (short)(treesInt[count - 1])) {
-                Console.WriteLine("Somethign wrong. treesInt[0]:{0} Before[0]: {1}, After[0]: {2};", (short)(treesInt[0]), input_array[0], output_array[0]);
-                Console.WriteLine("Somethign wrong. treesInt[{0}]:{1} Before[{0}]: {2}, After[{0}]: {3};", count - 1, (short)(treesInt[count - 1]), input_array[count - 1], output_array[count - 1]);
+            if (input_array[0] != output_array[0] - (short)(trees_int_[0]) || input_array[count - 1] != output_array[count - 1] - (short)(trees_int_[count - 1])) {
+                Console.WriteLine("Somethign wrong. treesInt[0]:{0} Before[0]: {1}, After[0]: {2};", (short)(trees_int_[0]), input_array[0], output_array[0]);
+                Console.WriteLine("Somethign wrong. treesInt[{0}]:{1} Before[{0}]: {2}, After[{0}]: {3};", count - 1, (short)(trees_int_[count - 1]), input_array[count - 1], output_array[count - 1]);
                 return true;
             }
             return false;
@@ -618,7 +786,6 @@ namespace FeatureExtractionLib
             for (int i = 0; i < Math.Min(numerPerClass, listOfTargetPosition.Count); i++)
                 ExtractFeatureFromOneDepthPointAndWriteToFile(listOfTargetPosition[i]);
         }
- 
 
         public void testEnum()
         {

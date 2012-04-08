@@ -33,16 +33,18 @@ namespace TestModuleNamespace
             //FeatureExtractionTest.TestGenerateOffset();
             
             // Generating feature files for different training set sizes
-            //FeatureExtractionTest.TestGenerateFeatures("10");
-            //FeatureExtractionTest.TestGenerateFeatures("50");
-            //FeatureExtractionTest.TestGenerateFeatures("100");
-            //FeatureExtractionTest.TestGenerateFeatures("150");
-            //FeatureExtractionTest.TestGenerateFeatures("200");
-            //FeatureExtractionTest.TestGenerateFeatures("250");
-            //FeatureExtractionTest.TestGenerateFeatures("300");
-            //FeatureExtractionTest.TestGenerateFeatures("350");
-            //FeatureExtractionTest.TestGenerateFeatures("test");
+            /*
+            FeatureExtractionTest.TestGenerateFeatures("10");
+            FeatureExtractionTest.TestGenerateFeatures("50");
+            FeatureExtractionTest.TestGenerateFeatures("100");
+            FeatureExtractionTest.TestGenerateFeatures("150");
+            FeatureExtractionTest.TestGenerateFeatures("200");
+            FeatureExtractionTest.TestGenerateFeatures("250");
+            FeatureExtractionTest.TestGenerateFeatures("300");
+            FeatureExtractionTest.TestGenerateFeatures("350");
+            FeatureExtractionTest.TestGenerateFeatures("test");
             Console.WriteLine("Generated features.");
+             */
             // Test Random Forest
             // ##################
             //FeatureExtractionTest.FindMaxDepth();
@@ -59,7 +61,7 @@ namespace TestModuleNamespace
 
             // Test simple case for GPU
             /* #################### */
-            //
+            //FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.Blue);
             //FeatureExtractionTest.TestAddVectorViaGPU();
 
             /* ###################### */          
@@ -69,15 +71,90 @@ namespace TestModuleNamespace
             //FeatureExtractionTest.LoadTrainedRFModelToGPU();
             // ############################
 
-            // General test on GPU
+            // General test on GPU (per-pixel classification on a random image)
             // ########################
+            FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.Blue);
             FeatureExtractionTest.GeneralTestGPU();
             // ########################
+
+            // Test on transform tree
+            //FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.Blue);
+            //FeatureExtractionTest.TestTransformTree();
+
+            // Test on pruning trees
+            //FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.Blue);
+            //FeatureExtractionTest.TestPruneTree();
             Console.ReadKey();
         }
 
         public TestModule() { 
             //myGPU = new GPUCompute();
+        }
+
+        private void TestPruneTree()
+        {
+            int[] old_tree = new int[] { 13, 1, 2, 11, 4, 5, 9, -1, 0, -1, 0, -1, 1, 13, 1, 2, 6, -1, 0, 6, 7, 11, -1, 1, -1, 1 };
+            int[] new_tree = new int[old_tree.Length];
+            int[] correct_tree = new int[] { 8, 1, 2, 6, -1, 0, -1, 1, 8, 1, 2, 6, -1, 0, -1, 1 };
+            feature_lib_obj_.PruneTrees(ref new_tree, old_tree, 2, 2);
+            
+            bool fail=false;
+            for (int i = 0; i < correct_tree.Length; i++)
+                if (correct_tree[i] != new_tree[i])
+                    fail = true;
+            if (new_tree.Length != correct_tree.Length)
+                fail = true;
+            if (fail)
+                Console.WriteLine("Test prune tree fail!");
+            else
+                Console.WriteLine("Test prune tree succeed!");
+            
+            #region deprecated
+            /*
+            old_tree = new int[] { 13, 1, 2, 6, -1, 0, 6, 7, 11, -1, 1, -1, 1};
+            new_tree = new int[old_tree.Length];
+            correct_tree = new int[] { 8, 1, 2, 6, -1, 0, -1, 1};
+            new_tree[0] = feature_lib_obj_.HelperPruneSingleTree(new_tree, old_tree, 0, 0, 1, 1, 1, 2);
+            Array.Resize(ref new_tree, new_tree[0]);
+            fail = false;
+            for (int i = 0; i < correct_tree.Length; i++)
+                if (correct_tree[i] != new_tree[i])
+                    fail = true;
+            if (fail)
+                Console.WriteLine("Test prune tree fail!");
+            else
+                Console.WriteLine("Test prune tree succeed!");
+             */ 
+            #endregion
+        }
+
+        private void HelperTestTransformTree(int [] new_tree, int[] old_tree, int[] new_tree_correct)
+        {
+            //feature_lib_obj_.HelperTransformSingleTree(new_tree, old_tree, 2);
+            feature_lib_obj_.TransformTrees(new_tree, old_tree, 2);
+            bool correct = true;
+            for (int i = 0; i < new_tree.Length; i++)
+            {
+                if (new_tree_correct[i] != new_tree[i])
+                {
+                    correct = false;
+                    break;
+                }
+            }
+            if (correct)
+            {
+                Console.WriteLine("Succeessfuly test case!");
+            }
+            else
+                Console.WriteLine("Fail to test case!");
+        }
+
+        public void TestTransformTree()
+        {
+            int[] old_tree = new int[] { 13, 1, 2, 11, 4, 5, 9, -1, 8, -1, 10, -1, 12, 13, 1, 2, 6, -1, 5, 6, 7, 11, -1, 10, -1, 12 };
+            int[] new_tree = new int[old_tree.Length];
+            int[] new_tree_correct = new int[] { 13, 1, 2, 4, 4, 5, 9, -1, 12, -1, 8, -1, 10, 13, 1, 2, 4, -1, 5, 6, 7, 9, -1, 10, -1, 12 };
+            HelperTestTransformTree(new_tree, old_tree, new_tree_correct);            
         }
 
         public void GeneralTestGPU()
@@ -88,9 +165,10 @@ namespace TestModuleNamespace
             Random _r = new Random();
             for (int i = 0; i < depth.Length; i++)
                 depth[i] = (short) (_r.Next(10000)  + 1);
-            float[] y = new float[count * 3];
+            //float[] y = new float[count * 3];
+            float[] y = new float[count * feature_lib_obj_.num_classes_];  
 
-            const int maxTmp = 1;
+            const int maxTmp = 100;
             DateTime ExecutionStartTime; //Var will hold Execution Starting Time
             DateTime ExecutionStopTime;//Var will hold Execution Stopped Time
             TimeSpan ExecutionTime;//Var will count Total Execution Time-Our Main Hero
@@ -233,7 +311,7 @@ namespace TestModuleNamespace
             short[] output_array = new short[count];
             
             //LoadTrainedRFModelToGPU();            
-            const int maxTmp = 1000;
+            const int maxTmp = 100;
             DateTime ExecutionStartTime; //Var will hold Execution Starting Time
             DateTime ExecutionStopTime;//Var will hold Execution Stopped Time
             TimeSpan ExecutionTime;//Var will count Total Execution Time-Our Main Hero
@@ -319,9 +397,10 @@ namespace TestModuleNamespace
             // To setup the mode, see README in the library
             //FeatureExtraction.ModeFormat MyMode = FeatureExtraction.ModeFormat.BlueDefault;
             FeatureExtraction.ModeFormat MyMode = mode;
-            string dir = "D:\\gr\\training\\blue\\";
-            //Feature = new FeatureExtraction(MyMode, "D:\\gr\\training\\blue\\");
-            feature_lib_obj_ = new FeatureExtraction(MyMode, dir);
+            //string dir = "D:\\gr\\training\\blue\\";
+            
+            //feature_lib_obj_ = new FeatureExtraction(MyMode, dir);
+            feature_lib_obj_ = new FeatureExtraction(MyMode);
         }
 
         private void TestGenerateFeatures(string training_set_size)

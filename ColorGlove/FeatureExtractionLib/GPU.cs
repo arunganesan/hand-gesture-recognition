@@ -9,8 +9,9 @@ namespace FeatureExtractionLib
     public class GPUCompute
     {
         private ComputeProgram program_;
+        #region predict_release
         private string clProgramSource_predict_ = @"
-short GetNewDepthIndex(int cur_index, int dx, int dy, global read_only short* depth)
+short GetNewDepth(int cur_index, int dx, int dy, global read_only short* depth)
 {    
     int cx = (int) ( (cur_index % 640) +  (float)dx / (float)depth[cur_index] );
     int cy = (int) ( (cur_index / 640) + (float)dy / (float)depth[cur_index] );
@@ -33,7 +34,7 @@ kernel void Predict(
 {
     
     int index= get_global_id(0), y_index =index* meta_tree[0];    
-    int offs = 0, k, idx, offset_list_index;    
+    int offs = 0, k,  offset_list_index;    
     short u_depth, v_depth, i;    
     float v;    
     if (depth[index] == -1)
@@ -50,15 +51,14 @@ kernel void Predict(
         k = offs +1;
         while (1){
             if (trees[k] == -1)
-            {
-                idx = trees[k+1];
-                y[y_index + idx]++;
+            {                
+                y[y_index + trees[k+1]]++;
                 break;
             }
             // get the feature value
             offset_list_index = trees[k]*4;                        
-            u_depth = GetNewDepthIndex(index, offset_list[offset_list_index], offset_list[offset_list_index+1], depth);
-            v_depth = GetNewDepthIndex(index, offset_list[offset_list_index + 2], offset_list[offset_list_index+3], depth);            
+            u_depth = GetNewDepth(index, offset_list[offset_list_index], offset_list[offset_list_index+1], depth);
+            v_depth = GetNewDepth(index, offset_list[offset_list_index + 2], offset_list[offset_list_index+3], depth);            
             if (u_depth - v_depth < trees[k+1] )
                 k+=3;
             else
@@ -71,14 +71,128 @@ kernel void Predict(
     
 }
 ";
+        #endregion
+
         /*
-         The following kernel make the output to be the total depths it visits.
+        test
          */
-        private string clProgramSource_predict_test_ = @"
-short GetNewDepthIndex(int cur_index, int dx, int dy, global read_only short* depth)
+        #region test
+        private string clProgramSource_predict_test_breath_first_tree_ = @"
+short GetNewDepth(int cur_x, int cur_y, int cur_index, int dx, int dy, global read_only short* depth)
 {    
-    int cx = (int) ( (cur_index % 640) +  (float)dx / (float)depth[cur_index] );
-    int cy = (int) ( (cur_index / 640) + (float)dy / (float)depth[cur_index] );
+    /* 
+    int cx = (int) ( (float)cur_x +  (float)dx / (float)depth[cur_index] );
+    int cy = (int) ( (float)cur_y + (float)dy / (float)depth[cur_index] );         
+    */
+    float v= 1 / (float)depth[cur_index] ;
+    int cx = (int) ( (float)cur_x +  (float)dx * v  );
+    int cy = (int) ( (float)cur_y + (float)dy * v );         
+    //return depth[cy*640 + cx];    
+    if (cx>=0 && cx< 640 && cy>=0 && cy< 480)
+    {
+        
+        if (depth[cy*640 + cx] <0)
+            return 10000;
+        else
+            return depth[cy*640 + cx];        
+    }
+    else 
+        return 10000;  
+   
+} 
+kernel void Predict(
+    global read_only short* meta_tree,     
+    global read_only int* trees, // 12 MB
+    global read_only const int* offset_list, // 32 KB
+    global write_only float* y, // 3.6MB   
+    global read_only short* depth // 1.2 MB
+)
+{
+    
+    int index= get_global_id(0), y_index =index* meta_tree[0];    
+    int offs = 0, k, offset_list_index, visit_count = 0, new_k;    
+    short u_depth, v_depth, i;    
+    int cur_x= index % 640, cur_y=index / 640;
+    float v;        
+    if (depth[index] == -1)
+    {
+        y[y_index] = 1;
+        for (i=1; i< meta_tree[0]; i++)
+            y[y_index + i] = 0;
+        return;
+    }
+
+    v = (float)1 / (float)meta_tree[1];
+    for (i=0; i< meta_tree[0]; i++)
+        y[y_index + i] = 0;
+    // do some repeatable stuff
+    //for (i=0; i< 60; i++);
+
+    for (i=0; i< meta_tree[1]; i++){
+        k = offs +1;     
+        visit_count = 0;   
+        while (1){            
+            visit_count ++;
+             
+            // limit the depth      
+            if (visit_count>20)
+                break;
+            
+            if (trees[k] == -1)
+            {                
+                y[y_index + trees[k+1]]++;
+                break;
+            }
+            // get the feature value
+            offset_list_index = trees[k]*4;            
+            
+            //u_depth = 0;
+            //v_depth = 0;
+            u_depth = GetNewDepth(cur_x, cur_y, index, offset_list[offset_list_index], offset_list[offset_list_index+1], depth);
+            v_depth = GetNewDepth(cur_x, cur_y, index, offset_list[offset_list_index + 2], offset_list[offset_list_index+3], depth);                  
+            // use Alglib tree
+            /* 
+            if (u_depth - v_depth < trees[k+1] )
+                k+=3;
+            else
+                k = offs + trees[k+2];
+            */
+            // use breadth-first tree
+            // first go to the left child by default
+            new_k = trees[k+2] + offs;
+            if (u_depth - v_depth >= trees[k+1] )
+            {                
+                // if the left child is not a leaf
+                if (trees[new_k] != -1)
+                    new_k+=3;
+                else
+                    new_k+=2;                
+            }    
+            k = new_k;
+            // just traverse 
+            /*
+            k = offs + trees[k];
+            */
+        }
+        offs = offs + trees[offs];
+    }
+
+    for (i=0; i< meta_tree[0]; i++)
+        y[y_index + i] = v* y[y_index + i];
+        //y[y_index + i] = visit_count;
+    
+}
+";
+        #endregion
+        /*
+        2d test
+         */
+        #region test2D
+        private string clProgramSource_predict_test_2d_ = @"
+short GetNewDepth(int cur_x, int cur_y, int cur_index, int dx, int dy, global read_only short* depth)
+{        
+    int cx = (int) ( cur_x +  (float)dx / (float)depth[cur_index] );
+    int cy = (int) ( cur_y + (float)dy / (float)depth[cur_index] );
     if (cx>=0 && cx< 640 && cy>=0 && cy< 480)
     {
         if (depth[cy*640 + cx] <0)
@@ -97,10 +211,12 @@ kernel void Predict(
     global read_only short* depth)
 {
     
-    int index= get_global_id(0), y_index =index* meta_tree[0];    
+    int cx= get_global_id(0), cy=get_global_id(1);
+    int index=cy*640 + cx, y_index =index* meta_tree[0];    
     int offs = 0, k, offset_list_index, visit_count = 0;    
     short u_depth, v_depth, i;    
     float v;        
+    
     if (depth[index] == -1)
     {
         y[y_index] = 1;
@@ -111,16 +227,18 @@ kernel void Predict(
 
     v = (float)1 / (float)meta_tree[1];
     for (i=0; i< meta_tree[0]; i++)
-        y[y_index + i] = 0;
+        y[y_index + i] = 0;    
+
     for (i=0; i< meta_tree[1]; i++){
         k = offs +1;     
         visit_count = 0;   
         while (1){            
             visit_count ++;
             // limit the depth
-            
-            if (visit_count>2)
+            /*
+            if (visit_count>20)
                 break;
+            */
             if (trees[k] == -1)
             {                
                 y[y_index + trees[k+1]]++;
@@ -130,21 +248,108 @@ kernel void Predict(
             offset_list_index = trees[k]*4;            
             //u_depth = 0;
             //v_depth = 0;
-            u_depth = GetNewDepthIndex(index, offset_list[offset_list_index], offset_list[offset_list_index+1], depth);
-            v_depth = GetNewDepthIndex(index, offset_list[offset_list_index + 2], offset_list[offset_list_index+3], depth);            
+            u_depth = GetNewDepth(cx, cy, index, offset_list[offset_list_index], offset_list[offset_list_index+1], depth);
+            v_depth = GetNewDepth(cx, cy, index, offset_list[offset_list_index + 2], offset_list[offset_list_index+3], depth);                  
+            
             if (u_depth - v_depth < trees[k+1] )
                 k+=3;
             else
                 k = offs + trees[k+2];
+            
         }
         offs = offs + trees[offs];
     }
+
+
     for (i=0; i< meta_tree[0]; i++)
-        //y[y_index + i] = v* y[y_index + i];
+        //y[y_index + i] *= v;
         y[y_index + i] = visit_count;
     
 }
 ";
+        #endregion
+        /*
+       2d test
+        */
+        #region release2D
+        private string clProgramSource_predict_2d_ = @"
+short GetNewDepth(int cur_x, int cur_y, int cur_index, int dx, int dy, global read_only short* depth)
+{        
+    int cx = (int) ( cur_x +  (float)dx / (float)depth[cur_index] );
+    int cy = (int) ( cur_y + (float)dy / (float)depth[cur_index] );
+    if (cx>=0 && cx< 640 && cy>=0 && cy< 480)
+    {
+        if (depth[cy*640 + cx] <0)
+            return 10000;
+        else
+            return depth[cy*640 + cx];
+    }
+    else 
+        return 10000;  
+} 
+kernel void Predict(
+    global read_only short* meta_tree,     
+    global read_only int* trees, 
+    global read_only int* offset_list,
+    global write_only float* y,    
+    global read_only short* depth)
+{
+    
+    int cx= get_global_id(0), cy=get_global_id(1);
+    int index=cy*640 + cx, y_index =index* meta_tree[0];    
+    int offs = 0, k, offset_list_index, visit_count = 0;    
+    short u_depth, v_depth, i;    
+    float v;        
+    
+    if (depth[index] == -1)
+    {
+        y[y_index] = 1;
+        for (i=1; i< meta_tree[0]; i++)
+            y[y_index + i] = 0;
+        return;
+    }
+
+    v = (float)1 / (float)meta_tree[1];
+    for (i=0; i< meta_tree[0]; i++)
+        y[y_index + i] = 0;    
+
+    for (i=0; i< meta_tree[1]; i++){
+        k = offs +1;     
+        visit_count = 0;   
+        while (1){            
+            visit_count ++;
+            // limit the depth
+            /*
+            if (visit_count>20)
+                break;
+            */
+            if (trees[k] == -1)
+            {                
+                y[y_index + trees[k+1]]++;
+                break;
+            }
+            // get the feature value
+            offset_list_index = trees[k]*4;            
+            //u_depth = 0;
+            //v_depth = 0;
+            u_depth = GetNewDepth(cx, cy, index, offset_list[offset_list_index], offset_list[offset_list_index+1], depth);
+            v_depth = GetNewDepth(cx, cy, index, offset_list[offset_list_index + 2], offset_list[offset_list_index+3], depth);                  
+            
+            if (u_depth - v_depth < trees[k+1] )
+                k+=3;
+            else
+                k = offs + trees[k+2];            
+        }
+        offs = offs + trees[offs];
+    }
+
+    for (i=0; i< meta_tree[0]; i++)
+        y[y_index + i] *= v;            
+}
+";
+        #endregion
+
+        #region random forest process
         private string clProgramSource_dfprocess_ = @"
 kernel void DFProcess(
     global read_only short* meta_tree, 
@@ -179,6 +384,9 @@ kernel void DFProcess(
         y[i] = v* y[i];
 }  
 ";
+        #endregion
+
+        #region vector add
         private string clProgramSource_vector_add_ = @"
 short AddVector(short a, global read_only int* t, int index)
 {
@@ -201,6 +409,7 @@ kernel void AddVectorWithTrees(
     c[index] =AddVector(a[index], trees, index);
 }
 ";
+        #endregion
         private ComputeKernel kernel_;
         private ComputeContext context_;
         private ComputeCommandQueue commands_;
@@ -225,7 +434,9 @@ kernel void AddVectorWithTrees(
             kAddVectorTest = 1,
             kPredictWithFeaturesTest = 2,
             kRelease = 4,
-            kTest = 8,
+            kTestBreathFrist = 8,
+            kTest2D = 16,
+            kRelease2D = 32,
         };
         
         // Constructor function
@@ -246,8 +457,12 @@ kernel void AddVectorWithTrees(
                 program_ = new ComputeProgram(context_, clProgramSource_dfprocess_);
             else if (compute_mode_ == ComputeModeFormat.kRelease)
                 program_ = new ComputeProgram(context_, clProgramSource_predict_);
-            else if (compute_mode_ == ComputeModeFormat.kTest)
-                program_ = new ComputeProgram(context_, clProgramSource_predict_test_);                    
+            else if (compute_mode_ == ComputeModeFormat.kRelease2D)
+                program_ = new ComputeProgram(context_, clProgramSource_predict_2d_);
+            else if (compute_mode_ == ComputeModeFormat.kTestBreathFrist)
+                program_ = new ComputeProgram(context_, clProgramSource_predict_test_breath_first_tree_);     
+            else if (compute_mode_ == ComputeModeFormat.kTest2D)
+                program_ = new ComputeProgram(context_, clProgramSource_predict_test_2d_);     
             program_.Build(null, null, null, IntPtr.Zero); 
             // end building
             Console.WriteLine("Build success");            
@@ -266,7 +481,8 @@ kernel void AddVectorWithTrees(
             else if (compute_mode_ == ComputeModeFormat.kPredictWithFeaturesTest) {
                 kernel_ = program_.CreateKernel("DFProcess");                                
             }
-            else if (compute_mode_ == ComputeModeFormat.kRelease || compute_mode_ == ComputeModeFormat.kTest) {
+            else if (compute_mode_ == ComputeModeFormat.kRelease || compute_mode_ == ComputeModeFormat.kRelease2D || compute_mode_ == ComputeModeFormat.kTestBreathFrist || compute_mode_ == ComputeModeFormat.kTest2D)
+            {
                 kernel_ = program_.CreateKernel("Predict");
             }
             commands_ = new ComputeCommandQueue(context_, context_.Devices[0], ComputeCommandQueueFlags.None);                
@@ -279,7 +495,7 @@ kernel void AddVectorWithTrees(
             //commands_.WriteToBuffer(toLoadTrees, trees_, true, null);           
             kernel_.SetMemoryArgument(1, trees_);
 
-            if (compute_mode_ == ComputeModeFormat.kPredictWithFeaturesTest || compute_mode_ == ComputeModeFormat.kRelease || compute_mode_ == ComputeModeFormat.kTest)
+            if (compute_mode_ == ComputeModeFormat.kPredictWithFeaturesTest || compute_mode_ == ComputeModeFormat.kRelease || compute_mode_ == ComputeModeFormat.kTestBreathFrist || compute_mode_ == ComputeModeFormat.kTest2D || compute_mode_ == ComputeModeFormat.kRelease2D)
             {
                 short[] host_meta_tree = new short[2];
                 host_meta_tree[0] = nclasses;
@@ -291,7 +507,7 @@ kernel void AddVectorWithTrees(
                     x_ = new ComputeBuffer<short>(context_, ComputeMemoryFlags.ReadOnly, nfeatures);
                     kernel_.SetMemoryArgument(2, x_);
                 }
-                else if (compute_mode_ == ComputeModeFormat.kRelease || compute_mode_ == ComputeModeFormat.kTest)
+                else if (compute_mode_ == ComputeModeFormat.kRelease || compute_mode_ == ComputeModeFormat.kTestBreathFrist || compute_mode_ == ComputeModeFormat.kTest2D || compute_mode_ == ComputeModeFormat.kRelease2D)
                 { 
                     // load offset. Is done in LoadOffsets()                    
                 }
@@ -299,13 +515,13 @@ kernel void AddVectorWithTrees(
                 {
                     y_ = new ComputeBuffer<float>(context_, ComputeMemoryFlags.WriteOnly, nclasses);                    
                 }
-                else if (compute_mode_ == ComputeModeFormat.kRelease || compute_mode_ == ComputeModeFormat.kTest)
+                else if (compute_mode_ == ComputeModeFormat.kRelease || compute_mode_ == ComputeModeFormat.kTestBreathFrist || compute_mode_ == ComputeModeFormat.kTest2D || compute_mode_ == ComputeModeFormat.kRelease2D)
                 {
                     y_ = new ComputeBuffer<float>(context_, ComputeMemoryFlags.WriteOnly, count_ * nclasses);                    
                 }
                 // the following bug takes me a day to find out
                 kernel_.SetMemoryArgument(3, y_);
-                if (compute_mode_ == ComputeModeFormat.kRelease || compute_mode_ == ComputeModeFormat.kTest)
+                if (compute_mode_ == ComputeModeFormat.kRelease || compute_mode_ == ComputeModeFormat.kTestBreathFrist || compute_mode_ == ComputeModeFormat.kTest2D || compute_mode_ == ComputeModeFormat.kRelease2D)
                 {
                     depth_ = new ComputeBuffer<short>(context_, ComputeMemoryFlags.ReadOnly, count_);
                     kernel_.SetMemoryArgument(4, depth_);
@@ -315,7 +531,7 @@ kernel void AddVectorWithTrees(
 
         public void LoadOffsets(int[] to_load_offset_list)
         {
-            if (compute_mode_ == ComputeModeFormat.kRelease || compute_mode_ == ComputeModeFormat.kTest)
+            if (compute_mode_ == ComputeModeFormat.kRelease || compute_mode_ == ComputeModeFormat.kTestBreathFrist || compute_mode_ == ComputeModeFormat.kTest2D || compute_mode_ == ComputeModeFormat.kRelease2D)
             {                
                 offset_list_ = new ComputeBuffer<int>(context_, ComputeMemoryFlags.ReadOnly | ComputeMemoryFlags.CopyHostPointer, to_load_offset_list);
                 //commands_.WriteToBuffer(to_load_offset_list, offset_list_, true, null);
@@ -341,7 +557,10 @@ kernel void AddVectorWithTrees(
             //Console.WriteLine("array depth dimension: {0}, count: {1}", depth.Length, count_);
             commands_.WriteToBuffer(depth, depth_, true, null);
             //Console.WriteLine("Successfuly write depth to GPU memory");
-            commands_.Execute(kernel_, null, new long[] {count_}, null, null); // set the work-item size to be 640*480.
+            if (compute_mode_ == ComputeModeFormat.kRelease || compute_mode_ == ComputeModeFormat.kTestBreathFrist )
+                commands_.Execute(kernel_, null, new long[] {count_}, null, null); // set the work-item size to be 640*480.
+            else if (compute_mode_ == ComputeModeFormat.kTest2D || compute_mode_ == ComputeModeFormat.kRelease2D)
+                commands_.Execute(kernel_, null, new long[] { 640, 480 }, null, null); // set the work-item size to be 640*480.
             commands_.Finish();
             //Console.WriteLine("Successfuly execute the kernel");
             commands_.ReadFromBuffer(y_, ref predict_output, true, null);
@@ -359,5 +578,7 @@ kernel void AddVectorWithTrees(
 
     }
 }
+
+
 
 

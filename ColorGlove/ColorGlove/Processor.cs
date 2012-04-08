@@ -229,9 +229,13 @@ namespace ColorGlove
 
             // User dependent. Notice that this is important
             //FeatureExtraction.ModeFormat MyMode = FeatureExtraction.ModeFormat.F1000; 
+
             //FeatureExtraction.ModeFormat MyMode = FeatureExtraction.ModeFormat.Blue;
             FeatureExtraction.ModeFormat MyMode = FeatureExtraction.ModeFormat.BlueDefault;
             Feature = new FeatureExtractionLib.FeatureExtraction(MyMode, "D:\\gr\\training\\blue");
+			
+            //Feature = new FeatureExtractionLib.FeatureExtraction(MyMode);
+            
             label_colors = Util.GiveMeNColors(Feature.num_classes_);
             Feature.ReadOffsetPairsFromStorage();
             predict_output_ = new float[width * height * Feature.num_classes_];
@@ -728,7 +732,6 @@ namespace ColorGlove
                 update(data_);
                 Pause((PauseDelegate)HideOverlayDelegate);
             }
-
             // This got messed up in merging. This should be inside 
             // the above if condition.
             // EnablePool(); // ??? Need condition?
@@ -878,12 +881,13 @@ namespace ColorGlove
             pipeline = new Filter.Step[steps.Length];
             for (int i = 0; i < steps.Length; i++) pipeline[i] = steps[i];
         }
-
+		
         // Relay functions into filter
         public void EnableFeatureExtract() { Filter.EnableFeatureExtract(state); }
         public void EnablePredict() { Filter.EnablePredict(state); }
         // End.
-
+		
+		
         private void process(Filter.Step step)
         {
             Type type = typeof(Filter);

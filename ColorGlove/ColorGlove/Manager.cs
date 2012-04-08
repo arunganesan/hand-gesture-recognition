@@ -31,7 +31,7 @@ namespace ColorGlove
         }
         Thread poller;
         DataFeed datafeed;
-        ProcessorModeFormat ProcessorMode = ProcessorModeFormat.Arun; // set the mode for processor here
+        ProcessorModeFormat ProcessorMode = ProcessorModeFormat.Michael; // set the mode for processor here
 
         public Manager(MainWindow parent)  // Construct function
         {
@@ -77,7 +77,9 @@ namespace ColorGlove
                     // Show the rgb image
                     // Filter.Step.CopyColor
                     // Show the depth image                                         
-                                            Filter.Step.CopyDepth,
+                                            Processor.Step.Depth,
+                                            Processor.Step.EnablePredict,
+                                            Processor.Step.PredictOnEnable,
                     // Show overlap offest
                                             Filter.Step.ShowOverlay
                     // Show Mapped Depth Using RGB
