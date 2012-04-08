@@ -77,9 +77,9 @@ namespace ColorGlove
                     // Show the rgb image
                     // Filter.Step.CopyColor
                     // Show the depth image                                         
-                                            Processor.Step.Depth,
-                                            Processor.Step.EnablePredict,
-                                            Processor.Step.PredictOnEnable,
+                                            Filter.Step.CopyDepth,
+                                            Filter.Step.EnablePredict,
+                                            Filter.Step.PredictOnEnable,
                     // Show overlap offest
                                             Filter.Step.ShowOverlay
                     // Show Mapped Depth Using RGB
