@@ -311,7 +311,73 @@ namespace FeatureExtractionLib
             //Console.WriteLine("Done"); //debug
         }
 
-       
+       // This function prune the Algbli-format tree to a depth-limit tree
+        public void PruneTrees(int[] new_tree, int[] old_tree, int max_depth, int num_tree)
+        {
+            int new_offset = 0, old_offset = 0, new_tree_size = 0;
+            for (int i = 0; i < num_tree; i++)
+            {
+                new_tree[new_offset] = HelperPruneSingleTree(new_tree, old_tree, new_offset, old_offset, 1, new_offset + 1, old_offset + 1, max_depth) - new_offset;
+                old_offset = old_tree[old_offset];
+                new_tree_size += new_tree[new_offset];
+                new_offset = new_tree[new_offset] + new_offset;
+            }
+            Array.Resize(ref new_tree, new_tree_size);
+        }
+
+        // Helper, return the last new index the tree array
+        public int HelperPruneSingleTree(int[] new_tree, int[] old_tree, int new_offset, int old_offset, int cur_depth, int index_new_tree, int index_old_tree, int max_depth)
+        { 
+            // first copy the feature value and threshold
+            new_tree[index_new_tree] = old_tree[index_old_tree];
+            new_tree[index_new_tree+1] = old_tree[index_old_tree+1];
+            // if the node is a leaf
+            if (old_tree[index_old_tree] == -1)
+            {
+                // return the last available index
+                return index_new_tree + 2;
+            }
+            // the node is non-leaf
+            // current depth is less than max
+            if (cur_depth < max_depth)
+            {
+                // first copy the left pruned tree
+                int last_index = HelperPruneSingleTree(new_tree, old_tree, new_offset, old_offset, cur_depth + 1, index_new_tree + 3, index_old_tree + 3, max_depth);
+                new_tree[index_new_tree + 2] = last_index - new_offset;
+                return HelperPruneSingleTree(new_tree, old_tree, new_offset, old_offset, cur_depth + 1, last_index, old_tree[index_old_tree + 2] + old_offset, max_depth);
+            }
+            // prune the tree, find the most probable labels in the subtree
+            else { 
+                int[] y=new int[decisionForest.nclasses];
+                HelperFindLablesInTree(old_tree, index_old_tree, old_offset, y);
+                int max_label_count = 0, y_max=0;
+                for (int i=0; i< decisionForest.nclasses; i++)
+                    if (y[i] > max_label_count)
+                    {
+                        max_label_count = y[i];
+                        y_max = i;
+                    }
+                new_tree[index_new_tree] = -1;
+                new_tree[index_new_tree + 1] = y_max;
+                return index_new_tree + 2;
+            }
+        }
+        // Helper, give a distribution of the labels in a given node
+        private void HelperFindLablesInTree(int[] tree, int index, int offset, int[] y) {
+            // is a leaf
+            if (tree[index] == -1)
+            {
+                y[tree[index + 1]]++;
+            }
+            else
+            { 
+                // traverse the left child
+                HelperFindLablesInTree(tree, index + 3, offset, y);
+                // traverse the right child
+                HelperFindLablesInTree(tree, tree[index + 2] + offset, offset, y);
+            }
+        }
+
 
         private void SetDirectory(string dir)
         // set working directory

@@ -77,7 +77,7 @@ kernel void Predict(
         test
          */
         #region test
-        private string clProgramSource_predict_test_ = @"
+        private string clProgramSource_predict_test_breath_first_tree_ = @"
 short GetNewDepth(int cur_x, int cur_y, int cur_index, int dx, int dy, global read_only short* depth)
 {    
     /* 
@@ -434,13 +434,13 @@ kernel void AddVectorWithTrees(
             kAddVectorTest = 1,
             kPredictWithFeaturesTest = 2,
             kRelease = 4,
-            kTest = 8,
+            kTestBreathFrist = 8,
             kTest2D = 16,
             kRelease2D = 32,
         };
         
         // Constructor function
-        public GPUCompute(ComputeModeFormat SetComputeMode = ComputeModeFormat.kAddVectorTest)         
+        public GPUCompute(ComputeModeFormat SetComputeMode = ComputeModeFormat.kTestBreathFrist)         
         {
             ComputePlatform platform = ComputePlatform.Platforms[0];
             ComputeContextPropertyList properties = new ComputeContextPropertyList(platform);
@@ -459,8 +459,8 @@ kernel void AddVectorWithTrees(
                 program_ = new ComputeProgram(context_, clProgramSource_predict_);
             else if (compute_mode_ == ComputeModeFormat.kRelease2D)
                 program_ = new ComputeProgram(context_, clProgramSource_predict_2d_);
-            else if (compute_mode_ == ComputeModeFormat.kTest)
-                program_ = new ComputeProgram(context_, clProgramSource_predict_test_);     
+            else if (compute_mode_ == ComputeModeFormat.kTestBreathFrist)
+                program_ = new ComputeProgram(context_, clProgramSource_predict_test_breath_first_tree_);     
             else if (compute_mode_ == ComputeModeFormat.kTest2D)
                 program_ = new ComputeProgram(context_, clProgramSource_predict_test_2d_);     
             program_.Build(null, null, null, IntPtr.Zero); 
@@ -481,7 +481,7 @@ kernel void AddVectorWithTrees(
             else if (compute_mode_ == ComputeModeFormat.kPredictWithFeaturesTest) {
                 kernel_ = program_.CreateKernel("DFProcess");                                
             }
-            else if (compute_mode_ == ComputeModeFormat.kRelease || compute_mode_ == ComputeModeFormat.kRelease2D || compute_mode_ == ComputeModeFormat.kTest || compute_mode_ == ComputeModeFormat.kTest2D)
+            else if (compute_mode_ == ComputeModeFormat.kRelease || compute_mode_ == ComputeModeFormat.kRelease2D || compute_mode_ == ComputeModeFormat.kTestBreathFrist || compute_mode_ == ComputeModeFormat.kTest2D)
             {
                 kernel_ = program_.CreateKernel("Predict");
             }
@@ -495,7 +495,7 @@ kernel void AddVectorWithTrees(
             //commands_.WriteToBuffer(toLoadTrees, trees_, true, null);           
             kernel_.SetMemoryArgument(1, trees_);
 
-            if (compute_mode_ == ComputeModeFormat.kPredictWithFeaturesTest || compute_mode_ == ComputeModeFormat.kRelease || compute_mode_ == ComputeModeFormat.kTest || compute_mode_ == ComputeModeFormat.kTest2D || compute_mode_ == ComputeModeFormat.kRelease2D)
+            if (compute_mode_ == ComputeModeFormat.kPredictWithFeaturesTest || compute_mode_ == ComputeModeFormat.kRelease || compute_mode_ == ComputeModeFormat.kTestBreathFrist || compute_mode_ == ComputeModeFormat.kTest2D || compute_mode_ == ComputeModeFormat.kRelease2D)
             {
                 short[] host_meta_tree = new short[2];
                 host_meta_tree[0] = nclasses;
@@ -507,7 +507,7 @@ kernel void AddVectorWithTrees(
                     x_ = new ComputeBuffer<short>(context_, ComputeMemoryFlags.ReadOnly, nfeatures);
                     kernel_.SetMemoryArgument(2, x_);
                 }
-                else if (compute_mode_ == ComputeModeFormat.kRelease || compute_mode_ == ComputeModeFormat.kTest || compute_mode_ == ComputeModeFormat.kTest2D || compute_mode_ == ComputeModeFormat.kRelease2D)
+                else if (compute_mode_ == ComputeModeFormat.kRelease || compute_mode_ == ComputeModeFormat.kTestBreathFrist || compute_mode_ == ComputeModeFormat.kTest2D || compute_mode_ == ComputeModeFormat.kRelease2D)
                 { 
                     // load offset. Is done in LoadOffsets()                    
                 }
@@ -515,13 +515,13 @@ kernel void AddVectorWithTrees(
                 {
                     y_ = new ComputeBuffer<float>(context_, ComputeMemoryFlags.WriteOnly, nclasses);                    
                 }
-                else if (compute_mode_ == ComputeModeFormat.kRelease || compute_mode_ == ComputeModeFormat.kTest || compute_mode_ == ComputeModeFormat.kTest2D || compute_mode_ == ComputeModeFormat.kRelease2D)
+                else if (compute_mode_ == ComputeModeFormat.kRelease || compute_mode_ == ComputeModeFormat.kTestBreathFrist || compute_mode_ == ComputeModeFormat.kTest2D || compute_mode_ == ComputeModeFormat.kRelease2D)
                 {
                     y_ = new ComputeBuffer<float>(context_, ComputeMemoryFlags.WriteOnly, count_ * nclasses);                    
                 }
                 // the following bug takes me a day to find out
                 kernel_.SetMemoryArgument(3, y_);
-                if (compute_mode_ == ComputeModeFormat.kRelease || compute_mode_ == ComputeModeFormat.kTest || compute_mode_ == ComputeModeFormat.kTest2D || compute_mode_ == ComputeModeFormat.kRelease2D)
+                if (compute_mode_ == ComputeModeFormat.kRelease || compute_mode_ == ComputeModeFormat.kTestBreathFrist || compute_mode_ == ComputeModeFormat.kTest2D || compute_mode_ == ComputeModeFormat.kRelease2D)
                 {
                     depth_ = new ComputeBuffer<short>(context_, ComputeMemoryFlags.ReadOnly, count_);
                     kernel_.SetMemoryArgument(4, depth_);
@@ -531,7 +531,7 @@ kernel void AddVectorWithTrees(
 
         public void LoadOffsets(int[] to_load_offset_list)
         {
-            if (compute_mode_ == ComputeModeFormat.kRelease || compute_mode_ == ComputeModeFormat.kTest || compute_mode_ == ComputeModeFormat.kTest2D || compute_mode_ == ComputeModeFormat.kRelease2D)
+            if (compute_mode_ == ComputeModeFormat.kRelease || compute_mode_ == ComputeModeFormat.kTestBreathFrist || compute_mode_ == ComputeModeFormat.kTest2D || compute_mode_ == ComputeModeFormat.kRelease2D)
             {                
                 offset_list_ = new ComputeBuffer<int>(context_, ComputeMemoryFlags.ReadOnly | ComputeMemoryFlags.CopyHostPointer, to_load_offset_list);
                 //commands_.WriteToBuffer(to_load_offset_list, offset_list_, true, null);
@@ -557,7 +557,7 @@ kernel void AddVectorWithTrees(
             //Console.WriteLine("array depth dimension: {0}, count: {1}", depth.Length, count_);
             commands_.WriteToBuffer(depth, depth_, true, null);
             //Console.WriteLine("Successfuly write depth to GPU memory");
-            if (compute_mode_ == ComputeModeFormat.kRelease || compute_mode_ == ComputeModeFormat.kTest )
+            if (compute_mode_ == ComputeModeFormat.kRelease || compute_mode_ == ComputeModeFormat.kTestBreathFrist )
                 commands_.Execute(kernel_, null, new long[] {count_}, null, null); // set the work-item size to be 640*480.
             else if (compute_mode_ == ComputeModeFormat.kTest2D || compute_mode_ == ComputeModeFormat.kRelease2D)
                 commands_.Execute(kernel_, null, new long[] { 640, 480 }, null, null); // set the work-item size to be 640*480.

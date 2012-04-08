@@ -61,8 +61,8 @@ namespace TestModuleNamespace
 
             // Test simple case for GPU
             /* #################### */
-            FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.Blue);
-            FeatureExtractionTest.TestAddVectorViaGPU();
+            //FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.Blue);
+            //FeatureExtractionTest.TestAddVectorViaGPU();
 
             /* ###################### */          
 
@@ -80,11 +80,50 @@ namespace TestModuleNamespace
             // Test on transform tree
             //FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.Blue);
             //FeatureExtractionTest.TestTransformTree();
+
+            // Test on pruning trees
+            FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.Blue);
+            FeatureExtractionTest.TestPruneTree();
             Console.ReadKey();
         }
 
         public TestModule() { 
             //myGPU = new GPUCompute();
+        }
+
+        private void TestPruneTree()
+        {
+            int[] old_tree = new int[] { 13, 1, 2, 11, 4, 5, 9, -1, 0, -1, 0, -1, 1, 13, 1, 2, 6, -1, 0, 6, 7, 11, -1, 1, -1, 1 };
+            int[] new_tree = new int[old_tree.Length];
+            int[] correct_tree = new int[] { 8, 1, 2, 6, -1, 0, -1, 1, 8, 1, 2, 6, -1, 0, -1, 1 };
+            feature_lib_obj_.PruneTrees(new_tree, old_tree, 2, 2);
+
+            bool fail=false;
+            for (int i = 0; i < correct_tree.Length; i++)
+                if (correct_tree[i] != new_tree[i])
+                    fail = true;
+            if (fail)
+                Console.WriteLine("Test prune tree fail!");
+            else
+                Console.WriteLine("Test prune tree succeed!");
+            
+            #region deprecated
+            /*
+            old_tree = new int[] { 13, 1, 2, 6, -1, 0, 6, 7, 11, -1, 1, -1, 1};
+            new_tree = new int[old_tree.Length];
+            correct_tree = new int[] { 8, 1, 2, 6, -1, 0, -1, 1};
+            new_tree[0] = feature_lib_obj_.HelperPruneSingleTree(new_tree, old_tree, 0, 0, 1, 1, 1, 2);
+            Array.Resize(ref new_tree, new_tree[0]);
+            fail = false;
+            for (int i = 0; i < correct_tree.Length; i++)
+                if (correct_tree[i] != new_tree[i])
+                    fail = true;
+            if (fail)
+                Console.WriteLine("Test prune tree fail!");
+            else
+                Console.WriteLine("Test prune tree succeed!");
+             */ 
+            #endregion
         }
 
         private void HelperTestTransformTree(int [] new_tree, int[] old_tree, int[] new_tree_correct)
