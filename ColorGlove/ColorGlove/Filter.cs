@@ -395,6 +395,7 @@ namespace ColorGlove
             Pooled gesture = new Pooled(new System.Drawing.Point(100, 100), 0, (HandGestureFormat)2);
             System.Drawing.Point center;
             int[] label_counts;
+            Tuple<int, int> max;
 
             switch (type)
             {
@@ -501,13 +502,11 @@ namespace ColorGlove
                     // Get majority label within clustered points
                     label_counts = new int[state.feature.num_classes_];
                     Array.Clear(label_counts, 0, label_counts.Length);
-                    foreach (int point in points) 
-                    {
- 
-                    }
+                    foreach (int point in clusters[largest]) label_counts[state.predict_labels_[point]]++;
+                    max = Util.MaxNonBackground(label_counts);
 
                     center = new System.Drawing.Point(centroids[largest].x(), centroids[largest].y());
-                    gesture = new Pooled(center, centroids[largest].depth(), (HandGestureFormat)1);
+                    gesture = new Pooled(center, centroids[largest].depth(), (HandGestureFormat)max.Item1);
                     Console.WriteLine("Center: ({0}px, {1}px, {2}mm)", center.X, center.Y, centroids[largest].depth());
                     break;
                 case PoolType.MedianMajority:
@@ -548,7 +547,7 @@ namespace ColorGlove
                         }
                     }
 
-                    Tuple<int, int> max = Util.MaxNonBackground(label_counts);
+                    max = Util.MaxNonBackground(label_counts);
                     int max_index = max.Item1, max_value = max.Item2;
                     int total_non_background = label_counts.Sum() - label_counts[0];
 
