@@ -61,8 +61,8 @@ namespace TestModuleNamespace
 
             // Test simple case for GPU
             /* #################### */
-            //
-            //FeatureExtractionTest.TestAddVectorViaGPU();
+            FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.Blue);
+            FeatureExtractionTest.TestAddVectorViaGPU();
 
             /* ###################### */          
 
@@ -73,8 +73,8 @@ namespace TestModuleNamespace
 
             // General test on GPU
             // ########################
-            FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.Blue);
-            FeatureExtractionTest.GeneralTestGPU();
+            //FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.Blue);
+            //FeatureExtractionTest.GeneralTestGPU();
             // ########################
 
             // Test on transform tree
@@ -270,7 +270,7 @@ namespace TestModuleNamespace
             short[] output_array = new short[count];
             
             //LoadTrainedRFModelToGPU();            
-            const int maxTmp = 1000;
+            const int maxTmp = 100;
             DateTime ExecutionStartTime; //Var will hold Execution Starting Time
             DateTime ExecutionStopTime;//Var will hold Execution Stopped Time
             TimeSpan ExecutionTime;//Var will count Total Execution Time-Our Main Hero
