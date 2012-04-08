@@ -25,5 +25,8 @@ namespace ColorGlove
             string message = String.Format("({0},{1},{2},{3})", gesture_, center_.X, center_.Y, center_depth_);
             return message;
         }
+
+        public Point center() { return center_; }
+        public int center_depth() { return center_depth_; }
     }
 }

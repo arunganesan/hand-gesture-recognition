@@ -185,6 +185,7 @@ namespace ColorGlove
             //DrawPredictionOverlay(state);
             //Pooled gesture = Pool(PoolType.MedianMajority, state);
             Pooled gesture = Pool(PoolType.KMeans, state);
+            DrawCrosshairAt(gesture, state);
             SendToSockets(gesture, state);
 
             //DBSCAN.Test();
@@ -392,13 +393,14 @@ namespace ColorGlove
         private static Pooled Pool(PoolType type, ProcessorState state)
         {
             Pooled gesture = new Pooled(new System.Drawing.Point(100, 100), 0, (Util.HandGestureFormat)2);
+            System.Drawing.Point center;
 
             switch (type)
             {
                 case PoolType.KMeans:
                     Random rand = new Random();
                     Point3 p = new Point3(0, 0, 0); 
-                    int K = 10, num_changes = 10, iterations = 0;
+                    int K = 7, num_changes = 10, iterations = 0;
 
                     List<Point3> centroids = new List<Point3>(K);
                     for (int i = 0; i < K; i++)
@@ -481,7 +483,6 @@ namespace ColorGlove
                             largest_size = clusters[i].Count;
                         }
 
-
                     // Draw clusters
                     List<Tuple<byte, byte, byte>> label_colors = Util.GiveMeNColors(K);
                     ResetOverlay(state);
@@ -496,7 +497,9 @@ namespace ColorGlove
                         state.overlay_bitmap_bits_[bitmap_index + 0] = (int)label_colors[cluster_label].Item3;
                     }
 
-                    state.overlay_start_.Value = true;
+                    center = new System.Drawing.Point(centroids[largest].x(), centroids[largest].y());
+                    gesture = new Pooled(center, centroids[largest].depth(), (Util.HandGestureFormat)1);
+                    Console.WriteLine("Center: ({0}px, {1}px, {2}mm)", center.X, center.Y, centroids[largest].depth());
                     break;
                 case PoolType.MedianMajority:
                 case PoolType.MeanMajority:
@@ -544,7 +547,7 @@ namespace ColorGlove
                         ((Util.HandGestureFormat)max_index).ToString(),
                         max_value, total_non_background);
 
-                    System.Drawing.Point center = new System.Drawing.Point();
+                    center = new System.Drawing.Point();
                     int center_depth = 0;
 
                     if (max_value == 0)
@@ -570,11 +573,7 @@ namespace ColorGlove
                     }
 
                     gesture = new Pooled(center, center_depth, (Util.HandGestureFormat)max_index);
-                    Console.WriteLine("Center: ({0}px, {1}px, {2}cm)", center.X, center.Y, center_depth);
-                    DrawCrosshairAt(center, center_depth, state);
-
-                    // Adding in DBscan for a simple speed test
-                    //DBSCAN.Test();
+                    Console.WriteLine("Center: ({0}px, {1}px, {2}mm)", center.X, center.Y, center_depth);
                     break;
             }
 
@@ -582,8 +581,11 @@ namespace ColorGlove
         }
 
         // Draws a crosshair at the specific point in the overlay buffer
-        private static void DrawCrosshairAt(System.Drawing.Point xy, int depth, ProcessorState state)
+        private static void DrawCrosshairAt(Pooled gesture, ProcessorState state)
         {
+            System.Drawing.Point xy = gesture.center();
+            int depth = gesture.center_depth();
+
             int box_length = 20;
             int x, y;
             System.Drawing.Color paint = System.Drawing.Color.Black;
@@ -603,6 +605,8 @@ namespace ColorGlove
                 PaintAt(xy.X, y + i, paint, state);
                 PaintAt(xy.X + 1, y + i, paint, state);
             }
+
+            state.overlay_start_.Value = true;
         }
 
         // Helper function for drawing custom    shapes on the overlay buffer
