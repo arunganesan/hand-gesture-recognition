@@ -11,9 +11,9 @@ namespace ColorGlove
     {
         private Point center_;
         private int center_depth_;
-        private Util.HandGestureFormat gesture_;
+        private HandGestureFormat gesture_;
 
-        public Pooled(Point center, int center_depth, Util.HandGestureFormat gesture)
+        public Pooled(Point center, int center_depth, HandGestureFormat gesture)
         {
             center_ = center;
             center_depth_ = center_depth;

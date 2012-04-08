@@ -78,8 +78,8 @@ namespace ColorGlove
         bool predict_on_enable_ = false;
         bool feature_extract_on_enable_ = false;
 
-        //private FeatureExtractionLib.Util.HandGestureFormat HandGestureValue;
-        private FeatureExtractionLib.Util.HandGestureFormat HandGestureValue;
+        //private FeatureExtractionLib.HandGestureFormat HandGestureValue;
+        private FeatureExtractionLib.HandGestureFormat HandGestureValue;
         
         private KinectData data_;
         private short[] depth_;
@@ -479,7 +479,7 @@ namespace ColorGlove
         private void SetCentroidColorAndLabel()
         {
             // First add label
-            HandGestureValue = Util.HandGestureFormat.Fist;
+            HandGestureValue = HandGestureFormat.Fist;
             //HandGestureValue = HandGestureFormat.OpenHand;
             // Set which hand gesture to use in the contruct function
             targetLabel = (byte)HandGestureValue;  // numerical value

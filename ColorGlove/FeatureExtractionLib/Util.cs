@@ -9,15 +9,6 @@ namespace FeatureExtractionLib
 {
     public class Util
     {
-        public enum HandGestureFormat
-        {
-            Background = 0,
-            OpenHand = 1,
-            CloseHand = 2,
-            One = 3,
-            Fist = 4,
-        };
-        
         // Returns the XY position of the index.
         public static Point toXY(int idx, int width, int height, int stride)
         {
@@ -140,4 +131,13 @@ namespace FeatureExtractionLib
             depth_ = depth;
         }
     }
+
+    public enum HandGestureFormat
+    {
+        Background = 0,
+        OpenHand = 1,
+        CloseHand = 2,
+        One = 3,
+        Fist = 4,
+    };
 }

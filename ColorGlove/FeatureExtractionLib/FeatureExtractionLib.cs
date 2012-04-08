@@ -543,12 +543,12 @@ namespace FeatureExtractionLib
 
         public void GenerateFeatureVectorViaImageFiles(string training_set_size)
         {
-            Array values = Enum.GetValues(typeof(Util.HandGestureFormat));
+            Array values = Enum.GetValues(typeof(HandGestureFormat));
             output_filestream_ = new StreamWriter(String.Format("{0}\\{1}.{2}.features.txt", directory, traningFilename, training_set_size));         
-            foreach (Util.HandGestureFormat val in values) // go through each directory
+            foreach (HandGestureFormat val in values) // go through each directory
             {
                 //Console.WriteLine ("{0}: {1}", Enum.GetName(typeof(HandGestureFormat), val), val);
-                if (val == Util.HandGestureFormat.Background)
+                if (val == HandGestureFormat.Background)
                     continue;
 
                 string subdirectory = String.Format("{0}\\{1}.{2}", directory, val, training_set_size);
@@ -599,7 +599,7 @@ namespace FeatureExtractionLib
             listOfTargetPosition.Clear();
             for (int i = 0; i < depth.Length; i++)
             {
-                if (label[i] == (byte)Util.HandGestureFormat.Background)
+                if (label[i] == (byte)HandGestureFormat.Background)
                 {
                     listOfBackgroundPosition.Add(i);
                 }
@@ -622,8 +622,8 @@ namespace FeatureExtractionLib
 
         public void testEnum()
         {
-            Array values = Enum.GetValues(typeof(Util.HandGestureFormat));
-            foreach (Util.HandGestureFormat val in values)
+            Array values = Enum.GetValues(typeof(HandGestureFormat));
+            foreach (HandGestureFormat val in values)
             {
                 Console.WriteLine("Name: {0}, numerical value: {1}", val, (byte)val);
             }

@@ -41,7 +41,7 @@ namespace ColorGlove
 
         public Filter.Step[] pipeline;
 
-        public Util.HandGestureFormat hand_gesture_value_;
+        public HandGestureFormat hand_gesture_value_;
         public RangeModeFormat range_mode_value_;
 
         public ProcessorState(
@@ -55,7 +55,7 @@ namespace ColorGlove
             FeatureExtractionLib.FeatureExtraction feature, float[] predict_output_, int[] predict_labels_,
             List<IWebSocketConnection> all_sockets_,
             Filter.Step[] pipeline,
-            Util.HandGestureFormat hand_gesture_value_, RangeModeFormat range_mode_value_)
+            HandGestureFormat hand_gesture_value_, RangeModeFormat range_mode_value_)
         {
             this.crop = crop;
             this.crop_values = crop_values;
