@@ -227,6 +227,9 @@ namespace FeatureExtractionLib
                 trees_int_[i] = (int) Math.Ceiling(decisionForest.trees[i]);
 
             
+            // change the number of tree
+            decisionForest.ntrees = 3;
+
             #region transform                        
             /*
             // Transform the tree into breath-first format            
@@ -240,13 +243,15 @@ namespace FeatureExtractionLib
             #endregion
 
             #region prune
+             
             // Prune the tree
             int[] new_trees = new int[trees_int_.Length];
             PruneTrees(ref new_trees, trees_int_, 20, decisionForest.ntrees);
             
             trees_int_ = new_trees;
             Console.WriteLine("Successfully prune the trees, the resulting tree size is {0}", trees_int_.Length);
-            #endregion
+             
+             #endregion
 
             myGPU_.LoadTrees(trees_int_, (short)decisionForest.nclasses, (short)decisionForest.ntrees, decisionForest.nvars);
             Console.WriteLine("Successfuly load the trained random forest into GPU");
