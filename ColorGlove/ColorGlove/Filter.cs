@@ -184,9 +184,13 @@ namespace ColorGlove
             PredictGPU(state);
             //DrawPredictionOverlay(state);
             //Pooled gesture = Pool(PoolType.MedianMajority, state);
-            Pooled gesture = Pool(PoolType.KMeans, state);
-            DrawCrosshairAt(gesture, state);
-            SendToSockets(gesture, state);
+            List<Pooled> gestures = Pool(PoolType.KMeans, state);
+            
+            foreach (var gesture in gestures)
+            {
+                DrawCrosshairAt(gesture, state);
+                SendToSockets(gesture, state);
+            }
 
             //DBSCAN.Test();
 
@@ -389,9 +393,9 @@ namespace ColorGlove
         // Uses the per-pixel classes from PredictGPU to pool the location of 
         // gestures. Supports multiple types of pooling algorithms. Each 
         // algorithm is described before each section.
-        private static Pooled Pool(PoolType type, ProcessorState state)
+        private static List<Pooled> Pool(PoolType type, ProcessorState state)
         {
-            Pooled gesture = new Pooled(new System.Drawing.Point(100, 100), 0, (HandGestureFormat)2);
+            List<Pooled> gestures = new List<Pooled>();
             System.Drawing.Point center;
             int[] label_counts;
             Tuple<int, int> max;
@@ -484,20 +488,6 @@ namespace ColorGlove
                             largest_size = clusters[i].Count;
                         }
 
-                    // Draw largest cluster
-                    List<Tuple<byte, byte, byte>> label_colors = Util.GiveMeNColors(K);
-                    ResetOverlay(state);
-
-                    foreach (int point in points) {
-                        int cluster_label = assignments[point];
-                        if (cluster_label != largest) continue; 
-
-                        int bitmap_index = point * 4;
-                        state.overlay_bitmap_bits_[bitmap_index + 2] = (int)label_colors[cluster_label].Item1;
-                        state.overlay_bitmap_bits_[bitmap_index + 1] = (int)label_colors[cluster_label].Item2;
-                        state.overlay_bitmap_bits_[bitmap_index + 0] = (int)label_colors[cluster_label].Item3;
-                    }
-
                     // Print the distribution of sizes within clusters
                     var sizes = clusters.Select(cluster => cluster.Count).
                                   OrderByDescending(val => val).ToArray();
@@ -506,19 +496,40 @@ namespace ColorGlove
                     double average = sizes.Average();
                     double stddev = Math.Sqrt(sizes.Select(val => Math.Pow(val, 2)).Sum()/sizes.Length - Math.Pow(average, 2));
                     Tuple<double, double> range = new Tuple<double, double>(average - 2*stddev, average + 2*stddev);
+                    List<int> outliers = new List<int>();
 
-                    for (int i = 0; i < sizes.Length; i++)
-                        Console.WriteLine("{0} - {1} ({2})", i, sizes[i], sizes[i] > range.Item2 || sizes[i] < range.Item1);
+                    for (int i = 0; i < clusters.Count; i++) 
+                    {
+                        Console.WriteLine("{0} - {1} ({2})", i, clusters[i].Count, clusters[i].Count > range.Item2);
+                        if (clusters[i].Count > range.Item2) outliers.Add(i);
+                    }
+                    
 
-                    // Get majority label within clustered points
-                    label_counts = new int[state.feature.num_classes_];
-                    Array.Clear(label_counts, 0, label_counts.Length);
-                    foreach (int point in clusters[largest]) label_counts[state.predict_labels_[point]]++;
-                    max = Util.MaxNonBackground(label_counts);
+                    // Draw outlier-ly large clusters
+                    List<Tuple<byte, byte, byte>> label_colors = Util.GiveMeNColors(K);
+                    ResetOverlay(state);
 
-                    center = new System.Drawing.Point(centroids[largest].x(), centroids[largest].y());
-                    gesture = new Pooled(center, centroids[largest].depth(), (HandGestureFormat)max.Item1);
-                    Console.WriteLine("Center: ({0}px, {1}px, {2}mm)", center.X, center.Y, centroids[largest].depth());
+                    foreach (int outlier in outliers)
+                    {
+                        foreach (int point in clusters[outlier])
+                        {
+                            int bitmap_index = point * 4;
+                            state.overlay_bitmap_bits_[bitmap_index + 2] = (int)label_colors[outlier].Item1;
+                            state.overlay_bitmap_bits_[bitmap_index + 1] = (int)label_colors[outlier].Item2;
+                            state.overlay_bitmap_bits_[bitmap_index + 0] = (int)label_colors[outlier].Item3;
+                        }
+                        
+                        // Get majority label within this cluster
+                        label_counts = new int[state.feature.num_classes_];
+                        Array.Clear(label_counts, 0, label_counts.Length);
+                        foreach (int point in clusters[outlier]) label_counts[state.predict_labels_[point]]++;
+                        max = Util.MaxNonBackground(label_counts);
+
+                        center = new System.Drawing.Point(centroids[outlier].x(), centroids[outlier].y());
+                        gestures.Add(new Pooled(center, centroids[outlier].depth(), (HandGestureFormat)max.Item1));
+                        Console.WriteLine("Center: ({0}px, {1}px, {2}mm)", center.X, center.Y, centroids[outlier].depth());
+                    }
+                    
                     break;
                 case PoolType.MedianMajority:
                 case PoolType.MeanMajority:
@@ -591,12 +602,12 @@ namespace ColorGlove
                         center_depth = (int)(label_sorted_depth[max_index].ElementAt(max_value / 2));
                     }
 
-                    gesture = new Pooled(center, center_depth, (HandGestureFormat)max_index);
+                    gestures.Add(new Pooled(center, center_depth, (HandGestureFormat)max_index));
                     Console.WriteLine("Center: ({0}px, {1}px, {2}mm)", center.X, center.Y, center_depth);
                     break;
             }
 
-            return gesture;
+            return gestures;
         }
 
         // Draws a crosshair at the specific point in the overlay buffer
