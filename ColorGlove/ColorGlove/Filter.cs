@@ -340,7 +340,6 @@ namespace ColorGlove
             }
         }
 
-
         private static void ShowAverageAndVariance(float[] a, ProcessorState state)
         {
             float sum = 0;
@@ -485,7 +484,7 @@ namespace ColorGlove
                             largest_size = clusters[i].Count;
                         }
 
-                    // Draw clusters
+                    // Draw largest cluster
                     List<Tuple<byte, byte, byte>> label_colors = Util.GiveMeNColors(K);
                     ResetOverlay(state);
 
@@ -498,6 +497,18 @@ namespace ColorGlove
                         state.overlay_bitmap_bits_[bitmap_index + 1] = (int)label_colors[cluster_label].Item2;
                         state.overlay_bitmap_bits_[bitmap_index + 0] = (int)label_colors[cluster_label].Item3;
                     }
+
+                    // Print the distribution of sizes within clusters
+                    var sizes = clusters.Select(cluster => cluster.Count).
+                                  OrderByDescending(val => val).ToArray();
+
+                    // Fit normal distribution and look for outliers
+                    double average = sizes.Average();
+                    double stddev = Math.Sqrt(sizes.Select(val => Math.Pow(val, 2)).Sum()/sizes.Length - Math.Pow(average, 2));
+                    Tuple<double, double> range = new Tuple<double, double>(average - 2*stddev, average + 2*stddev);
+
+                    for (int i = 0; i < sizes.Length; i++)
+                        Console.WriteLine("{0} - {1} ({2})", i, sizes[i], sizes[i] > range.Item2 || sizes[i] < range.Item1);
 
                     // Get majority label within clustered points
                     label_counts = new int[state.feature.num_classes_];

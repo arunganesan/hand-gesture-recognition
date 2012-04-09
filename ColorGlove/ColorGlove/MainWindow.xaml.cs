@@ -18,9 +18,6 @@ using System.Diagnostics;
 using System.Drawing.Imaging;
 using Microsoft.Kinect;
 
-/*
- * Borrowed some code from: http://social.msdn.microsoft.com/Forums/en-US/kinectsdknuiapi/thread/c39bab30-a704-4de1-948d-307afd128dab
- */
 
 namespace ColorGlove
 {
