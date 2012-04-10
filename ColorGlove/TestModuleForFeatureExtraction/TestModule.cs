@@ -2,7 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using FeatureExtractionLib;
+using System.Diagnostics;
 
 namespace TestModuleNamespace
 {
@@ -73,17 +75,22 @@ namespace TestModuleNamespace
 
             // General test on GPU (per-pixel classification on a random image)
             // ########################
-            FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.Blue);
-            FeatureExtractionTest.GeneralTestGPU();
+            //FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.Blue);
+            //FeatureExtractionTest.GeneralTestGPU();
             // ########################
 
             // Test on transform tree
             //FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.Blue);
-            //FeatureExtractionTest.TestTransformTree();
+            //FeatureExtractionTest.TestTransformTree();            
 
             // Test on pruning trees
             //FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.Blue);
             //FeatureExtractionTest.TestPruneTree();
+
+            // Real task on pruning trees            
+            Debug.WriteLine("Hey I am in debug mode!");                      
+            FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.F3000, "C:\\Users\\Michael Zhang\\Desktop\\HandGestureRecognition\\Experiments\\alglib");
+            FeatureExtractionTest.RealPruneTree();
             Console.ReadKey();
         }
 
@@ -91,12 +98,17 @@ namespace TestModuleNamespace
             //myGPU = new GPUCompute();
         }
 
+        private void RealPruneTree()
+        {
+            Console.WriteLine("Finish pruning the tree");
+        }
+
         private void TestPruneTree()
         {
             int[] old_tree = new int[] { 13, 1, 2, 11, 4, 5, 9, -1, 0, -1, 0, -1, 1, 13, 1, 2, 6, -1, 0, 6, 7, 11, -1, 1, -1, 1 };
             int[] new_tree = new int[old_tree.Length];
             int[] correct_tree = new int[] { 8, 1, 2, 6, -1, 0, -1, 1, 8, 1, 2, 6, -1, 0, -1, 1 };
-            feature_lib_obj_.PruneTrees(ref new_tree, old_tree, 2, 2);
+            feature_lib_obj_.PruneTrees_ERROR(ref new_tree, old_tree, 2, 2);
             
             bool fail=false;
             for (int i = 0; i < correct_tree.Length; i++)
@@ -168,7 +180,7 @@ namespace TestModuleNamespace
             //float[] y = new float[count * 3];
             float[] y = new float[count * feature_lib_obj_.num_classes_];  
 
-            const int maxTmp = 100;
+            const int maxTmp = 10;
             DateTime ExecutionStartTime; //Var will hold Execution Starting Time
             DateTime ExecutionStopTime;//Var will hold Execution Stopped Time
             TimeSpan ExecutionTime;//Var will count Total Execution Time-Our Main Hero
@@ -392,7 +404,19 @@ namespace TestModuleNamespace
             }
         }
 
-        public void SetupFeatureExtraction(FeatureExtraction.ModeFormat mode) {
+        private void CreateThreadFunction(FeatureExtraction.ModeFormat mode, string dir = "..\\..\\..\\Data")
+        {
+            feature_lib_obj_ = new FeatureExtraction(mode, dir);
+        }
+
+        public void IAmFoo(int i, int j)
+        {
+            //int i = (int)param;
+            Console.WriteLine("Hi, I'm a thread {0} and {1}", i, j);
+        }
+
+        public void SetupFeatureExtraction(FeatureExtraction.ModeFormat mode, string dir = "..\\..\\..\\Data")
+        {
             //Default direcotry: "..\\..\\..\\Data";
             // To setup the mode, see README in the library
             //FeatureExtraction.ModeFormat MyMode = FeatureExtraction.ModeFormat.BlueDefault;
@@ -400,7 +424,17 @@ namespace TestModuleNamespace
             //string dir = "D:\\gr\\training\\blue\\";
             
             //feature_lib_obj_ = new FeatureExtraction(MyMode, dir);
-            feature_lib_obj_ = new FeatureExtraction(MyMode);
+           
+            const int kMaxStackSize = 1000000;
+            //Thread oThread = new Thread(new ThreadStart(this.IAmFoo), kMaxStackSize);
+            Thread oThread = new Thread(delegate()
+                {
+                 this.CreateThreadFunction(MyMode, dir);
+                }, kMaxStackSize);
+            oThread.Start();
+            // Start the thread            
+            oThread.Join();
+            //feature_lib_obj_ = new FeatureExtraction(MyMode, dir);
         }
 
         private void TestGenerateFeatures(string training_set_size)

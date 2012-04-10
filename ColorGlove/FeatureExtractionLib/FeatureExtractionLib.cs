@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.IO;
+using System.Diagnostics;
 
 namespace FeatureExtractionLib
 {
@@ -86,6 +87,8 @@ namespace FeatureExtractionLib
         List<int[]> offset_pair_list_; 
         private KinectModeFormat kinect_mode_;
         private CPUorGPUFormat xPU_mode_;
+
+        private int debug_current_depth_, max_depth_;
 
         // Construct fiunction
         public FeatureExtraction(ModeFormat setMode= ModeFormat.Maize, string varDirectory = defaultDirectory, CPUorGPUFormat to_set_xPU_mode=CPUorGPUFormat.GPU)        
@@ -182,8 +185,8 @@ namespace FeatureExtractionLib
                     traningFilename = "F1000";
                     RandomGenerationMode = RandomGenerationModeFormat.Circular;
                     //RFModelFilePath = directory + "\\FeatureVectorF1000.400.rf.model";
-                    RFModelFilePath = directory + "\\RF.1000.100.3.model";
-                    
+                    //RFModelFilePath = directory + "\\RF.1000.100.3.model";
+                    RFModelFilePath = directory + "\\RF.1000.10.2.model";
                     num_classes_ = 5;
                     break;
                 case ModeFormat.F2000:
@@ -207,7 +210,8 @@ namespace FeatureExtractionLib
                     kinect_mode_ = KinectModeFormat.Default;
                     traningFilename = "F3000";
                     RandomGenerationMode = RandomGenerationModeFormat.Circular;
-                    RFModelFilePath = directory + "\\FeatureVectorF3000.400.rf.model";
+                    //RFModelFilePath = directory + "\\FeatureVectorF3000.400.rf.model";
+                    RFModelFilePath = directory + "\\RF.2000.350.3.model"; 
                     num_classes_ = 5;
                     break;
 
@@ -227,6 +231,9 @@ namespace FeatureExtractionLib
                 trees_int_[i] = (int) Math.Ceiling(decisionForest.trees[i]);
 
             
+            // change the number of tree
+            //decisionForest.ntrees = 3;
+
             #region transform                        
             /*
             // Transform the tree into breath-first format            
@@ -240,20 +247,22 @@ namespace FeatureExtractionLib
             #endregion
 
             #region prune
-            // Prune the tree
-            /*
+             
+            // Prune the tree            
             int[] new_trees = new int[trees_int_.Length];
-            PruneTrees(ref new_trees, trees_int_, 20, decisionForest.ntrees);
-            
+            PruneTrees_ERROR(ref new_trees, trees_int_, 20, decisionForest.ntrees);            
             trees_int_ = new_trees;
-            Console.WriteLine("Successfully prune the trees, the resulting tree size is {0}", trees_int_.Length);
-            */
+            Console.WriteLine("Successfully prune the trees, the resulting tree size is {0}", trees_int_.Length);           
             #endregion
+
+            // show max depth of each tree
+            //FindMaxDepthRandomForest(trees_int_, decisionForest.ntrees);
 
             myGPU_.LoadTrees(trees_int_, (short)decisionForest.nclasses, (short)decisionForest.ntrees, decisionForest.nvars);
             Console.WriteLine("Successfuly load the trained random forest into GPU");
         }
 
+        #region transform tree into breath first
         // This function trasform the tree data structure from Alglib to breadth-first data structure.
         public void TransformTrees(int []new_tree, int [] old_tree, int num_trees)
         {
@@ -278,6 +287,7 @@ namespace FeatureExtractionLib
             for (int i = 0; i < num_trees; i++)
             {
                 HelperTransformSingleTree(new_tree, old_tree, offset);
+                
                 offset += old_tree[offset];
             }
         }
@@ -328,16 +338,20 @@ namespace FeatureExtractionLib
             //Console.WriteLine("Done"); //debug
         }
 
-       // This function prune the Algbli-format tree to a depth-limit tree
-        public void PruneTrees(ref int[]  new_tree, int[] old_tree, int max_depth, int num_tree)
+        #endregion
+
+        // This function prune the Algbli-format tree to a depth-limit tree
+        public void PruneTrees_ERROR(ref int[]  new_tree, int[] old_tree, int max_depth, int num_tree)
         {
             int new_offset = 0, old_offset = 0, new_tree_size = 0;
+            max_depth_ = 0;
             for (int i = 0; i < num_tree; i++)
             {
+                Debug.WriteLine("Tree {0}", i);
                 new_tree[new_offset] = HelperPruneSingleTree(new_tree, old_tree, new_offset, old_offset, 1, new_offset + 1, old_offset + 1, max_depth) - new_offset;
-                old_offset = old_tree[old_offset];
+                old_offset += old_tree[old_offset]; // bug: old_offset = old_tree[old_offset]
                 new_tree_size += new_tree[new_offset];
-                new_offset = new_tree[new_offset] + new_offset;
+                new_offset += new_tree[new_offset];
             }
             Array.Resize(ref new_tree, new_tree_size);
         }
@@ -366,7 +380,9 @@ namespace FeatureExtractionLib
             // prune the tree, find the most probable labels in the subtree
             else { 
                 int[] y=new int[decisionForest.nclasses];
-                HelperFindLablesInTree(old_tree, index_old_tree, old_offset, y);
+                debug_current_depth_ = cur_depth;
+                int explored_depth=0;
+                HelperFindLablesInTree(old_tree, index_old_tree, old_offset, y, explored_depth);
                 int max_label_count = 0, y_max=0;
                 for (int i=0; i< decisionForest.nclasses; i++)
                     if (y[i] > max_label_count)
@@ -380,7 +396,10 @@ namespace FeatureExtractionLib
             }
         }
         // Helper, give a distribution of the labels in a given node
-        private void HelperFindLablesInTree(int[] tree, int index, int offset, int[] y) {
+        private void HelperFindLablesInTree(int[] tree, int index, int offset, int[] y, int explored_depth) {
+            // if the depth is more than 1000, quit
+            if (explored_depth > 1000)
+                return;
             // is a leaf
             if (tree[index] == -1)
             {
@@ -389,12 +408,39 @@ namespace FeatureExtractionLib
             else
             { 
                 // traverse the left child
-                HelperFindLablesInTree(tree, index + 3, offset, y);
+                //Debug.WriteLine("depth: {0}", explored_depth);
+                if (explored_depth > max_depth_) {
+                    max_depth_ = explored_depth;
+                    Console.WriteLine("current max explored depth: {0}", explored_depth);
+                }                
+               // Debug.Assert(explored_depth < 1000, "depth is greater than 10000!");
+                Debug.Assert(index +3< decisionForest.trees.Length, "left child is out of the bound of the old tree!");
+                HelperFindLablesInTree(tree, index + 3, offset, y, explored_depth+1);
                 // traverse the right child
-                HelperFindLablesInTree(tree, tree[index + 2] + offset, offset, y);
+                Debug.Assert(tree[index + 2] + offset < decisionForest.trees.Length, "right child is out of the bound of the old tree!");
+                HelperFindLablesInTree(tree, tree[index + 2] + offset, offset, y, explored_depth+1);
             }
         }
 
+        // Test function: find the max depth of a random forest
+        public void FindMaxDepthRandomForest(int[] tree, int n_tree) {
+            int offset = 0;
+            for (int i = 0; i < n_tree; i++)
+            {
+                //Console.WriteLine("Tree: {0}, Max depth: {1}", i, FindMaxDepthSingleTree(tree, offset + 1, offset));
+                offset = tree[offset] + offset;
+            }
+        }
+        
+        // Test function: find the max depth of a tree
+        private int FindMaxDepthSingleTree(int[] tree, int index, int offset)
+        {
+            if (tree[index] == -1)
+                return 0;
+            return Math.Max( FindMaxDepthSingleTree(tree, index+3, offset),  
+                                    FindMaxDepthSingleTree(tree, tree[index+2] + offset, offset))
+                                   +1;
+        }
 
         private void SetDirectory(string dir)
         // set working directory
@@ -416,6 +462,7 @@ namespace FeatureExtractionLib
 
         private string GetOffsetPairsFilename()
         {          
+            // Offset file name: "Offset[Mode].txt"
             return directory + "\\" + "Offset" + Mode + ".txt";
         }
 
