@@ -432,6 +432,7 @@ namespace ColorGlove
                     // If there have been no changes, the centroids wont 
                     // change either so KMeans has found a minimum. This may
                     // be a local minimum. 
+                    #region KMeans, can be factored out
                     while (num_changes > 0)
                     {
                         num_changes = 0;
@@ -477,17 +478,12 @@ namespace ColorGlove
                             }
                         }
                     }
+                    #endregion
 
-                    // Get largest cluster
-                    int largest = 0;
-                    int largest_size = clusters[0].Count;
-                    for (int i = 1; i < clusters.Count; i++)
-                        if (clusters[i].Count > largest_size)
-                        {
-                            largest = i;
-                            largest_size = clusters[i].Count;
-                        }
-
+                    // Fit a Gaussian distribution on all the cluster sizes 
+                    // and look for outliers that are at least two standard
+                    // deviations away from the mean.
+                    #region Gaussian outlier detection
                     // Print the distribution of sizes within clusters
                     var sizes = clusters.Select(cluster => cluster.Count).
                                   OrderByDescending(val => val).ToArray();
@@ -503,7 +499,7 @@ namespace ColorGlove
                         Console.WriteLine("{0} - {1} ({2})", i, clusters[i].Count, clusters[i].Count > range.Item2);
                         if (clusters[i].Count > range.Item2) outliers.Add(i);
                     }
-                    
+                    #endregion
 
                     // Draw outlier-ly large clusters
                     List<Tuple<byte, byte, byte>> label_colors = Util.GiveMeNColors(K);
