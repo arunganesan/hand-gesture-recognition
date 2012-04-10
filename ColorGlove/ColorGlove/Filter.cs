@@ -411,6 +411,7 @@ namespace ColorGlove
 
             switch (type)
             {
+                #region KMeans
                 case PoolType.KMeans:
                     Random rand = new Random();
                     Point3 p = new Point3(0, 0, 0); 
@@ -540,6 +541,8 @@ namespace ColorGlove
                     state.overlay_start_.Value = true;
                     
                     break;
+                #endregion
+                #region DBSCAN
                 case PoolType.DBSCAN:
                     List<DBScanPoint> dbpoints = new List<DBScanPoint>();
                     for (int i = 0; i < state.depth.Length; i++)
@@ -548,8 +551,11 @@ namespace ColorGlove
                             dbpoints.Add(new DBScanPoint(xy.X, xy.Y));
                         }
 
+                    // The minPts setting automatically filters out noise. So
+                    // the clusters returned here can be safely assumed to be 
+                    // hands. No need for outlier detection!
                     double eps = 20;
-                    int minPts = 300;
+                    int minPts = 500;
                     
                     List<List<DBScanPoint>> dbclusters = DBSCAN.GetClusters(dbpoints, eps, minPts);
                     label_colors = Util.GiveMeNColors(dbclusters.Count);
@@ -569,20 +575,34 @@ namespace ColorGlove
                         }
 
                         // Get majority label within this cluster
-                        //label_counts = new int[state.feature.num_classes_];
-                        //Array.Clear(label_counts, 0, label_counts.Length);
-                        //foreach (DBScanPoint point in dbclusters[cluster]) 
-                        //    label_counts[state.predict_labels_[Util.toID(point.X, point.Y, width, height, kDepthStride)]]++;
+                        label_counts = new int[state.feature.num_classes_];
+                        Array.Clear(label_counts, 0, label_counts.Length);
+                        foreach (DBScanPoint point in dbclusters[cluster]) 
+                            label_counts[state.predict_labels_[Util.toID(point.X, point.Y, width, height, kDepthStride)]]++;
                         
-                        //max = Util.MaxNonBackground(label_counts);
+                        max = Util.MaxNonBackground(label_counts);
+
+                        center = new System.Drawing.Point(
+                            (int)(dbclusters[cluster].Select(point => point.X).Average()),
+                            (int)(dbclusters[cluster].Select(point => point.Y).Average())
+                            );
+
+                        int depth = (int)dbclusters[cluster].Select(point =>
+                        {
+                            int idx = Util.toID(point.X, point.Y, width, height, kDepthStride);
+                            return (double)state.depth[idx];
+                        }).Average();
 
                         //center = new System.Drawing.Point(centroids[outlier].x(), centroids[outlier].y());
-                        //gestures.Add(new Pooled(center, centroids[outlier].depth(), (HandGestureFormat)max.Item1));
-                        //Console.WriteLine("Center: ({0}px, {1}px, {2}mm)", center.X, center.Y, centroids[outlier].depth());
+                        gestures.Add(new Pooled(center, depth, (HandGestureFormat)max.Item1));
+                        Console.WriteLine("Center: ({0}px, {1}px, {2}mm), Gesture: {3}", center.X, center.Y, depth, (HandGestureFormat)max.Item1);
                     }
+
                     state.overlay_start_.Value = true;
 
                     break;
+                #endregion
+                #region Majority centroid
                 case PoolType.MedianMajority:
                 case PoolType.MeanMajority:
                     // Median and mean pooling for the majority class.
@@ -657,6 +677,7 @@ namespace ColorGlove
                     gestures.Add(new Pooled(center, center_depth, (HandGestureFormat)max_index));
                     Console.WriteLine("Center: ({0}px, {1}px, {2}mm)", center.X, center.Y, center_depth);
                     break;
+                #endregion
             }
 
             return gestures;
