@@ -1,3 +1,13 @@
+experiment.accuracy:
+	./accuracy 2000 10 3
+	./accuracy 2000 50 3
+	./accuracy 2000 100 3
+	./accuracy 2000 150 3
+	./accuracy 2000 200 3
+	./accuracy 2000 250 3
+	./accuracy 2000 300 3
+	./accuracy 2000 350 3
+
 experiment.onetree:
 	./gesturetrain 2000 10 1
 	./gesturetrain 2000 50 1

@@ -1,8 +1,8 @@
+accuracy: dataanalysis.o accuracy.cpp
+	g++ -g ap.o alglibinternal.o statistics.o specialfunctions.o linalg.o alglibmisc.o solvers.o optimization.o dataanalysis.o accuracy.cpp -o accuracy
+
 gesture: dataanalysis.o gesturetrain.cpp
 	g++ -g ap.o alglibinternal.o statistics.o specialfunctions.o linalg.o alglibmisc.o solvers.o optimization.o dataanalysis.o gesturetrain.cpp -o gesturetrain
-
-readfile: dataanalysis.o readsvm.cpp
-	g++ -g ap.o alglibinternal.o statistics.o specialfunctions.o linalg.o alglibmisc.o solvers.o optimization.o dataanalysis.o readsvm.cpp -o readsvm
 
 dataanalysis.o: ap.o alglibinternal.o statistics.o specialfunctions.o linalg.o alglibmisc.o solvers.o optimization.o dataanalysis.cpp
 	g++ -c -g dataanalysis.cpp
