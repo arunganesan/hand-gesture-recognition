@@ -31,7 +31,7 @@ namespace ColorGlove
         }
         Thread poller;
         DataFeed datafeed;
-        ProcessorModeFormat ProcessorMode = ProcessorModeFormat.Michael; // set the mode for processor here
+        ProcessorModeFormat ProcessorMode = ProcessorModeFormat.Arun; // set the mode for processor here
 
         public Manager(MainWindow parent)  // Construct function
         {

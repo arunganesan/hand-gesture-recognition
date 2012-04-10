@@ -31,8 +31,8 @@ namespace FeatureExtractionLib
 
             List<Tuple<byte, byte, byte>> colors = new List<Tuple<byte, byte, byte>>();
             
-            colors.Add(new Tuple<byte, byte, byte>(140, 140, 255));
             colors.Add(new Tuple<byte, byte, byte>(255, 0, 0));
+            colors.Add(new Tuple<byte, byte, byte>(140, 140, 255));
             colors.Add(new Tuple<byte, byte, byte>(0, 255, 0));
             colors.Add(new Tuple<byte, byte, byte>(0, 0, 255));
             colors.Add(new Tuple<byte, byte, byte>(255, 0, 255));

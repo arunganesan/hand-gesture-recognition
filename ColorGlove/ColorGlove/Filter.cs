@@ -183,13 +183,13 @@ namespace ColorGlove
             AdjustDepth(state);
             PredictGPU(state);
             //DrawPredictionOverlay(state);
-            //Pooled gesture = Pool(PoolType.MedianMajority, state);
-            List<Pooled> gestures = Pool(PoolType.KMeans, state);
-            
+            //List<Pooled> gestures = Pool(PoolType.MedianMajority, state);
+            //List<Pooled> gestures = Pool(PoolType.KMeans, state);
+            List<Pooled> gestures = Pool(PoolType.DBSCAN, state);
             foreach (var gesture in gestures)
             {
                 DrawCrosshairAt(gesture, state);
-                SendToSockets(gesture, state);
+            //    SendToSockets(gesture, state);
             }
 
             //DBSCAN.Test();
@@ -324,8 +324,17 @@ namespace ColorGlove
         // and the majority value in predict_labels_.
         private static void PredictGPU(ProcessorState state)
         {
+            DateTime ExecutionStartTime;
+            DateTime ExecutionStopTime;
+            TimeSpan ExecutionTime;
+            ExecutionStartTime = DateTime.Now;
+
             state.feature.PredictGPU(state.depth, ref state.predict_output_);
             ShowAverageAndVariance(state.predict_output_, state);
+
+            ExecutionStopTime = DateTime.Now;
+            ExecutionTime = ExecutionStopTime - ExecutionStartTime;
+            Console.WriteLine("Use {0} ms for getting prediction", ExecutionTime.TotalMilliseconds.ToString());
 
             for (int y = state.crop.Value.Y; y <= state.crop.Value.Y + state.crop.Value.Height; y++)
             {
@@ -505,7 +514,8 @@ namespace ColorGlove
                     List<Tuple<byte, byte, byte>> label_colors = Util.GiveMeNColors(K);
                     ResetOverlay(state);
 
-                    foreach (int outlier in outliers)
+                    //foreach (int outlier in outliers)
+                    for (int outlier = 0; outlier < K; outlier++)
                     {
                         foreach (int point in clusters[outlier])
                         {
@@ -515,6 +525,7 @@ namespace ColorGlove
                             state.overlay_bitmap_bits_[bitmap_index + 0] = (int)label_colors[outlier].Item3;
                         }
                         
+
                         // Get majority label within this cluster
                         label_counts = new int[state.feature.num_classes_];
                         Array.Clear(label_counts, 0, label_counts.Length);
@@ -525,7 +536,52 @@ namespace ColorGlove
                         gestures.Add(new Pooled(center, centroids[outlier].depth(), (HandGestureFormat)max.Item1));
                         Console.WriteLine("Center: ({0}px, {1}px, {2}mm)", center.X, center.Y, centroids[outlier].depth());
                     }
+
+                    state.overlay_start_.Value = true;
                     
+                    break;
+                case PoolType.DBSCAN:
+                    List<DBScanPoint> dbpoints = new List<DBScanPoint>();
+                    for (int i = 0; i < state.depth.Length; i++)
+                        if (state.predict_labels_[i] != (int)HandGestureFormat.Background) {
+                            System.Drawing.Point xy = Util.toXY(i, width, height, kDepthStride);
+                            dbpoints.Add(new DBScanPoint(xy.X, xy.Y));
+                        }
+
+                    double eps = 20;
+                    int minPts = 300;
+                    
+                    List<List<DBScanPoint>> dbclusters = DBSCAN.GetClusters(dbpoints, eps, minPts);
+                    label_colors = Util.GiveMeNColors(dbclusters.Count);
+
+                    Console.WriteLine("Detected {0} clusters.", dbclusters.Count);
+
+                    ResetOverlay(state);
+
+                    for (int cluster = 0; cluster < dbclusters.Count; cluster++)
+                    {
+                        foreach (DBScanPoint point in dbclusters[cluster])
+                        {
+                            int bitmap_index = Util.toID(point.X, point.Y, width, height, kColorStride);
+                            state.overlay_bitmap_bits_[bitmap_index + 2] = (int)label_colors[cluster].Item1;
+                            state.overlay_bitmap_bits_[bitmap_index + 1] = (int)label_colors[cluster].Item2;
+                            state.overlay_bitmap_bits_[bitmap_index + 0] = (int)label_colors[cluster].Item3;
+                        }
+
+                        // Get majority label within this cluster
+                        //label_counts = new int[state.feature.num_classes_];
+                        //Array.Clear(label_counts, 0, label_counts.Length);
+                        //foreach (DBScanPoint point in dbclusters[cluster]) 
+                        //    label_counts[state.predict_labels_[Util.toID(point.X, point.Y, width, height, kDepthStride)]]++;
+                        
+                        //max = Util.MaxNonBackground(label_counts);
+
+                        //center = new System.Drawing.Point(centroids[outlier].x(), centroids[outlier].y());
+                        //gestures.Add(new Pooled(center, centroids[outlier].depth(), (HandGestureFormat)max.Item1));
+                        //Console.WriteLine("Center: ({0}px, {1}px, {2}mm)", center.X, center.Y, centroids[outlier].depth());
+                    }
+                    state.overlay_start_.Value = true;
+
                     break;
                 case PoolType.MedianMajority:
                 case PoolType.MeanMajority:

@@ -246,15 +246,18 @@ namespace FeatureExtractionLib
              */ 
             #endregion
 
+            
             #region prune
-             
+            
             // Prune the tree            
+            
             int[] new_trees = new int[trees_int_.Length];
             PruneTrees_ERROR(ref new_trees, trees_int_, 20, decisionForest.ntrees);            
             trees_int_ = new_trees;
             Console.WriteLine("Successfully prune the trees, the resulting tree size is {0}", trees_int_.Length);           
+            
             #endregion
-
+            
             // show max depth of each tree
             //FindMaxDepthRandomForest(trees_int_, decisionForest.ntrees);
 
