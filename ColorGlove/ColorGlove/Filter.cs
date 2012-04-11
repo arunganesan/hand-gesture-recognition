@@ -182,8 +182,9 @@ namespace ColorGlove
             if (state.predict_on_enable_.Value == false) return;
             AdjustDepth(state);
             PredictGPU(state);
-            //DrawPredictionOverlay(state);
+            DrawPredictionOverlay(state);
             //Pooled gesture = Pool(PoolType.MedianMajority, state);
+            /*
             List<Pooled> gestures = Pool(PoolType.KMeans, state);
             
             foreach (var gesture in gestures)
@@ -191,7 +192,7 @@ namespace ColorGlove
                 DrawCrosshairAt(gesture, state);
                 SendToSockets(gesture, state);
             }
-
+            */
             //DBSCAN.Test();
 
             state.predict_on_enable_.Value = false;
@@ -324,7 +325,14 @@ namespace ColorGlove
         // and the majority value in predict_labels_.
         private static void PredictGPU(ProcessorState state)
         {
+            DateTime ExecutionStartTime;
+            DateTime ExecutionStopTime;
+            TimeSpan ExecutionTime;
+            ExecutionStartTime = DateTime.Now;
             state.feature.PredictGPU(state.depth, ref state.predict_output_);
+            ExecutionStopTime = DateTime.Now;
+            ExecutionTime = ExecutionStopTime - ExecutionStartTime;
+            Console.WriteLine("Use {0} ms for getting prediction", ExecutionTime.TotalMilliseconds.ToString());
             ShowAverageAndVariance(state.predict_output_, state);
 
             for (int y = state.crop.Value.Y; y <= state.crop.Value.Y + state.crop.Value.Height; y++)

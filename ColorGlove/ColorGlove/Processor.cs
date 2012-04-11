@@ -230,11 +230,10 @@ namespace ColorGlove
             // User dependent. Notice that this is important
             //FeatureExtraction.ModeFormat MyMode = FeatureExtraction.ModeFormat.F1000; 
 
-            //FeatureExtraction.ModeFormat MyMode = FeatureExtraction.ModeFormat.Blue;
-            FeatureExtraction.ModeFormat MyMode = FeatureExtraction.ModeFormat.BlueDefault;
-            Feature = new FeatureExtractionLib.FeatureExtraction(MyMode, "D:\\gr\\training\\blue");
-			
-            //Feature = new FeatureExtractionLib.FeatureExtraction(MyMode);
+            FeatureExtraction.ModeFormat MyMode = FeatureExtraction.ModeFormat.Blue;
+            //FeatureExtraction.ModeFormat MyMode = FeatureExtraction.ModeFormat.BlueDefault;
+            //Feature = new FeatureExtractionLib.FeatureExtraction(MyMode, "D:\\gr\\training\\blue");			
+            Feature = new FeatureExtractionLib.FeatureExtraction(MyMode);
             
             label_colors = Util.GiveMeNColors(Feature.num_classes_);
             Feature.ReadOffsetPairsFromStorage();
@@ -567,7 +566,7 @@ namespace ColorGlove
             Properties.Settings.Default.Save();
         }
 
-        private void GetAllFeatures() {
+        private void GetAllFeaturesCPU() {
             // timer start
             DateTime ExecutionStartTime; //Var will hold Execution Starting Time
             DateTime ExecutionStopTime;//Var will hold Execution Stopped Time
@@ -626,7 +625,7 @@ namespace ColorGlove
                 int depthVal = depth_[depthIndex]; // >> DepthImageFrame.PlayerIndexBitmaskWidth;
                 // Show offsets pair 
                 Console.WriteLine("depth: {0}, baseIndex: {1}", depthVal, depthIndex);
-                GetAllFeatures();
+                GetAllFeaturesCPU();
             }
 
             // Predict one pixel using CPU

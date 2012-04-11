@@ -66,7 +66,7 @@ namespace FeatureExtractionLib
         private const string defaultDirectory = "..\\..\\..\\Data";
         public string directory;
         private const int width = 640, height = 480; 
-        private string RFModelFilePath;
+        private string RF_model_file_path_;
         // random forest object from Alglib
         private dforest.decisionforest decisionForest;
         // trees in int type
@@ -134,7 +134,7 @@ namespace FeatureExtractionLib
                     kinect_mode_ = KinectModeFormat.Near;
                     traningFilename = "Blue";
                     RandomGenerationMode = RandomGenerationModeFormat.Circular;
-                    RFModelFilePath = directory + "\\FeatureVectureBlue149.rf.model";
+                    RF_model_file_path_ = directory + "\\FeatureVectureBlue149.rf.model";
                     num_classes_ = 3;
                     break;
                 /*
@@ -159,7 +159,7 @@ namespace FeatureExtractionLib
                     kinect_mode_ = KinectModeFormat.Default;
                     traningFilename = "BlueDefault";
                     RandomGenerationMode = RandomGenerationModeFormat.Circular;
-                    RFModelFilePath = directory + "\\FeatureVectorBlueDefault.400.rf.model";
+                    RF_model_file_path_ = directory + "\\FeatureVectorBlueDefault.400.rf.model";
                     num_classes_ = 5;
                     break;
                 case ModeFormat.Abstraction: // Operate in default Kinect mode, use a large box and a large number of offset
@@ -186,7 +186,7 @@ namespace FeatureExtractionLib
                     RandomGenerationMode = RandomGenerationModeFormat.Circular;
                     //RFModelFilePath = directory + "\\FeatureVectorF1000.400.rf.model";
                     //RFModelFilePath = directory + "\\RF.1000.100.3.model";
-                    RFModelFilePath = directory + "\\RF.1000.10.2.model";
+                    RF_model_file_path_ = directory + "\\RF.1000.10.2.model";
                     num_classes_ = 5;
                     break;
                 case ModeFormat.F2000:
@@ -198,7 +198,7 @@ namespace FeatureExtractionLib
                     kinect_mode_ = KinectModeFormat.Default;
                     traningFilename = "F2000";
                     RandomGenerationMode = RandomGenerationModeFormat.Circular;
-                    RFModelFilePath = directory + "\\FeatureVectorF2000.400.rf.model";
+                    RF_model_file_path_ = directory + "\\FeatureVectorF2000.400.rf.model";
                     num_classes_ = 5;
                     break;
                 case ModeFormat.F3000:
@@ -211,7 +211,7 @@ namespace FeatureExtractionLib
                     traningFilename = "F3000";
                     RandomGenerationMode = RandomGenerationModeFormat.Circular;
                     //RFModelFilePath = directory + "\\FeatureVectorF3000.400.rf.model";
-                    RFModelFilePath = directory + "\\RF.2000.350.3.model"; 
+                    RF_model_file_path_ = directory + "\\RF.2000.350.3.model"; 
                     num_classes_ = 5;
                     break;
 
@@ -246,15 +246,16 @@ namespace FeatureExtractionLib
              */ 
             #endregion
 
+            
             #region prune
              
             // Prune the tree            
             int[] new_trees = new int[trees_int_.Length];
-            PruneTrees_ERROR(ref new_trees, trees_int_, 20, decisionForest.ntrees);            
+            PruneTrees(ref new_trees, trees_int_, 20, decisionForest.ntrees);            
             trees_int_ = new_trees;
             Console.WriteLine("Successfully prune the trees, the resulting tree size is {0}", trees_int_.Length);           
             #endregion
-
+             
             // show max depth of each tree
             //FindMaxDepthRandomForest(trees_int_, decisionForest.ntrees);
 
@@ -341,7 +342,7 @@ namespace FeatureExtractionLib
         #endregion
 
         // This function prune the Algbli-format tree to a depth-limit tree
-        public void PruneTrees_ERROR(ref int[]  new_tree, int[] old_tree, int max_depth, int num_tree)
+        public void PruneTrees(ref int[]  new_tree, int[] old_tree, int max_depth, int num_tree)
         {
             int new_offset = 0, old_offset = 0, new_tree_size = 0;
             max_depth_ = 0;
@@ -466,10 +467,13 @@ namespace FeatureExtractionLib
             return directory + "\\" + "Offset" + Mode + ".txt";
         }
 
-        private void LoadRFModel() {
+        public void LoadRFModel(string file_name = "")
+        {
+            if (file_name == "")
+                file_name = RF_model_file_path_;
             decisionForest = new dforest.decisionforest();
             alglib.serializer Serializer = new alglib.serializer();
-            string modelFile = System.IO.File.ReadAllText(RFModelFilePath);
+            string modelFile = System.IO.File.ReadAllText(file_name);
             Serializer.ustart_str(modelFile);
             dforest.dfunserialize(Serializer, decisionForest);
             Serializer.stop();
@@ -480,6 +484,26 @@ namespace FeatureExtractionLib
             Console.WriteLine("Number of variable: {0}", decisionForest.nvars);
             Console.WriteLine("ntress: {0}", decisionForest.ntrees);
             Console.WriteLine("nclasses: {0}", decisionForest.nclasses);
+        }
+
+        public void WriteRFModel(string file_name) { 
+            double [] new_tree = new double[trees_int_.Length];
+            for (int i=0; i< trees_int_.Length; i++)
+                new_tree[i] = (double) trees_int_[i];
+            decisionForest.trees = new_tree;
+            alglib.serializer Serializer = new alglib.serializer();
+            Serializer.sstart_str();
+            dforest.dfserialize(Serializer, decisionForest);
+            Serializer.stop();
+            string model_file = Serializer.get_string();
+            Console.WriteLine("Finish serializing the random forest");
+
+            using (StreamWriter outfile =
+                new StreamWriter(file_name))
+                {
+                    outfile.Write(model_file);
+                };
+            Console.WriteLine("Finish writting the file {0} to the disk", file_name);
         }
 
         #region FileOperations

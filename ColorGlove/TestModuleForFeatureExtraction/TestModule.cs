@@ -108,7 +108,7 @@ namespace TestModuleNamespace
             int[] old_tree = new int[] { 13, 1, 2, 11, 4, 5, 9, -1, 0, -1, 0, -1, 1, 13, 1, 2, 6, -1, 0, 6, 7, 11, -1, 1, -1, 1 };
             int[] new_tree = new int[old_tree.Length];
             int[] correct_tree = new int[] { 8, 1, 2, 6, -1, 0, -1, 1, 8, 1, 2, 6, -1, 0, -1, 1 };
-            feature_lib_obj_.PruneTrees_ERROR(ref new_tree, old_tree, 2, 2);
+            feature_lib_obj_.PruneTrees(ref new_tree, old_tree, 2, 2);
             
             bool fail=false;
             for (int i = 0; i < correct_tree.Length; i++)
