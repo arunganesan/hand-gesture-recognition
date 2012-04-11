@@ -232,7 +232,7 @@ namespace FeatureExtractionLib
 
             
             // change the number of tree
-            //decisionForest.ntrees = 3;
+            decisionForest.ntrees = 1;
 
             #region transform                        
             /*
