@@ -1,4 +1,12 @@
 experiment.accuracy:
+	./accuracy 2000 10 1
+	./accuracy 2000 50 1
+	./accuracy 2000 100 1
+	./accuracy 2000 150 1
+	./accuracy 2000 200 1
+	./accuracy 2000 250 1
+	./accuracy 2000 300 1
+	./accuracy 2000 350 1
 	./accuracy 2000 10 3
 	./accuracy 2000 50 3
 	./accuracy 2000 100 3
@@ -88,7 +96,6 @@ experiment.2000.200:
 	./gesturetrain 2000 200 5
 experiment.2000.250:
 	./gesturetrain 2000 250 2
-	./gesturetrain 2000 250 3
 	./gesturetrain 2000 250 4
 	./gesturetrain 2000 250 5
 experiment.2000.300:
