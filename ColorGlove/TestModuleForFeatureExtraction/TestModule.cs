@@ -88,8 +88,9 @@ namespace TestModuleNamespace
             //FeatureExtractionTest.TestPruneTree();
 
             // Real task on pruning trees            
-            Debug.WriteLine("Hey I am in debug mode!");                      
-            FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.F3000, "C:\\Users\\Michael Zhang\\Desktop\\HandGestureRecognition\\Experiments\\alglib");
+            Debug.WriteLine("Hey I am in debug mode!");
+            FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.Blue);
+            //FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.F3000, "C:\\Users\\Michael Zhang\\Desktop\\HandGestureRecognition\\Experiments\\alglib");
             FeatureExtractionTest.RealPruneTree();
             Console.ReadKey();
         }
@@ -100,7 +101,11 @@ namespace TestModuleNamespace
 
         private void RealPruneTree()
         {
-            Console.WriteLine("Finish pruning the tree");
+            //Console.WriteLine("Finish pruning the tree");
+            feature_lib_obj_.LoadRFModel(feature_lib_obj_.directory + "\\FeatureVectureBlue149.rf.model");
+            feature_lib_obj_.PruneRFModel();
+            feature_lib_obj_.WriteRFModel(feature_lib_obj_.directory + "\\prune.model");
+            
         }
 
         private void TestPruneTree()

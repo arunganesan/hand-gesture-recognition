@@ -135,6 +135,7 @@ namespace FeatureExtractionLib
                     traningFilename = "Blue";
                     RandomGenerationMode = RandomGenerationModeFormat.Circular;
                     RF_model_file_path_ = directory + "\\FeatureVectureBlue149.rf.model";
+                    //RF_model_file_path_ = directory + "\\FeatureVectureBlue149.rf.model.prune.model";                    
                     num_classes_ = 3;
                     break;
                 /*
@@ -234,33 +235,40 @@ namespace FeatureExtractionLib
             // change the number of tree
             //decisionForest.ntrees = 3;
 
+            int[] new_trees;
             #region transform                        
             /*
             // Transform the tree into breath-first format            
-            int[] new_trees = new int[trees_int_.Length];
+            new_trees = new int[trees_int_.Length];
             TransformTrees(new_trees, trees_int_, decisionForest.ntrees);
             // maybe need to clear the memory?
             trees_int_ = new_trees;
             Console.WriteLine("Successfuly transform the trees");
             // End of transformation            
-             */ 
+             */
             #endregion
+             
+            // Prune the random forest
+            //PruneRFModel();
 
-            
-            #region prune
-             
-            // Prune the tree            
-            int[] new_trees = new int[trees_int_.Length];
-            PruneTrees(ref new_trees, trees_int_, 20, decisionForest.ntrees);            
-            trees_int_ = new_trees;
-            Console.WriteLine("Successfully prune the trees, the resulting tree size is {0}", trees_int_.Length);           
-            #endregion
-             
             // show max depth of each tree
             //FindMaxDepthRandomForest(trees_int_, decisionForest.ntrees);
 
             myGPU_.LoadTrees(trees_int_, (short)decisionForest.nclasses, (short)decisionForest.ntrees, decisionForest.nvars);
             Console.WriteLine("Successfuly load the trained random forest into GPU");
+        }
+
+        public void PruneRFModel()
+        {
+            #region prune
+            int[] new_trees;
+            // Prune the tree            
+            new_trees = new int[trees_int_.Length];
+            PruneTrees(ref new_trees, trees_int_, 20, decisionForest.ntrees);
+            trees_int_ = new_trees;
+            decisionForest.bufsize = trees_int_.Length;
+            Console.WriteLine("Successfully prune the trees, the resulting tree size is {0}", trees_int_.Length);
+            #endregion
         }
 
         #region transform tree into breath first
@@ -412,7 +420,7 @@ namespace FeatureExtractionLib
                 //Debug.WriteLine("depth: {0}", explored_depth);
                 if (explored_depth > max_depth_) {
                     max_depth_ = explored_depth;
-                    Console.WriteLine("current max explored depth: {0}", explored_depth);
+                    Debug.WriteLine("current max explored depth: {0}", explored_depth);
                 }                
                // Debug.Assert(explored_depth < 1000, "depth is greater than 10000!");
                 Debug.Assert(index +3< decisionForest.trees.Length, "left child is out of the bound of the old tree!");
@@ -479,7 +487,7 @@ namespace FeatureExtractionLib
             Serializer.stop();
             Console.WriteLine("Finish loading the RF model");
             Console.WriteLine("Total tree size: {0}", decisionForest.trees.Length);
-            int treeSize = (int)(decisionForest.trees.Length / 3);
+            int treeSize = (int)(decisionForest.trees.Length / decisionForest.ntrees);
             Console.WriteLine("single tree size:{0}", treeSize);
             Console.WriteLine("Number of variable: {0}", decisionForest.nvars);
             Console.WriteLine("ntress: {0}", decisionForest.ntrees);
@@ -491,7 +499,10 @@ namespace FeatureExtractionLib
             for (int i=0; i< trees_int_.Length; i++)
                 new_tree[i] = (double) trees_int_[i];
             decisionForest.trees = new_tree;
+
             alglib.serializer Serializer = new alglib.serializer();
+            Serializer.alloc_start();
+            dforest.dfalloc(Serializer, decisionForest);
             Serializer.sstart_str();
             dforest.dfserialize(Serializer, decisionForest);
             Serializer.stop();
