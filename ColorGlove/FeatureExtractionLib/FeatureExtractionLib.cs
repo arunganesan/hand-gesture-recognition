@@ -199,7 +199,8 @@ namespace FeatureExtractionLib
                     kinect_mode_ = KinectModeFormat.Default;
                     traningFilename = "F2000";
                     RandomGenerationMode = RandomGenerationModeFormat.Circular;
-                    RF_model_file_path_ = directory + "\\FeatureVectorF2000.400.rf.model";
+                    //RF_model_file_path_ = directory + "\\FeatureVectorF2000.400.rf.model";
+                    RF_model_file_path_ = directory + "\\RF.2000.350.3.model"; 
                     num_classes_ = 5;
                     break;
                 case ModeFormat.F3000:
@@ -225,15 +226,9 @@ namespace FeatureExtractionLib
             Console.WriteLine("Start calling GPU");
             // initialize the GPU compute, including compiling. You can set which source to use in the construct function. See the default setting. 
             myGPU_ = new GPUCompute(); 
-            // turn the tree from double type to int type to make it more efficient
-            trees_int_ = new int [decisionForest.trees.Length];
-            Console.WriteLine("Length of the original tree: {0}", trees_int_.Length);
-            for (int i = 0; i < decisionForest.trees.Length; i++)                 
-                trees_int_[i] = (int) Math.Ceiling(decisionForest.trees[i]);
-
             
             // change the number of tree
-            //decisionForest.ntrees = 3;
+            //decisionForest.ntrees = 1;
 
             int[] new_trees;
             #region transform                        
@@ -406,9 +401,6 @@ namespace FeatureExtractionLib
         }
         // Helper, give a distribution of the labels in a given node
         private void HelperFindLablesInTree(int[] tree, int index, int offset, int[] y, int explored_depth) {
-            // if the depth is more than 1000, quit
-            if (explored_depth > 1000)
-                return;
             // is a leaf
             if (tree[index] == -1)
             {
@@ -423,10 +415,15 @@ namespace FeatureExtractionLib
                     Debug.WriteLine("current max explored depth: {0}", explored_depth);
                 }                
                // Debug.Assert(explored_depth < 1000, "depth is greater than 10000!");
-                Debug.Assert(index +3< decisionForest.trees.Length, "left child is out of the bound of the old tree!");
+                if (index + 3 >= tree.Length)
+                {
+                    Debug.WriteLine("left child is out of the bound of the old tree!. Index: {0}, Tree.Length: {1}", index, tree.Length);
+                }
+                Debug.Assert(index +3< tree.Length, "left child is out of the bound of the old tree!");
+                
                 HelperFindLablesInTree(tree, index + 3, offset, y, explored_depth+1);
                 // traverse the right child
-                Debug.Assert(tree[index + 2] + offset < decisionForest.trees.Length, "right child is out of the bound of the old tree!");
+                Debug.Assert(tree[index + 2] + offset < tree.Length, "right child is out of the bound of the old tree!");
                 HelperFindLablesInTree(tree, tree[index + 2] + offset, offset, y, explored_depth+1);
             }
         }
@@ -479,6 +476,7 @@ namespace FeatureExtractionLib
         {
             if (file_name == "")
                 file_name = RF_model_file_path_;
+            
             decisionForest = new dforest.decisionforest();
             alglib.serializer Serializer = new alglib.serializer();
             string modelFile = System.IO.File.ReadAllText(file_name);
@@ -492,6 +490,12 @@ namespace FeatureExtractionLib
             Console.WriteLine("Number of variable: {0}", decisionForest.nvars);
             Console.WriteLine("ntress: {0}", decisionForest.ntrees);
             Console.WriteLine("nclasses: {0}", decisionForest.nclasses);
+            // turn the tree from double type to int type to make it more efficient
+            trees_int_ = new int[decisionForest.trees.Length];
+            Console.WriteLine("Length of the original tree: {0}", trees_int_.Length);
+            for (int i = 0; i < decisionForest.trees.Length; i++)
+                trees_int_[i] = (int)Math.Ceiling(decisionForest.trees[i]);
+
         }
 
         public void WriteRFModel(string file_name) { 

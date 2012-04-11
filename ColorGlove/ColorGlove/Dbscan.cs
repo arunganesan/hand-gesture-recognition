@@ -24,7 +24,7 @@ namespace ColorGlove {
             return diffX * diffX + diffY * diffY;
         }
     }
-    static class DBSCAN
+    public static class DBSCAN
     {
         public static void Test()
         {
@@ -83,7 +83,7 @@ namespace ColorGlove {
             }
             */
         }
-        static List<List<DBScanPoint>> GetClusters(List<DBScanPoint> points, double eps, int minPts)
+        public static List<List<DBScanPoint>> GetClusters(List<DBScanPoint> points, double eps, int minPts)
         {
             if (points == null) return null;
             List<List<DBScanPoint>> clusters = new List<List<DBScanPoint>>();

@@ -5,6 +5,8 @@ using System.Text;
 using System.Threading;
 using FeatureExtractionLib;
 using System.Diagnostics;
+using System.Linq;
+using System.IO;
 
 namespace TestModuleNamespace
 {
@@ -89,8 +91,8 @@ namespace TestModuleNamespace
 
             // Real task on pruning trees            
             Debug.WriteLine("Hey I am in debug mode!");
-            FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.Blue);
-            //FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.F3000, "C:\\Users\\Michael Zhang\\Desktop\\HandGestureRecognition\\Experiments\\alglib");
+            //FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.Blue);
+            FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.F2000, "C:\\Users\\Michael Zhang\\Desktop\\HandGestureRecognition\\Experiments\\alglib");
             FeatureExtractionTest.RealPruneTree();
             Console.ReadKey();
         }
@@ -102,10 +104,40 @@ namespace TestModuleNamespace
         private void RealPruneTree()
         {
             //Console.WriteLine("Finish pruning the tree");
+            /*
             feature_lib_obj_.LoadRFModel(feature_lib_obj_.directory + "\\FeatureVectureBlue149.rf.model");
             feature_lib_obj_.PruneRFModel();
             feature_lib_obj_.WriteRFModel(feature_lib_obj_.directory + "\\prune.model");
-            
+            */
+
+            try
+            {
+                var files = from file in Directory.EnumerateFiles(@"C:\Users\Michael Zhang\Desktop\HandGestureRecognition\Experiments\alglib\PruneThese\",
+                                "*.model", SearchOption.AllDirectories)                            
+                            select new
+                            {
+                                file_name = file
+                            };
+
+                foreach (var f in files)
+                {
+                    Console.WriteLine("File name: {0}", f.file_name);
+                    feature_lib_obj_.LoadRFModel(f.file_name);
+                    feature_lib_obj_.PruneRFModel();
+                    feature_lib_obj_.WriteRFModel(f.file_name+".prune");
+                   // break;
+                }
+                Console.WriteLine("{0} files found.",
+                    files.Count().ToString());
+            }
+            catch (UnauthorizedAccessException UAEx)
+            {
+                Console.WriteLine(UAEx.Message);
+            }
+            catch (PathTooLongException PathEx)
+            {
+                Console.WriteLine(PathEx.Message);
+            }
         }
 
         private void TestPruneTree()

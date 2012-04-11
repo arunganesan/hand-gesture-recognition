@@ -711,11 +711,13 @@ namespace ColorGlove
                 ExecutionStartTime = DateTime.Now;
 
                 Feature.PredictGPU(depth_, ref predict_output_);
-                ShowAverageAndVariance(predict_output_); // used for debug
-
+                
                 ExecutionStopTime = DateTime.Now;
                 ExecutionTime = ExecutionStopTime - ExecutionStartTime;
                 Console.WriteLine("Use {0} ms for getting prediction", ExecutionTime.TotalMilliseconds.ToString());
+
+                ShowAverageAndVariance(predict_output_); // used for debug
+                
                 for (int depth_index = 0; depth_index < depth_.Length; depth_index++)
                 {
                     int predict_label = 0, bitmap_index = depth_index * 4, y_index = depth_index * Feature.num_classes_;
