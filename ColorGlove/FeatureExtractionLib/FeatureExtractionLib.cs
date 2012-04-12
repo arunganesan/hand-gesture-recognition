@@ -83,7 +83,7 @@ namespace FeatureExtractionLib
         private string traningFilename;
         private StreamWriter output_filestream_;
         private List<int> feature_vector_ = new List<int>();
-        List<int> listOfTargetPosition, listOfBackgroundPosition;        
+        List<int> listOfTargetPosition, listOfBackgroundPosition;
         List<int[]> offset_pair_list_; 
         private KinectModeFormat kinect_mode_;
         private CPUorGPUFormat xPU_mode_;

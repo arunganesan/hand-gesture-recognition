@@ -229,12 +229,17 @@ namespace ColorGlove
 
             // User dependent. Notice that this is important
             //FeatureExtraction.ModeFormat MyMode = FeatureExtraction.ModeFormat.F1000; 
+            if (manager.ProcessorMode == Manager.ProcessorModeFormat.Michael)
+            {
+                FeatureExtraction.ModeFormat MyMode = FeatureExtraction.ModeFormat.Blue;
+                Feature = new FeatureExtractionLib.FeatureExtraction(MyMode);
+            }
+            else
+            {
+                FeatureExtraction.ModeFormat MyMode = FeatureExtraction.ModeFormat.BlueDefault;
+                Feature = new FeatureExtractionLib.FeatureExtraction(MyMode, "D:\\gr\\training\\blue");
+            }
 
-            FeatureExtraction.ModeFormat MyMode = FeatureExtraction.ModeFormat.Blue;
-            //FeatureExtraction.ModeFormat MyMode = FeatureExtraction.ModeFormat.BlueDefault;
-            //Feature = new FeatureExtractionLib.FeatureExtraction(MyMode, "D:\\gr\\training\\blue");			
-            Feature = new FeatureExtractionLib.FeatureExtraction(MyMode);
-            
             label_colors = Util.GiveMeNColors(Feature.num_classes_);
             Feature.ReadOffsetPairsFromStorage();
             predict_output_ = new float[width * height * Feature.num_classes_];
@@ -511,6 +516,7 @@ namespace ColorGlove
             AddCentroid(146, 189, 211, targetLabel);
             AddCentroid(159, 198, 214, targetLabel);
             AddCentroid(147, 196, 210, targetLabel);
+            AddCentroid(232, 242, 246, targetLabel);
 
 
             // For background color 
@@ -616,6 +622,7 @@ namespace ColorGlove
             int baseIndex = ((int)click_position.Y * 640 + (int)click_position.X) * 4;
             Console.WriteLine("(x,y): (" + click_position.X + ", " + click_position.Y + ") RGB: {" + bitmap_bits_[baseIndex + 2] + ", " + bitmap_bits_[baseIndex + 1] + ", " + bitmap_bits_[baseIndex] + "}");
 
+            return;
 
             if ((ShowExtractedFeatureMode & ShowExtractedFeatureFormat.Extract30FeacturesForEveryPixel) == ShowExtractedFeatureFormat.Extract30FeacturesForEveryPixel)
             {

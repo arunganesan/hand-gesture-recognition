@@ -202,9 +202,17 @@ namespace ColorGlove
             state.predict_on_enable_.Value = false;
         }
 
-        private void FeatureExtractOnEnable(ProcessorState state)
+        public static void FeatureExtractOnEnable(ProcessorState state)
         {
             if (state.feature_extract_on_enable_.Value == false) return;
+            /************************************/
+            /* CHANGE THIS WHEN SAVING IMAGES   */
+            /************************************/
+            state.hand_gesture_value_ = HandGestureFormat.Fist;
+            /************************************/
+            /*                                  */
+            /************************************/
+            
 
             int color_match_index = Array.IndexOf(state.pipeline, Filter.Step.MatchColors);
             int this_index = Array.IndexOf(state.pipeline, Filter.Step.FeatureExtractOnEnable);

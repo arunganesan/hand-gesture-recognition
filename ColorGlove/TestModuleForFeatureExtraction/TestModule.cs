@@ -31,7 +31,7 @@ namespace TestModuleNamespace
         {
             Console.WriteLine("Hello World");
             TestModule FeatureExtractionTest = new TestModule();
-            //FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.F1000);
+            FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.F1000);
             //FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.F2000);
             //FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.F3000);
             //FeatureExtractionTest.TestGenerateOffset();
@@ -90,10 +90,10 @@ namespace TestModuleNamespace
             //FeatureExtractionTest.TestPruneTree();
 
             // Real task on pruning trees            
-            Debug.WriteLine("Hey I am in debug mode!");
+            //..Debug.WriteLine("Hey I am in debug mode!");
             //FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.Blue);
-            FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.F2000, "C:\\Users\\Michael Zhang\\Desktop\\HandGestureRecognition\\Experiments\\alglib");
-            FeatureExtractionTest.RealPruneTree();
+            //FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.F2000, "C:\\Users\\Michael Zhang\\Desktop\\HandGestureRecognition\\Experiments\\alglib");
+            //FeatureExtractionTest.RealPruneTree();
             Console.ReadKey();
         }
 
