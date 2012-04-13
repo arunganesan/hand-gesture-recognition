@@ -31,11 +31,13 @@ namespace TestModuleNamespace
         {
             Console.WriteLine("Hello World");
             TestModule FeatureExtractionTest = new TestModule();
-            FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.F1000);
-            //FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.F2000);
+            //FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.F1000);
+            FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.F2000);
             //FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.F3000);
             //FeatureExtractionTest.TestGenerateOffset();
-            
+
+            FeatureExtractionTest.TestGenerateFeatures("1150");
+
             // Generating feature files for different training set sizes
             /*
             FeatureExtractionTest.TestGenerateFeatures("10");
@@ -456,9 +458,8 @@ namespace TestModuleNamespace
         {
             //Default direcotry: "..\\..\\..\\Data";
             // To setup the mode, see README in the library
-            //FeatureExtraction.ModeFormat MyMode = FeatureExtraction.ModeFormat.BlueDefault;
             FeatureExtraction.ModeFormat MyMode = mode;
-            //string dir = "D:\\gr\\training\\blue\\";
+            dir = "D:\\gr\\training\\blue\\";
             
             //feature_lib_obj_ = new FeatureExtraction(MyMode, dir);
            
