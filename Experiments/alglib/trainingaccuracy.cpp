@@ -92,7 +92,8 @@ int main (int argc, char * argv []) {
   line_counts[250] = 496847;
   line_counts[300] = 596372;
   line_counts[350] = 695672;
-  
+  line_counts[1150] = 2290591;
+
   double r = 0.66;
   int nclasses = 5;
   int ntest = line_counts[ntrain_images];
