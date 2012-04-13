@@ -289,25 +289,25 @@ void ae_state_init(ae_state *state)
     if( state->endianness==AE_LITTLE_ENDIAN )
     {
         vp = (ae_int32_t*)(&state->v_nan);
-        vp[0] = 0;
-        vp[1] = (ae_int32_t)0x7FF80000;
+        //vp[0] = 0;
+        vp[0] = (ae_int32_t)0x7FF80000;
         vp = (ae_int32_t*)(&state->v_posinf);
-        vp[0] = 0;
-        vp[1] = (ae_int32_t)0x7FF00000;
+        //vp[0] = 0;
+        vp[0] = (ae_int32_t)0x7FF00000;
         vp = (ae_int32_t*)(&state->v_neginf);
-        vp[0] = 0;
-        vp[1] = (ae_int32_t)0xFFF00000;
+        //vp[0] = 0;
+        vp[0] = (ae_int32_t)0xFFF00000;
     }
     else if( state->endianness==AE_BIG_ENDIAN )
     {
         vp = (ae_int32_t*)(&state->v_nan);
-        vp[1] = 0;
+        //vp[1] = 0;
         vp[0] = (ae_int32_t)0x7FF80000;
         vp = (ae_int32_t*)(&state->v_posinf);
-        vp[1] = 0;
+        //vp[1] = 0;
         vp[0] = (ae_int32_t)0x7FF00000;
         vp = (ae_int32_t*)(&state->v_neginf);
-        vp[1] = 0;
+        //vp[1] = 0;
         vp[0] = (ae_int32_t)0xFFF00000;
     }
     else
