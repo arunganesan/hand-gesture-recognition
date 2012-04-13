@@ -102,7 +102,7 @@ int main (int argc, char * argv []) {
   sprintf(model_file, "RF.%d.%d.%d.model", nfeatures, ntrain_images, ntrees);
   sprintf(training_file, "F%d.%d.features.txt", nfeatures, ntrain_images);
   sprintf(test_file, "F%d.test.features.txt", nfeatures);
-  sprintf(results_file, "Results.%d.%d.%d.txt", nfeatures, ntrain_images, ntrees);
+  sprintf(results_file, "Results.%d.%d.%d.%05d.txt", nfeatures, ntrain_images, ntrees, rand() % 10000);
 
   cout << "Reading in training file." << endl;
   float * _train = new float [ntrain*(nfeatures + 1)];
