@@ -230,10 +230,11 @@ namespace ColorGlove
             // User dependent. Notice that this is important
             //FeatureExtraction.ModeFormat MyMode = FeatureExtraction.ModeFormat.F1000; 
 
-            FeatureExtraction.ModeFormat MyMode = FeatureExtraction.ModeFormat.Blue;
+            //FeatureExtraction.ModeFormat MyMode = FeatureExtraction.ModeFormat.Blue;
             //FeatureExtraction.ModeFormat MyMode = FeatureExtraction.ModeFormat.BlueDefault;
             //Feature = new FeatureExtractionLib.FeatureExtraction(MyMode, "D:\\gr\\training\\blue");			
-            Feature = new FeatureExtractionLib.FeatureExtraction(MyMode);
+            //Feature = new FeatureExtractionLib.FeatureExtraction(FeatureExtraction.ModeFormat.F2000, "C:\\Users\\Michael Zhang\\Desktop\\HandGestureRecognition\\Experiments\\alglib");
+            Feature = new FeatureExtractionLib.FeatureExtraction(FeatureExtraction.ModeFormat.Blue);
             
             label_colors = Util.GiveMeNColors(Feature.num_classes_);
             Feature.ReadOffsetPairsFromStorage();

@@ -214,7 +214,7 @@ namespace FeatureExtractionLib
                     RandomGenerationMode = RandomGenerationModeFormat.Circular;
                     //RFModelFilePath = directory + "\\FeatureVectorF3000.400.rf.model";
                     RF_model_file_path_ = directory + "\\RF.2000.350.3.model"; 
-                    num_classes_ = 5;
+                    num_classes_ = 5; 
                     break;
 
                
@@ -228,7 +228,7 @@ namespace FeatureExtractionLib
             myGPU_ = new GPUCompute(); 
             
             // change the number of tree
-            //decisionForest.ntrees = 1;
+            decisionForest.ntrees = 1;
 
             int[] new_trees;
             #region transform                        
@@ -244,7 +244,7 @@ namespace FeatureExtractionLib
             #endregion
              
             // Prune the random forest
-            //PruneRFModel();
+            PruneRFModel();
 
             // show max depth of each tree
             //FindMaxDepthRandomForest(trees_int_, decisionForest.ntrees);
