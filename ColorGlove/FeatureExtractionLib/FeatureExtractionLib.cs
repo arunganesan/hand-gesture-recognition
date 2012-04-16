@@ -83,7 +83,7 @@ namespace FeatureExtractionLib
         private string traningFilename;
         private StreamWriter output_filestream_;
         private List<int> feature_vector_ = new List<int>();
-        List<int> listOfTargetPosition, listOfBackgroundPosition;        
+        List<int> listOfTargetPosition, listOfBackgroundPosition;
         List<int[]> offset_pair_list_; 
         private KinectModeFormat kinect_mode_;
         private CPUorGPUFormat xPU_mode_;
@@ -103,6 +103,7 @@ namespace FeatureExtractionLib
             SetDirectory(varDirectory);
             SetMode(setMode);
             
+             
             LoadRFModel();
             RFfeatureVector = new double[numOfOffsetPairs];
             RFfeatureVectorShort = new short[numOfOffsetPairs];
@@ -110,6 +111,7 @@ namespace FeatureExtractionLib
             if (xPU_mode_ == CPUorGPUFormat.GPU) {
                 InitGPU();
             }
+            
         }
 
         private void SetMode(ModeFormat setMode) {
@@ -228,12 +230,16 @@ namespace FeatureExtractionLib
             myGPU_ = new GPUCompute(); 
             
             // change the number of tree
-            decisionForest.ntrees = 1;
+            decisionForest.ntrees = 3;
 
             int[] new_trees;
+            // Prune the random forest, change trees_int_
+            PruneRFModel();
+            
             #region transform                        
             /*
             // Transform the tree into breath-first format            
+            // ? 
             new_trees = new int[trees_int_.Length];
             TransformTrees(new_trees, trees_int_, decisionForest.ntrees);
             // maybe need to clear the memory?
@@ -242,13 +248,9 @@ namespace FeatureExtractionLib
             // End of transformation            
              */
             #endregion
-             
-            // Prune the random forest
-            PruneRFModel();
 
             // show max depth of each tree
             //FindMaxDepthRandomForest(trees_int_, decisionForest.ntrees);
-
             myGPU_.LoadTrees(trees_int_, (short)decisionForest.nclasses, (short)decisionForest.ntrees, decisionForest.nvars);
             Console.WriteLine("Successfuly load the trained random forest into GPU");
         }
@@ -791,7 +793,7 @@ namespace FeatureExtractionLib
                     else
                         countBackgounrdLabel++;
                 }
-                Console.WriteLine("countTargetLabel:{0}, countDepthMinusOne:{1}, countBackgroundLabel:{2}, totalNumber:{3}", countTargetLabel, countDepthMinusOne, countBackgounrdLabel, width * height);
+                //Console.WriteLine("countTargetLabel:{0}, countDepthMinusOne:{1}, countBackgroundLabel:{2}, totalNumber:{3}", countTargetLabel, countDepthMinusOne, countBackgounrdLabel, width * height);
                 file.Close();
             };
 
@@ -809,14 +811,16 @@ namespace FeatureExtractionLib
 
                 string subdirectory = String.Format("{0}\\{1}.{2}", directory, val, training_set_size);
 
-                Console.WriteLine("Current directoray: {0}", subdirectory);
+                Console.WriteLine("Current directory: {0}", subdirectory);
                 string[] fileEntries = Directory.GetFiles(subdirectory);
                 int tmpCounter = 0;
+                int total = fileEntries.Length;
                 foreach (string filePath in fileEntries) // go through each file within the subdirectory
                 {
                     tmpCounter++;                    
                     string fileName = Path.GetFileName(filePath);
-                    Console.WriteLine("Generating feature vecor for files {0}", fileName);
+                    Console.WriteLine("{3}: {1}/{2} ({0})", 
+                                        fileName, tmpCounter, total, val);
                     string prefix = fileName.Substring(0, 10);
                     if (prefix == "depthLabel")
                     {

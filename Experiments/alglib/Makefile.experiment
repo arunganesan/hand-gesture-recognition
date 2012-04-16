@@ -1,12 +1,38 @@
-experiment.accuracy:
-	./accuracy 2000 10 3
-	./accuracy 2000 50 3
-	./accuracy 2000 100 3
-	./accuracy 2000 150 3
-	./accuracy 2000 200 3
-	./accuracy 2000 250 3
-	./accuracy 2000 300 3
-	./accuracy 2000 350 3
+experiment.pruneaccuracy:
+	./pruneaccuracy 2000 10 1
+	./pruneaccuracy 2000 50 1
+	./pruneaccuracy 2000 100 1
+	./pruneaccuracy 2000 150 1
+	./pruneaccuracy 2000 200 1
+	./pruneaccuracy 2000 250 1
+	./pruneaccuracy 2000 300 1
+	./pruneaccuracy 2000 350 1
+	./pruneaccuracy 2000 10 3
+	./pruneaccuracy 2000 50 3
+	./pruneaccuracy 2000 100 3
+	./pruneaccuracy 2000 150 3
+	./pruneaccuracy 2000 200 3
+	./pruneaccuracy 2000 250 3
+	./pruneaccuracy 2000 300 3
+	./pruneaccuracy 2000 350 3
+
+experiment.trainingaccuracy:
+	./trainingaccuracy 2000 10 1
+	./trainingaccuracy 2000 50 1
+	./trainingaccuracy 2000 100 1
+	./trainingaccuracy 2000 150 1
+	./trainingaccuracy 2000 200 1
+	./trainingaccuracy 2000 250 1
+	./trainingaccuracy 2000 300 1
+	./trainingaccuracy 2000 350 1
+	./trainingaccuracy 2000 10 3
+	./trainingaccuracy 2000 50 3
+	./trainingaccuracy 2000 100 3
+	./trainingaccuracy 2000 150 3
+	./trainingaccuracy 2000 200 3
+	./trainingaccuracy 2000 250 3
+	./trainingaccuracy 2000 300 3
+	./trainingaccuracy 2000 350 3
 
 experiment.onetree:
 	./gesturetrain 2000 10 1
@@ -88,7 +114,6 @@ experiment.2000.200:
 	./gesturetrain 2000 200 5
 experiment.2000.250:
 	./gesturetrain 2000 250 2
-	./gesturetrain 2000 250 3
 	./gesturetrain 2000 250 4
 	./gesturetrain 2000 250 5
 experiment.2000.300:

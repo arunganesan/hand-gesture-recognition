@@ -1,5 +1,8 @@
-accuracy: dataanalysis.o accuracy.cpp
-	g++ -g ap.o alglibinternal.o statistics.o specialfunctions.o linalg.o alglibmisc.o solvers.o optimization.o dataanalysis.o accuracy.cpp -o accuracy
+pruneaccuracy: dataanalysis.o pruneaccuracy.cpp
+	g++ -g ap.o alglibinternal.o statistics.o specialfunctions.o linalg.o alglibmisc.o solvers.o optimization.o dataanalysis.o pruneaccuracy.cpp -o pruneaccuracy
+
+trainingaccuracy: dataanalysis.o trainingaccuracy.cpp
+	g++ -g ap.o alglibinternal.o statistics.o specialfunctions.o linalg.o alglibmisc.o solvers.o optimization.o dataanalysis.o trainingaccuracy.cpp -o trainingaccuracy
 
 gesture: dataanalysis.o gesturetrain.cpp
 	g++ -g ap.o alglibinternal.o statistics.o specialfunctions.o linalg.o alglibmisc.o solvers.o optimization.o dataanalysis.o gesturetrain.cpp -o gesturetrain

@@ -25,13 +25,14 @@ namespace ColorGlove
     {
         private KinectData data;
         private Processor[] processors;
-        private enum ProcessorModeFormat {
+        public enum ProcessorModeFormat {
             Arun,
             Michael,
         }
         Thread poller;
         DataFeed datafeed;
-        ProcessorModeFormat ProcessorMode = ProcessorModeFormat.Michael; // set the mode for processor here
+        public ProcessorModeFormat ProcessorMode = ProcessorModeFormat.Michael; // set the mode for processor here
+
 
         public Manager(MainWindow parent)  // Construct function
         {
@@ -98,9 +99,9 @@ namespace ColorGlove
                     Filter.Step.PaintWhite,
                     Filter.Step.Crop,
                     Filter.Step.PaintGreen,
-                    Filter.Step.CopyColor,
-                    //Filter.Step.MatchColors,
-                    //Filter.Step.FeatureExtractOnEnable,
+                    //Filter.Step.CopyColor,
+                    Filter.Step.MatchColors,
+                    Filter.Step.FeatureExtractOnEnable,
                     Filter.Step.ShowOverlay
                 );
 
@@ -110,8 +111,8 @@ namespace ColorGlove
                     Filter.Step.PaintGreen,
                     Filter.Step.Crop,
                     Filter.Step.CopyDepth,
-                    Filter.Step.EnablePredict,
-                    Filter.Step.PredictOnEnable,
+                    //Filter.Step.EnablePredict,
+                    //Filter.Step.PredictOnEnable,
                     Filter.Step.ShowOverlay);
                 
                  
