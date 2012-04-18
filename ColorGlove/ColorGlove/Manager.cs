@@ -73,7 +73,7 @@ namespace ColorGlove
                 //processors[0].updatePipeline(Filter.Step.ColorMatch);
                 //processors[1].SetTestModule(Processor.ShowExtractedFeatureFormat.PredictOnePixelCPU | Processor.ShowExtractedFeatureFormat.ShowTransformedForOnePixel); // 
                 // one should call SetTestModule to active the FeatureExtractionLib
-                processors[1].SetTestModule(Processor.ShowExtractedFeatureFormat.PredictAllPixelsGPU); 
+                processors[1].setFeatureExtraction(Processor.ShowExtractedFeatureFormat.PredictAllPixelsGPU); 
                 processors[1].updatePipeline(
                     // Show the rgb image
                     // Filter.Step.CopyColor
@@ -94,7 +94,7 @@ namespace ColorGlove
                 );
             }
             else if (ProcessorMode == ProcessorModeFormat.Arun) {
-                processors[0].SetTestModule(Processor.ShowExtractedFeatureFormat.ShowTransformedForOnePixel); 
+                processors[0].setFeatureExtraction(Processor.ShowExtractedFeatureFormat.ShowTransformedForOnePixel); 
                 processors[0].updatePipeline(
                     Filter.Step.PaintWhite,
                     Filter.Step.Crop,
@@ -106,7 +106,7 @@ namespace ColorGlove
                 );
 
 
-                processors[1].SetTestModule(Processor.ShowExtractedFeatureFormat.PredictAllPixelsGPU);
+                processors[1].setFeatureExtraction(Processor.ShowExtractedFeatureFormat.PredictAllPixelsGPU);
                 processors[1].updatePipeline(
                     Filter.Step.PaintGreen,
                     Filter.Step.Crop,

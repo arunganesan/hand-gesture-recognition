@@ -111,6 +111,7 @@ namespace ColorGlove {
         static List<DBScanPoint> GetRegion(List<DBScanPoint> points, DBScanPoint p, double eps)
         {
             List<DBScanPoint> region = new List<DBScanPoint>();
+            // this is to slow, can be improved using the spatial property (Michael)
             for (int i = 0; i < points.Count; i++)
             {
                 int distSquared = DBScanPoint.DistanceSquared(p, points[i]);

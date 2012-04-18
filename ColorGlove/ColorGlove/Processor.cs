@@ -70,7 +70,7 @@ namespace ColorGlove
         private static Object depth_lock_ = new Object();
 
         private bool overlayStart;
-        private System.Windows.Controls.Image image;
+        private System.Windows.Controls.Image image_;
         private Manager manager;
         public int lower, upper; // range for thresholding in show_mapped_depth(),  show_color_depth(). Set by the manager.
         
@@ -92,8 +92,8 @@ namespace ColorGlove
         private const float DesiredMinHue = 198f - .5f, DesiredMaxHue = 214f + .5f,
                                   DesiredMinSat = 0.174f, DesiredMaxSat = 0.397f; // Used for hue dection
 
-        private static System.Drawing.Rectangle cropValues;
-        private System.Drawing.Rectangle crop;
+        private static System.Drawing.Rectangle crop_values_;
+        private System.Drawing.Rectangle crop_;
         private int width, height;
         private int kColorStride, kDepthStride;
         private System.Drawing.Point startDrag, endDrag;
@@ -145,20 +145,20 @@ namespace ColorGlove
             this.manager = manager;
             width = 640; height = 480;
             kColorStride = 4; kDepthStride = 1;
-            image = new System.Windows.Controls.Image();
-            image.Width = width;
-            image.Height = height;
+            image_ = new System.Windows.Controls.Image();
+            image_.Width = width;
+            image_.Height = height;
             depth_label_ = new byte[width * height];
 
-            cropValues = new System.Drawing.Rectangle(
+            crop_values_ = new System.Drawing.Rectangle(
                 Properties.Settings.Default.CropOffset.X,
                 Properties.Settings.Default.CropOffset.Y,
                 Properties.Settings.Default.CropSize.Width,
                 Properties.Settings.Default.CropSize.Height);
 
-            crop = new System.Drawing.Rectangle(0, 0, width - 1, height - 1);
-            crop_ref_ = new Ref<System.Drawing.Rectangle>(() => crop, val => { crop = val; });
-            crop_val_ref_ = new Ref<System.Drawing.Rectangle>(() => cropValues, val => { cropValues = val; });
+            crop_ = new System.Drawing.Rectangle(0, 0, width - 1, height - 1);
+            crop_ref_ = new Ref<System.Drawing.Rectangle>(() => crop_, val => { crop_ = val; });
+            crop_val_ref_ = new Ref<System.Drawing.Rectangle>(() => crop_values_, val => { crop_values_ = val; });
 
             upper_ref_ = new Ref<int>(() => upper, val => { upper = val; });
             lower_ref_ = new Ref<int>(() => lower, val => { lower = val; });
@@ -181,12 +181,12 @@ namespace ColorGlove
             bitmap_bits_ = new byte[640 * 480 * 4];
             tmp_buffer_ = new byte[640 * 480 * 4];
             overlay_bitmap_bits_ = new int[640 * 480 * 4]; // overlay
-            image.Source = bitmap_;
+            image_.Source = bitmap_;
 
-            image.MouseLeftButtonUp += ImageClick;
-            image.MouseRightButtonDown += StartDrag;
-            image.MouseMove += Drag;
-            image.MouseRightButtonUp += EndDrag;
+            image_.MouseLeftButtonUp += ImageClick;
+            image_.MouseRightButtonDown += StartDrag;
+            image_.MouseMove += Drag;
+            image_.MouseRightButtonUp += EndDrag;
 
             SetCentroidColorAndLabel();
             
@@ -221,8 +221,8 @@ namespace ColorGlove
             Debug.WriteLine("Pass processor setting");
         }
 
-        public void SetTestModule(ShowExtractedFeatureFormat setTestModuleValue){
-            ShowExtractedFeatureMode = setTestModuleValue;
+        public void setFeatureExtraction(ShowExtractedFeatureFormat setFeatureExtractionMode){
+            ShowExtractedFeatureMode = setFeatureExtractionMode;
             // Setup FeatureExtraction Class
             //Default direcotry: "..\\..\\..\\Data";
             // To setup the mode, see README in the library
@@ -274,9 +274,9 @@ namespace ColorGlove
             int epsilon = 60;
             int min = short.MaxValue;
             int depthVal, idx;
-            for (int x = crop.X; x <= crop.X + crop.Width; x++)
+            for (int x = crop_.X; x <= crop_.X + crop_.Width; x++)
             {
-                for (int y = crop.Y; y <= crop.Y + crop.Height; y++)
+                for (int y = crop_.Y; y <= crop_.Y + crop_.Height; y++)
                 {
                     idx = Util.toID(x, y, width, height, kDepthStride);
                     depthVal = depth_[idx] >> DepthImageFrame.PlayerIndexBitmaskWidth;
@@ -310,7 +310,7 @@ namespace ColorGlove
             //int width = x_1 - x_0;
             //int height = y_1 - y_0;
 
-            kMeans_assignments = new int[crop.Width * crop.Height];
+            kMeans_assignments = new int[crop_.Width * crop_.Height];
             double[] point = new double[3];
 
             int [] cluster_count = Enumerable.Repeat((int)0, k).ToArray();
@@ -336,8 +336,8 @@ namespace ColorGlove
                 // Step 1: label each point as a cluster
                 for (int i = 0; i < kMeans_assignments.Length; i++)
                 {
-                    System.Drawing.Point crop_point = Util.toXY(i, crop.Width, crop.Height, 1);
-                    int adjusted_i = Util.toID(crop.X + crop_point.X, crop.Y + crop_point.Y, width, height, 1);
+                    System.Drawing.Point crop_point = Util.toXY(i, crop_.Width, crop_.Height, 1);
+                    int adjusted_i = Util.toID(crop_.X + crop_point.X, crop_.Y + crop_point.Y, width, height, 1);
                     //int y = i / width;
                     //int x = i % width;
                     //int adjusted_y = y, adjusted_x = x;
@@ -372,8 +372,8 @@ namespace ColorGlove
                 // Step 2: update the cluster center values
                 for (int i = 0; i < kMeans_assignments.Length; i++)
                 {
-                    System.Drawing.Point crop_point = Util.toXY(i, crop.Width, crop.Height, 1);
-                    int adjusted_i = Util.toID(crop.X + crop_point.X, crop.Y + crop_point.Y, width, height, 1);
+                    System.Drawing.Point crop_point = Util.toXY(i, crop_.Width, crop_.Height, 1);
+                    int adjusted_i = Util.toID(crop_.X + crop_point.X, crop_.Y + crop_point.Y, width, height, 1);
                     //int y = i / width;
                     //int x = i % width;
                     //int adjusted_y = y, adjusted_x = x;
@@ -419,8 +419,8 @@ namespace ColorGlove
             // Show all colors, wait for the user's click. 
             for (int i = 0; i < kMeans_assignments.Length; i++)
             {
-                System.Drawing.Point crop_point = Util.toXY(i, crop.Width, crop.Height, 1);
-                int adjusted_i = Util.toID(crop.X + crop_point.X, crop.Y + crop_point.Y, width, height, 1);
+                System.Drawing.Point crop_point = Util.toXY(i, crop_.Width, crop_.Height, 1);
+                int adjusted_i = Util.toID(crop_.X + crop_point.X, crop_.Y + crop_point.Y, width, height, 1);
 
                 overlay_bitmap_bits_[4 * adjusted_i + 2] = (int)kMeans_clusters[kMeans_assignments[i], 0];
                 overlay_bitmap_bits_[4 * adjusted_i + 1] = (int)kMeans_clusters[kMeans_assignments[i], 1];
@@ -456,18 +456,18 @@ namespace ColorGlove
             lock (centroidColor)
             {
                 clearCentroids();
-                System.Windows.Point click_position = e.GetPosition(image);
-                if (click_position.Y <= crop.Y ||
-                    click_position.Y >= crop.Height + crop.Y ||
-                    click_position.X <= crop.X ||
-                    click_position.X >= crop.Width + crop.X)
+                System.Windows.Point click_position = e.GetPosition(image_);
+                if (click_position.Y <= crop_.Y ||
+                    click_position.Y >= crop_.Height + crop_.Y ||
+                    click_position.X <= crop_.X ||
+                    click_position.X >= crop_.Width + crop_.X)
                 {
                     Console.WriteLine("Clicked outside of crop region. Using random point.");
-                    click_position.X = crop.X + 1;
-                    click_position.Y = crop.Y + 1;
+                    click_position.X = crop_.X + 1;
+                    click_position.Y = crop_.Y + 1;
                 }
 
-                int baseIndex = Util.toID((int)click_position.X - crop.X, (int)click_position.Y - crop.Y, crop.Width, crop.Height, 1);
+                int baseIndex = Util.toID((int)click_position.X - crop_.X, (int)click_position.Y - crop_.Y, crop_.Width, crop_.Height, 1);
 
                 for (int i = 0; i < k; i++)
                 {
@@ -576,8 +576,8 @@ namespace ColorGlove
                 
         public void UpdateCropSettings()
         {
-            Properties.Settings.Default.CropOffset = cropValues.Location;
-            Properties.Settings.Default.CropSize = cropValues.Size;
+            Properties.Settings.Default.CropOffset = crop_values_.Location;
+            Properties.Settings.Default.CropSize = crop_values_.Size;
             Properties.Settings.Default.Save();
         }
 
@@ -627,7 +627,7 @@ namespace ColorGlove
                 return;
             }
 
-            System.Windows.Point click_position = e.GetPosition(image);
+            System.Windows.Point click_position = e.GetPosition(image_);
             int baseIndex = ((int)click_position.Y * 640 + (int)click_position.X) * 4;
             Console.WriteLine("(x,y): (" + click_position.X + ", " + click_position.Y + ") RGB: {" + bitmap_bits_[baseIndex + 2] + ", " + bitmap_bits_[baseIndex + 1] + ", " + bitmap_bits_[baseIndex] + "}");
 
@@ -686,11 +686,11 @@ namespace ColorGlove
                 List<Tuple<byte, byte, byte>> label_colors = Util.GiveMeNColors(Feature.num_classes_);
                 ResetOverlay();
 
-                for (int y = crop.Y; y <= crop.Y + crop.Height; y++)
+                for (int y = crop_.Y; y <= crop_.Y + crop_.Height; y++)
                 {
-                    for (int x = crop.X; x <= crop.X + crop.Width; x++)
+                    for (int x = crop_.X; x <= crop_.X + crop_.Width; x++)
                     {
-                        if (x == crop.X) Console.WriteLine("Processing {0}% ({1}/{2})", (float)(y - crop.Y) / crop.Height * 100, (y - crop.Y), crop.Height);
+                        if (x == crop_.X) Console.WriteLine("Processing {0}% ({1}/{2})", (float)(y - crop_.Y) / crop_.Height * 100, (y - crop_.Y), crop_.Height);
                         depthIndex = Util.toID(x, y, width, height, kDepthStride);
 
                         int bitmap_index = depthIndex * 4;
@@ -811,7 +811,7 @@ namespace ColorGlove
 
         private void StartDrag(object sender, MouseButtonEventArgs e)
         {
-            System.Windows.Point click_position = e.GetPosition(image);
+            System.Windows.Point click_position = e.GetPosition(image_);
             dragging = true;
             startDrag.X = (int)click_position.X;
             startDrag.Y = (int)click_position.Y;
@@ -819,30 +819,30 @@ namespace ColorGlove
 
         private void Drag(object sender, MouseEventArgs e)
         {
-            System.Windows.Point position = e.GetPosition(image);
+            System.Windows.Point position = e.GetPosition(image_);
             if (dragging)
             {
                 endDrag.X = (int)position.X;
                 endDrag.Y = (int)position.Y;
 
-                cropValues.X = Math.Min(startDrag.X, endDrag.X);
-                cropValues.Y = Math.Min(startDrag.Y, endDrag.Y);
-                cropValues.Width = Math.Abs(startDrag.X - endDrag.X);
-                cropValues.Height = Math.Abs(startDrag.Y - endDrag.Y);
+                crop_values_.X = Math.Min(startDrag.X, endDrag.X);
+                crop_values_.Y = Math.Min(startDrag.Y, endDrag.Y);
+                crop_values_.Width = Math.Abs(startDrag.X - endDrag.X);
+                crop_values_.Height = Math.Abs(startDrag.Y - endDrag.Y);
             }
         }
 
         private void EndDrag(object sender, MouseButtonEventArgs e)
         {
-            System.Windows.Point click_position = e.GetPosition(image);
+            System.Windows.Point click_position = e.GetPosition(image_);
             dragging = false;
             endDrag.X = (int)click_position.X;
             endDrag.Y = (int)click_position.Y;
 
-            cropValues.X = Math.Min(startDrag.X, endDrag.X);
-            cropValues.Y = Math.Min(startDrag.Y, endDrag.Y);
-            cropValues.Width = Math.Abs(startDrag.X - endDrag.X);
-            cropValues.Height = Math.Abs(startDrag.Y - endDrag.Y);
+            crop_values_.X = Math.Min(startDrag.X, endDrag.X);
+            crop_values_.Y = Math.Min(startDrag.Y, endDrag.Y);
+            crop_values_.Width = Math.Abs(startDrag.X - endDrag.X);
+            crop_values_.Height = Math.Abs(startDrag.Y - endDrag.Y);
             UpdateCropSettings();
             //Console.WriteLine("New crop values are {0}", cropValues);
         }
@@ -892,10 +892,12 @@ namespace ColorGlove
             }
         }
 
-        public System.Windows.Controls.Image getImage() { return image; }
+        public System.Windows.Controls.Image getImage() { return image_; }
 
+        // seems like a better name to be setPipeline?
         public void updatePipeline(params Filter.Step [] steps)
         {
+            
             pipeline = new Filter.Step[steps.Length];
             for (int i = 0; i < steps.Length; i++) pipeline[i] = steps[i];
         }
@@ -915,6 +917,7 @@ namespace ColorGlove
 
         private void PackageState()
         {
+            // so each ProcessorState needs to allocate a memory? That seems some overhead (Michael)
             state = new ProcessorState(
                 crop_ref_, crop_val_ref_, upper_ref_, lower_ref_,
                 data_, depth_, depth_label_, rgb_, bitmap_bits_,
@@ -926,16 +929,7 @@ namespace ColorGlove
                 HandGestureValue, RangeModeValue);
         }
 
-        private void updateHelper()
-        {
-            bitmap_.Dispatcher.Invoke(new Action(() =>
-            {
-                bitmap_.WritePixels(new Int32Rect(0, 0, bitmap_.PixelWidth, bitmap_.PixelHeight),
-                    bitmap_bits_, bitmap_.PixelWidth * sizeof(int), 0);
-            }));
-        }
-
-        public void update(KinectData data)
+       public void update(KinectData data)
         {
             if (data_ == null)
             {
@@ -951,8 +945,12 @@ namespace ColorGlove
                 if (paused) return;
                 foreach (Filter.Step step in pipeline) process(step);
             }
-            
-            updateHelper();
+            bitmap_.Dispatcher.Invoke(new Action(() =>
+            {
+                bitmap_.WritePixels(new Int32Rect(0, 0, bitmap_.PixelWidth, bitmap_.PixelHeight),
+                    bitmap_bits_, bitmap_.PixelWidth * sizeof(int), 0);
+            }));
+          
         }
     }
 }
