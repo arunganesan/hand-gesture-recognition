@@ -13,8 +13,9 @@ namespace FeatureExtractionLib
         private string clProgramSource_predict_ = @"
 short GetNewDepth(int cur_index, int dx, int dy, global read_only short* depth)
 {    
-    int cx = (int) ( (cur_index % 640) +  (float)dx / (float)depth[cur_index] );
-    int cy = (int) ( (cur_index / 640) + (float)dy / (float)depth[cur_index] );
+    float tmp = 1/ (float)depth[cur_index];
+    int cx = (int) ( (cur_index % 640) +  (float)dx * tmp  );
+    int cy = (int) ( (cur_index / 640) + (float)dy * tmp );
     if (cx>=0 && cx< 640 && cy>=0 && cy< 480)
     {
         if (depth[cy*640 + cx] <0)
