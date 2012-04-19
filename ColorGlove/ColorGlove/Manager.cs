@@ -80,8 +80,8 @@ namespace ColorGlove
                     // Show the depth image                                         
                                             Filter.Step.CopyDepth,
                                             Filter.Step.EnablePredict,
-                                            Filter.Step.PredictOnEnable,
-                    // Show overlap offest
+                                            Filter.Step.PerPixelClassificationOnEnable,
+                                            Filter.Step.PoolingOnPerPixelClassification,
                                             Filter.Step.ShowOverlay
                     // Show Mapped Depth Using RGB
                     // Filter.Step.PaintWhite,

@@ -931,7 +931,8 @@ namespace ColorGlove
 
        public void update(KinectData data)
         {
-            if (data_ == null)
+           // Is data_ going to be nullifies? (Michael) 
+           if (data_ == null)
             {
                 this.data_ = data;
                 this.depth_ = data.depth();

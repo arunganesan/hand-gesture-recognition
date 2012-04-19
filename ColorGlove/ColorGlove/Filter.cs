@@ -26,7 +26,8 @@ namespace ColorGlove
             EnableFeatureExtract,
             FeatureExtractOnEnable,
             EnablePredict,
-            PredictOnEnable,
+            PerPixelClassificationOnEnable,
+            PoolingOnPerPixelClassification,
         };
 
         private enum PoolType
@@ -137,6 +138,7 @@ namespace ColorGlove
         }
 
         // Enables the prediction....
+        // Why is this function necessary? (Michael)
         public static void EnablePredict(ProcessorState state) 
         {
             bool val = state.predict_on_enable_.Value;
@@ -174,10 +176,10 @@ namespace ColorGlove
             }
         }
 
-        // Runs the prediction algorithm for each pixel and pools the results. 
+        // Runs the prediction algorithm for each pixel. 
         // The classes are drawn onto the overlay layer, and overlay is turned 
         // on. 
-        public static void PredictOnEnable(ProcessorState state)
+        public static void PerPixelClassificationOnEnable(ProcessorState state)
         {
             if (state.predict_on_enable_.Value == false) return;
             AdjustDepth(state);
@@ -200,6 +202,26 @@ namespace ColorGlove
             //DBSCAN.Test();
 
             state.predict_on_enable_.Value = false;
+        }
+
+        public static void PoolingOnPerPixelClassification(ProcessorState state)
+        {
+            DateTime ExecutionStartTime;
+            DateTime ExecutionStopTime;
+            TimeSpan ExecutionTime;
+            ExecutionStartTime = DateTime.Now;
+            
+            List<Pooled> gestures = Pool(PoolType.DBSCAN, state);
+
+            ExecutionStopTime = DateTime.Now;
+            ExecutionTime = ExecutionStopTime - ExecutionStartTime;
+            Console.WriteLine("Use {0} ms for pooling", ExecutionTime.TotalMilliseconds.ToString());
+            foreach (var gesture in gestures)
+            {
+                DrawCrosshairAt(gesture, state);
+            //    SendToSockets(gesture, state);
+            }
+           // DBSCAN.Test();
         }
 
         public static void FeatureExtractOnEnable(ProcessorState state)
@@ -565,19 +587,30 @@ namespace ColorGlove
                 #region DBSCAN
                 case PoolType.DBSCAN:
                     List<DBScanPoint> dbpoints = new List<DBScanPoint>();
+                    int count_label = 0;
                     for (int i = 0; i < state.depth.Length; i++)
                         if (state.predict_labels_[i] != (int)HandGestureFormat.Background) {
+                            count_label++;
                             System.Drawing.Point xy = Util.toXY(i, width, height, kDepthStride);
                             dbpoints.Add(new DBScanPoint(xy.X, xy.Y));
                         }
-
+                    Debug.WriteLine("{0} points are dbscanned", count_label);
                     // The minPts setting automatically filters out noise. So
                     // the clusters returned here can be safely assumed to be 
                     // hands. No need for outlier detection!
                     double eps = 20;
                     int minPts = 500;
                     
+                    DateTime ExecutionStartTime;
+                    DateTime ExecutionStopTime;
+                    TimeSpan ExecutionTime;
+                    ExecutionStartTime = DateTime.Now;
+
                     List<List<DBScanPoint>> dbclusters = DBSCAN.GetClusters(dbpoints, eps, minPts);
+                    
+                    ExecutionStopTime = DateTime.Now;
+                    ExecutionTime = ExecutionStopTime - ExecutionStartTime;
+                    Console.WriteLine("Use {0} ms for DBSCAN.GetClusters", ExecutionTime.TotalMilliseconds.ToString());
                     label_colors = Util.GiveMeNColors(dbclusters.Count);
 
                     Console.WriteLine("Detected {0} clusters.", dbclusters.Count);
@@ -606,7 +639,7 @@ namespace ColorGlove
                             (int)(dbclusters[cluster].Select(point => point.X).Average()),
                             (int)(dbclusters[cluster].Select(point => point.Y).Average())
                             );
-
+                        // use average to get the depth
                         int depth = (int)dbclusters[cluster].Select(point =>
                         {
                             int idx = Util.toID(point.X, point.Y, width, height, kDepthStride);

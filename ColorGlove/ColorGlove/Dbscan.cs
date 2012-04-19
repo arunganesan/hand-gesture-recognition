@@ -61,7 +61,7 @@ namespace ColorGlove {
                 total += count;
                 string plural = (count != 1) ? "s" : "";
                 Console.WriteLine("\nCluster {0} consists of the following {1} point{2} :\n", i + 1, count, plural);
-                foreach (DBScanPoint p in clusters[i]) Console.Write(" {0} ", p);
+                reach (DBScanPoint p in clusters[i]) Console.Write(" {0} ", p);
                 Console.WriteLine();
             }
             // print any points which are NOISE
@@ -111,7 +111,7 @@ namespace ColorGlove {
         static List<DBScanPoint> GetRegion(List<DBScanPoint> points, DBScanPoint p, double eps)
         {
             List<DBScanPoint> region = new List<DBScanPoint>();
-            // this is to slow, can be improved using the spatial property (Michael)
+            // this is too slow, can be improved using the spatial property (Michael)
             for (int i = 0; i < points.Count; i++)
             {
                 int distSquared = DBScanPoint.DistanceSquared(p, points[i]);
