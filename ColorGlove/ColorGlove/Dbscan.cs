@@ -221,9 +221,10 @@ namespace ColorGlove {
                             // resultP is gaurantted to be a non-background point
                             // it can however belongs to a already existed cluster or noise
                             Debug.Assert(predict_label_[resultP] > 0);
-                            if (pool_[resultP] == UNCLASSIFIED)
+                            if (pool_[resultP] == UNCLASSIFIED || pool_[resultP] == NOISE)
                             {
-                                seeds.Enqueue(resultP);
+                                if (pool_[resultP] == UNCLASSIFIED) 
+                                    seeds.Enqueue(resultP);
                                 pool_[resultP] = clusterId;
                                 clusters[clusterId].Add(resultP);
                             }

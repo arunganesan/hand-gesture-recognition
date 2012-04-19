@@ -609,10 +609,10 @@ namespace ColorGlove
                     // The minPts setting automatically filters out noise. So
                     // the clusters returned here can be safely assumed to be 
                     // hands. No need for outlier detection!
-                    //double eps = 20;
-                    //int minPts = 500;
-                    double eps = 10;
-                    int minPts = 300;
+                    double eps = 20;
+                    int minPts = 500;
+                    //double eps = 10;
+                    //int minPts = 400;
                     DateTime ExecutionStartTime;
                     DateTime ExecutionStopTime;
                     TimeSpan ExecutionTime;
@@ -631,40 +631,43 @@ namespace ColorGlove
                     
                     // The following is to get the center, and depth for each cluster. Seems unnecessary to do it as this can be done in DBScan.
                     for (int cluster = 0; cluster < dbclusters.Count; cluster++)
-                    if (dbclusters[cluster].Count>0)
-                    {
-                        int center_x = 0, center_y = 0, average_depth= 0 ;
-                        foreach (int bitmap_index in dbclusters[cluster])
+                        if (dbclusters[cluster].Count > 0)
                         {
-                            //int bitmap_index = Util.toID(point.X, point.Y, width, height, kColorStride);
-                            state.overlay_bitmap_bits_[bitmap_index + 2] = (int)label_colors[cluster].Item1;
-                            state.overlay_bitmap_bits_[bitmap_index + 1] = (int)label_colors[cluster].Item2;
-                            state.overlay_bitmap_bits_[bitmap_index + 0] = (int)label_colors[cluster].Item3;
-                            System.Drawing.Point point = Util.toXY( bitmap_index, 640, 480, 1);
-                            center_x += point.X;
-                            center_y += point.Y;
-                            average_depth += state.depth[bitmap_index];
+                            int center_x = 0, center_y = 0, average_depth = 0;
+                            foreach (int bitmap_index in dbclusters[cluster])
+                            {
+                                //int bitmap_index = Util.toID(point.X, point.Y, width, height, kColorStride);
+                                state.overlay_bitmap_bits_[bitmap_index + 2] = (int)label_colors[cluster].Item1;
+                                state.overlay_bitmap_bits_[bitmap_index + 1] = (int)label_colors[cluster].Item2;
+                                state.overlay_bitmap_bits_[bitmap_index + 0] = (int)label_colors[cluster].Item3;
+                                System.Drawing.Point point = Util.toXY(bitmap_index, 640, 480, 1);
+                                center_x += point.X;
+                                center_y += point.Y;
+                                average_depth += state.depth[bitmap_index];
+                            }
+
+                            // Get majority label within this cluster
+                            label_counts = new int[state.feature.num_classes_];
+                            Array.Clear(label_counts, 0, label_counts.Length);
+                            foreach (int point_index in dbclusters[cluster])
+                                label_counts[state.predict_labels_[point_index]]++;
+
+                            max = Util.MaxNonBackground(label_counts);
+                            Debug.Assert(dbclusters[cluster].Count > 0);
+                            center = new System.Drawing.Point(
+                                (int)(center_x / dbclusters[cluster].Count),
+                                (int)(center_y / dbclusters[cluster].Count)
+                                );
+                            // use average to get the depth
+                            int depth = (int)(average_depth / dbclusters[cluster].Count);
+
+                            //center = new System.Drawing.Point(centroids[outlier].x(), centroids[outlier].y());
+                            gestures.Add(new Pooled(center, depth, (HandGestureFormat)max.Item1));
+                            Console.WriteLine("Center: ({0}px, {1}px, {2}mm), Gesture: {3}", center.X, center.Y, depth, (HandGestureFormat)max.Item1);
                         }
-
-                        // Get majority label within this cluster
-                        label_counts = new int[state.feature.num_classes_];
-                        Array.Clear(label_counts, 0, label_counts.Length);
-                        foreach (int point_index in dbclusters[cluster]) 
-                            label_counts[state.predict_labels_[point_index]]++;
-                        
-                        max = Util.MaxNonBackground(label_counts);
-                        Debug.Assert(dbclusters[cluster].Count>0);
-                        center = new System.Drawing.Point(
-                            (int)( center_x/ dbclusters[cluster].Count),
-                            (int)(center_y/ dbclusters[cluster].Count)
-                            );
-                        // use average to get the depth
-                        int depth = (int)(average_depth / dbclusters[cluster].Count);
-
-                        //center = new System.Drawing.Point(centroids[outlier].x(), centroids[outlier].y());
-                        gestures.Add(new Pooled(center, depth, (HandGestureFormat)max.Item1));
-                        Console.WriteLine("Center: ({0}px, {1}px, {2}mm), Gesture: {3}", center.X, center.Y, depth, (HandGestureFormat)max.Item1);
-                    }
+                        else {
+                            Debug.WriteLine("Cluster size is 0!");
+                        }
 
                     state.overlay_start_.Value = true;
 
