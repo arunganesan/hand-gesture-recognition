@@ -53,9 +53,10 @@ namespace ColorGlove
                 sensor_.ColorStream.Enable(ColorImageFormat.RgbResolution640x480Fps30);
                 sensor_.DepthStream.Enable(DepthImageFormat.Resolution640x480Fps30);
                 
+                
                 if (RangeModeValue == RangeModeFormat.Near)
                     sensor_.DepthStream.Range = DepthRange.Near; // set near mode 
-
+                 
                 colorPixels = new byte[640 * 480 * 4];
                 depthPixels = new short[640 * 480];
                 sensor_.Start();

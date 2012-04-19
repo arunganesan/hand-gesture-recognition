@@ -240,6 +240,15 @@ namespace ColorGlove
                 Feature = new FeatureExtractionLib.FeatureExtraction(MyMode, "D:\\gr\\training\\blue");
             }
 
+
+            // The following code is deprecated even it is commented. Look at the above! 
+            //FeatureExtraction.ModeFormat MyMode = FeatureExtraction.ModeFormat.Blue;
+            //FeatureExtraction.ModeFormat MyMode = FeatureExtraction.ModeFormat.BlueDefault;
+            //Feature = new FeatureExtractionLib.FeatureExtraction(MyMode, "D:\\gr\\training\\blue");			
+            //Feature = new FeatureExtractionLib.FeatureExtraction(FeatureExtraction.ModeFormat.F2000, "C:\\Users\\Michael Zhang\\Desktop\\HandGestureRecognition\\Experiments\\alglib");
+            // Michael's code here
+            //Feature = new FeatureExtractionLib.FeatureExtraction(FeatureExtraction.ModeFormat.Blue);            
+            // end of deprecated
             label_colors = Util.GiveMeNColors(Feature.num_classes_);
             Feature.ReadOffsetPairsFromStorage();
             predict_output_ = new float[width * height * Feature.num_classes_];
@@ -850,6 +859,7 @@ namespace ColorGlove
                 */
                 
                 update(data_);
+                // this should be changed to be more user friendly
                 var directory = "D:\\gr\\training\\blue\\" + HandGestureValue;
                 //var directory = "..\\..\\..\\Data" + "\\" + HandGestureValue + RangeModeValue;  // assume the directory exist
                 TimeSpan t = (DateTime.UtcNow - new DateTime(1970, 1, 1));

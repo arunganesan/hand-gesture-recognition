@@ -103,7 +103,7 @@ namespace FeatureExtractionLib
             SetDirectory(varDirectory);
             SetMode(setMode);
             
-            /*
+             
             LoadRFModel();
             RFfeatureVector = new double[numOfOffsetPairs];
             RFfeatureVectorShort = new short[numOfOffsetPairs];
@@ -111,7 +111,7 @@ namespace FeatureExtractionLib
             if (xPU_mode_ == CPUorGPUFormat.GPU) {
                 InitGPU();
             }
-            */
+            
         }
 
         private void SetMode(ModeFormat setMode) {
@@ -216,7 +216,7 @@ namespace FeatureExtractionLib
                     RandomGenerationMode = RandomGenerationModeFormat.Circular;
                     //RFModelFilePath = directory + "\\FeatureVectorF3000.400.rf.model";
                     RF_model_file_path_ = directory + "\\RF.2000.350.3.model"; 
-                    num_classes_ = 5;
+                    num_classes_ = 5; 
                     break;
 
                
@@ -230,12 +230,16 @@ namespace FeatureExtractionLib
             myGPU_ = new GPUCompute(); 
             
             // change the number of tree
-            //decisionForest.ntrees = 1;
+            decisionForest.ntrees = 3;
 
             int[] new_trees;
+            // Prune the random forest, change trees_int_
+            PruneRFModel();
+            
             #region transform                        
             /*
             // Transform the tree into breath-first format            
+            // ? 
             new_trees = new int[trees_int_.Length];
             TransformTrees(new_trees, trees_int_, decisionForest.ntrees);
             // maybe need to clear the memory?
@@ -244,13 +248,9 @@ namespace FeatureExtractionLib
             // End of transformation            
              */
             #endregion
-             
-            // Prune the random forest
-            //PruneRFModel();
 
             // show max depth of each tree
             //FindMaxDepthRandomForest(trees_int_, decisionForest.ntrees);
-
             myGPU_.LoadTrees(trees_int_, (short)decisionForest.nclasses, (short)decisionForest.ntrees, decisionForest.nvars);
             Console.WriteLine("Successfuly load the trained random forest into GPU");
         }

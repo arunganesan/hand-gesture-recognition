@@ -74,9 +74,9 @@ kernel void Predict(
         #endregion
 
         /*
-        test
+        breadth first
          */
-        #region test
+        #region breadth first
         private string clProgramSource_predict_test_breath_first_tree_ = @"
 short GetNewDepth(int cur_x, int cur_y, int cur_index, int dx, int dy, global read_only short* depth)
 {    

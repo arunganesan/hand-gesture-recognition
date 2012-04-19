@@ -1,0 +1,11 @@
+experiment.random:
+	./gesturetrain 1000 300 1
+	./gesturetrain 1000 300 1
+	./gesturetrain 1000 300 1
+	./gesturetrain 1000 300 1
+	./gesturetrain 1000 300 1
+	./gesturetrain 1000 300 1
+	./gesturetrain 1000 300 1
+	./gesturetrain 1000 300 1
+	./gesturetrain 1000 300 1
+	./gesturetrain 1000 300 1

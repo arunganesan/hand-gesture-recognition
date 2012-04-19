@@ -341,16 +341,21 @@ namespace ColorGlove
             DateTime ExecutionStopTime;
             TimeSpan ExecutionTime;
             ExecutionStartTime = DateTime.Now;
+            
             state.feature.PredictGPU(state.depth, ref state.predict_output_);
-            ExecutionStopTime = DateTime.Now;
-            ExecutionTime = ExecutionStopTime - ExecutionStartTime;
-            Console.WriteLine("Use {0} ms for getting prediction", ExecutionTime.TotalMilliseconds.ToString());
-            ShowAverageAndVariance(state.predict_output_, state);
+            
 
             ExecutionStopTime = DateTime.Now;
             ExecutionTime = ExecutionStopTime - ExecutionStartTime;
-            Console.WriteLine("Use {0} ms for getting prediction", ExecutionTime.TotalMilliseconds.ToString());
-
+            Console.WriteLine("Use {0} ms for getting GPU prediction", ExecutionTime.TotalMilliseconds.ToString());
+            //ExecutionStartTime = DateTime.Now;
+            
+            //ShowAverageAndVariance(state.predict_output_, state);
+            /*
+            ExecutionStopTime = DateTime.Now;
+            ExecutionTime = ExecutionStopTime - ExecutionStartTime;
+            Console.WriteLine("Use {0} ms for getting Average and Variance", ExecutionTime.TotalMilliseconds.ToString());
+            */
             for (int y = state.crop.Value.Y; y <= state.crop.Value.Y + state.crop.Value.Height; y++)
             {
                 for (int x = state.crop.Value.X; x <= state.crop.Value.X + state.crop.Value.Width; x++)

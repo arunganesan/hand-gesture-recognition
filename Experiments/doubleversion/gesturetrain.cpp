@@ -9,7 +9,7 @@
 using namespace std;
 
 
-void readsvmfile(float * container, int lines, int stride, char * filename) {
+void readsvmfile(double * container, int lines, int stride, char * filename) {
   int counter = 0;
   string line, part;
   int feature;
@@ -93,7 +93,7 @@ int main (int argc, char * argv []) {
   line_counts[300] = 596372;
   line_counts[350] = 695672;
   
-  float r = 0.66;
+  double r = 0.66;
   int nclasses = 5;
   int ntest = 103280;
   int ntrain = line_counts[ntrain_images];
@@ -105,14 +105,14 @@ int main (int argc, char * argv []) {
   sprintf(results_file, "Results.%d.%d.%d.%05d.txt", nfeatures, ntrain_images, ntrees, rand() % 10000);
 
   cout << "Reading in training file." << endl;
-  float * _train = new float [ntrain*(nfeatures + 1)];
+  double * _train = new double [ntrain*(nfeatures + 1)];
   alglib::real_2d_array train;
   readsvmfile(_train, ntrain, nfeatures + 1, training_file);
   train.setcontent(ntrain, nfeatures + 1, _train);
   delete [] _train;
 
   cout << "Reading in test file." << endl;
-  float * _test = new float [ntest*(nfeatures + 1)];
+  double * _test = new double [ntest*(nfeatures + 1)];
   alglib::real_2d_array test;
   readsvmfile(_test, ntest, nfeatures + 1, test_file);
   test.setcontent(ntest, nfeatures + 1, _test);
@@ -122,7 +122,7 @@ int main (int argc, char * argv []) {
   alglib::dfbuildrandomdecisionforest(train, ntrain, nfeatures, nclasses, ntrees, r, info, df, rep); 
   
   cout << "Testing." << endl;
-  float error = alglib::dfavgrelerror(df, test, ntest);
+  double error = alglib::dfavgrelerror(df, test, ntest);
   printf("Average error is %f\n", error);
   
   ofstream results_ofile (results_file);
