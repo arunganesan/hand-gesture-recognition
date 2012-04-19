@@ -97,7 +97,7 @@ int main (int argc, char * argv []) {
   double r = 0.66;
   int nclasses = 5;
   int ntest = 103280;
-  int ntrain = line_counts[ntrain_images];
+  unsigned int ntrain = line_counts[ntrain_images];
   char model_file [50], training_file [50], test_file [50], results_file [50];
   
   sprintf(model_file, "RF.%d.%d.%d.model", nfeatures, ntrain_images, ntrees);

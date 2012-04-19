@@ -32,11 +32,15 @@ namespace TestModuleNamespace
             Console.WriteLine("Hello World");
             TestModule FeatureExtractionTest = new TestModule();
             //FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.F1000);
-            FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.F2000);
+            //FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.F2000);
             //FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.F3000);
             //FeatureExtractionTest.TestGenerateOffset();
 
-            FeatureExtractionTest.TestGenerateFeatures("1150");
+            //FeatureExtractionTest.TestGenerateFeatures("large.test");
+            //FeatureExtractionTest.TestGenerateFeatures("large.689");
+            
+            //FeatureExtractionTest.TestGenerateFeatures("1000");
+            //FeatureExtractionTest.TestGenerateFeatures("1150");
 
             // Generating feature files for different training set sizes
             /*
