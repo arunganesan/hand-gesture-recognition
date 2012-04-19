@@ -108,6 +108,8 @@ namespace ColorGlove
         // predict output for each pixel. It is used when using GPU.
         private float[] predict_output_;
         private int[] predict_labels_;
+        // pooling result for each pixel. have clusterID or noise.
+        private int[] pool_;
         List<Tuple<byte, byte, byte>> label_colors;
                 
         private readonly byte[] targetColor = new byte[] { 255, 0, 0 };
@@ -253,6 +255,7 @@ namespace ColorGlove
             Feature.ReadOffsetPairsFromStorage();
             predict_output_ = new float[width * height * Feature.num_classes_];
             predict_labels_ = new int[width * height];
+            pool_ = new int[width * height];
             Console.WriteLine("Allocate memory for predict_output");
             
             //Feature.GenerateOffsetPairs(); // use this to test the offset pairs parameters setting
@@ -926,7 +929,7 @@ namespace ColorGlove
                 overlay_start_ref_, kNoOverlay, overlay_bitmap_bits_, kEmptyOverlay,
                 Feature, predict_output_, predict_labels_,
                 all_sockets_, pipeline,
-                HandGestureValue, RangeModeValue);
+                HandGestureValue, RangeModeValue, pool_);
         }
 
        public void update(KinectData data)
