@@ -24,41 +24,40 @@ namespace ColorGlove
     public class Manager
     {
         private KinectData data;
-        private Processor[] processors;
+        private Processor processor;
         public enum ProcessorModeFormat {
             Arun,
             Michael,
         }
         Thread poller;
         DataFeed datafeed;
-        public ProcessorModeFormat ProcessorMode = ProcessorModeFormat.Michael; // set the mode for processor here
-
+        private ProcessorModeFormat processor_mode_ = ProcessorModeFormat.Michael; // set the mode for processor here
 
         public Manager(MainWindow parent)  // Construct function
         {
-            if (ProcessorMode == ProcessorModeFormat.Michael)
+            if (processor_mode_ == ProcessorModeFormat.Michael)
                 datafeed = new DataFeed(DataFeed.DataSource.Kinect, DataFeed.RangeModeFormat.Near);
             else
                 datafeed = new DataFeed(DataFeed.DataSource.Kinect, DataFeed.RangeModeFormat.Default);
             
-            #region Create and arrange Images
-            int total_processors = 2;
-            processors = new Processor[total_processors];
-            for (int i = 0; i < total_processors; i++)
-            {
-                processors[i] = new Processor(this);
-                processors[i].lower = 100;
-                processors[i].upper = 1000;
-                Image image = processors[i].getImage();
-                parent.mainContainer.Children.Add(image);
-            }
+            #region Create one processor
+            // the processor is passed by the current object and the main window controller
+            // Note about the new design: there is only one processor which do all the processing, and pass the processed image to a
+            // corresponding image control element
+            processor = new Processor(processor_mode_, parent);
+            processor.lower = 100;
+            processor.upper = 1000;
+            //    Image image = processors[i].getImage();
+            //    parent.mainContainer.Children.Add(image);
             #endregion
 
             #region Processor configurations
-			
-            
-            if (ProcessorMode == ProcessorModeFormat.Michael)
+            if (processor_mode_ == ProcessorModeFormat.Michael)
             {
+                // Whic pipelines to show is decided by the processor.
+                processor.setFeatureExtraction(Processor.ShowExtractedFeatureFormat.PredictAllPixelsGPU); 
+                
+                /*
                 processors[0].updatePipeline(
                     // Show the rgb image
                                             Filter.Step.CopyColor
@@ -92,8 +91,10 @@ namespace ColorGlove
                     // Denoise
                     //                        Filter.Step.Denoise
                 );
+                 */ 
             }
-            else if (ProcessorMode == ProcessorModeFormat.Arun) {
+            else if (processor_mode_ == ProcessorModeFormat.Arun) {
+                /*
                 processors[0].setFeatureExtraction(Processor.ShowExtractedFeatureFormat.ShowTransformedForOnePixel); 
                 processors[0].updatePipeline(
                     Filter.Step.PaintWhite,
@@ -116,7 +117,7 @@ namespace ColorGlove
                     Filter.Step.PoolingOnPerPixelClassification,
                     Filter.Step.ShowOverlay);
                 
-                 
+                */ 
                 /*processors[1].SetTestModule(Processor.ShowExtractedFeatureFormat.ShowTransformedForOnePixel);
                 processors[1].updatePipeline(
                    Processor.Step.PaintGreen,
@@ -126,7 +127,7 @@ namespace ColorGlove
                 
             }
             #endregion
-
+            // why using a new thread? (Michael)
             poller = new Thread(new ThreadStart(this.poll));
         }
 
@@ -144,7 +145,8 @@ namespace ColorGlove
 
         public void saveImages()
         {
-            foreach(Processor p in processors) p.EnableFeatureExtract();
+            processor.EnableFeatureExtract();  
+            //foreach(Processor p in processors) p.EnableFeatureExtract();
             //poller.Suspend();
             //foreach (Processor p in processors) p.processAndSave();
             //processors[0].ProcessAndSave();
@@ -155,20 +157,29 @@ namespace ColorGlove
 
         public void AutoRange()
         {
+           /*
             processors[0].AutoDetectRange();
             processors[1].AutoDetectRange();
+            */
+            processor.AutoDetectRange();
         }
 
         public void increaseRange()
         {
+            /*
             processors[0].IncreaseRange();
             processors[1].IncreaseRange();
+            */
+            processor.IncreaseRange();
         }
 
         public void decreaseRange()
         {
+            /*
             processors[0].DecreaseRange();
             processors[1].DecreaseRange();
+            */
+            processor.DecreaseRange();
         }
 
         public void poll()
@@ -176,12 +187,18 @@ namespace ColorGlove
             while (true)
             {
                 data = datafeed.PullData(); 
+                /*
                 foreach (Processor p in processors) p.update(data);
+                */
+                processor.update(data);
             }
         }
 
 
-        public void kMeans() { processors[0].kMeans(); }
+        public void kMeans() { 
+            //processors[0].kMeans(); 
+            processor.kMeans();
+        }
         
 
         // Just adds pooling to the pipeline. 
@@ -190,7 +207,8 @@ namespace ColorGlove
         // added to the pipeline will then perform that action.
         public void Pool() 
         {
-            processors[1].EnablePredict(); 
+            //processors[1].EnablePredict(); 
+            processor.EnablePredict();
         }
     }
 }

@@ -59,19 +59,23 @@ namespace ColorGlove
         private ShowExtractedFeatureFormat ShowExtractedFeatureMode = ShowExtractedFeatureFormat.None;
         // It seems not necessary to save the mapped result as byte[], byte should be enough.
         static private Dictionary<Tuple<byte, byte, byte>, byte> nearest_cache = new Dictionary<Tuple<byte, byte, byte>, byte>();         
-        private WriteableBitmap bitmap_;
+        //private WriteableBitmap bitmap_;
+        private WriteableBitmap color_bitmap_;
+        private WriteableBitmap depth_bitmap_;
+        private WriteableBitmap pool_bitmap_;
         public byte[] bitmap_bits_;
         private byte[] tmp_buffer_;
         private int[] overlay_bitmap_bits_;
         private readonly int kNoOverlay = -1;
         private int[] kEmptyOverlay;
 
+        private Manager.ProcessorModeFormat processor_mode_;
         private Object bitmap_lock_ = new Object();
         private static Object depth_lock_ = new Object();
 
         private bool overlayStart;
-        private System.Windows.Controls.Image image_;
-        private Manager manager;
+        // Disallow image interactive operactions at this poing
+        //private System.Windows.Controls.Image image_;
         public int lower, upper; // range for thresholding in show_mapped_depth(),  show_color_depth(). Set by the manager.
         
         // *OnEnable counters
@@ -140,17 +144,21 @@ namespace ColorGlove
         private Ref<bool> overlay_start_ref_;
         #endregion
 
-        public Processor(Manager manager)
+        public Processor(Manager.ProcessorModeFormat processor_mode, MainWindow main_window_controller)
         {
 
             Debug.WriteLine("Start processor contruction");
-            this.manager = manager;
+            //this.manager = manager;
+            processor_mode_ = processor_mode; 
             width = 640; height = 480;
             kColorStride = 4; kDepthStride = 1;
+            // The following is commented because it's done by the XAML already
+            /*
             // generate an control element: image
             image_ = new System.Windows.Controls.Image();
             image_.Width = width;
             image_.Height = height;
+             */ 
             depth_label_ = new byte[width * height];
 
             crop_values_ = new System.Drawing.Rectangle(
@@ -180,19 +188,26 @@ namespace ColorGlove
             MinSatTarget = 1F;
             MaxSatTarget = 0F;            
 			            
-            bitmap_ = new WriteableBitmap(640, 480, 96, 96, PixelFormats.Bgr32, null);
+            //bitmap_ = new WriteableBitmap(640, 480, 96, 96, PixelFormats.Bgr32, null);
+            
+            color_bitmap_ = new WriteableBitmap(640, 480, 96, 96, PixelFormats.Bgr32, null);
+            depth_bitmap_ = new WriteableBitmap(640, 480, 96, 96, PixelFormats.Bgr32, null);
+            pool_bitmap_ = new WriteableBitmap(640, 480, 96, 96, PixelFormats.Bgr32, null);
             bitmap_bits_ = new byte[640 * 480 * 4];
             tmp_buffer_ = new byte[640 * 480 * 4];
             overlay_bitmap_bits_ = new int[640 * 480 * 4]; // overlay
             
-            // Set property of the control element
-            image_.Source = bitmap_;
-
+            // Set property of the control elements, epsecially those images
+            //image_.Source = bitmap_;
+            main_window_controller.colorImage.Source = color_bitmap_;
+            main_window_controller.depthImage.Source = depth_bitmap_;
+            main_window_controller.poolImage.Source = pool_bitmap_;
+            /*
             image_.MouseLeftButtonUp += ImageClick;
             image_.MouseRightButtonDown += StartDrag;
             image_.MouseMove += Drag;
             image_.MouseRightButtonUp += EndDrag;
-
+            */ 
             SetCentroidColorAndLabel();
             
             FleckLog.Level = LogLevel.Debug;
@@ -234,7 +249,7 @@ namespace ColorGlove
 
             // User dependent. Notice that this is important
             //FeatureExtraction.ModeFormat MyMode = FeatureExtraction.ModeFormat.F1000; 
-            if (manager.ProcessorMode == Manager.ProcessorModeFormat.Michael)
+            if (processor_mode_ == Manager.ProcessorModeFormat.Michael)
             {
                 FeatureExtraction.ModeFormat MyMode = FeatureExtraction.ModeFormat.Blue;
                 Feature = new FeatureExtractionLib.FeatureExtraction(MyMode);
@@ -454,9 +469,11 @@ namespace ColorGlove
             Console.WriteLine("Unpausing.");
             paused = false;
         }
-        
+       
+        // disable at this time due to the use of image_
         private void UpdateKMeansCentroid(MouseButtonEventArgs e)
         {
+            /*
             Console.WriteLine("Click acquired.");
 
             lock (centroidColor)
@@ -491,6 +508,7 @@ namespace ColorGlove
             }
 
             overlayStart = false;
+             */
         }
 
         private void DummyPauseDelegate(MouseButtonEventArgs e) { }
@@ -624,9 +642,10 @@ namespace ColorGlove
             ExecutionTime = ExecutionStopTime - ExecutionStartTime;
             Console.WriteLine("Use {0} ms for getting the 33 transformed points", ExecutionTime.TotalMilliseconds.ToString());
         }
-        
+        // disable at this time due to the use of image_ 
         private void ImageClick(object sender, MouseButtonEventArgs e)
         {
+            /*
             if (paused)
             {
                 UnPause(e);
@@ -813,18 +832,22 @@ namespace ColorGlove
 
                 overlayStart = true;
             }
+             */
         }
-
+        // disable at this time due to the use of image_
         private void StartDrag(object sender, MouseButtonEventArgs e)
         {
+            /*
             System.Windows.Point click_position = e.GetPosition(image_);
             dragging = true;
             startDrag.X = (int)click_position.X;
             startDrag.Y = (int)click_position.Y;
+            */
         }
-
+        // disable at this time due to the use of image_
         private void Drag(object sender, MouseEventArgs e)
         {
+            /*
             System.Windows.Point position = e.GetPosition(image_);
             if (dragging)
             {
@@ -836,10 +859,12 @@ namespace ColorGlove
                 crop_values_.Width = Math.Abs(startDrag.X - endDrag.X);
                 crop_values_.Height = Math.Abs(startDrag.Y - endDrag.Y);
             }
+            */
         }
-
+        // disable at this time due to the use of image_
         private void EndDrag(object sender, MouseButtonEventArgs e)
         {
+            /*
             System.Windows.Point click_position = e.GetPosition(image_);
             dragging = false;
             endDrag.X = (int)click_position.X;
@@ -851,6 +876,7 @@ namespace ColorGlove
             crop_values_.Height = Math.Abs(startDrag.Y - endDrag.Y);
             UpdateCropSettings();
             //Console.WriteLine("New crop values are {0}", cropValues);
+            */
         }
 
         public void ProcessAndSave()
@@ -898,7 +924,7 @@ namespace ColorGlove
             }
         }
 
-        public System.Windows.Controls.Image getImage() { return image_; }
+        //public System.Windows.Controls.Image getImage() { return image_; }
 
         // seems like a better name to be setPipeline?
         public void updatePipeline(params Filter.Step [] steps)
@@ -1008,8 +1034,20 @@ namespace ColorGlove
            DateTime ExecutionStopTime_new;
            TimeSpan ExecutionTime_new;
            ExecutionStartTime_new = DateTime.Now;
-
-            lock (bitmap_lock_)
+          
+           process(Filter.Step.CopyColor);
+           color_bitmap_.Dispatcher.Invoke(new Action(() =>
+            {
+                color_bitmap_.WritePixels(new Int32Rect(0, 0, color_bitmap_.PixelWidth, color_bitmap_.PixelHeight),
+                    bitmap_bits_, color_bitmap_.PixelWidth * sizeof(int), 0);
+            }));
+           
+           ExecutionStopTime_new = DateTime.Now;
+           ExecutionTime_new = ExecutionStopTime_new - ExecutionStartTime_new;
+           Console.WriteLine("Use {0} ms for processing steps", ExecutionTime_new.TotalMilliseconds.ToString());
+           
+           /* 
+           lock (bitmap_lock_)
             {
                 if (paused) return;
                 foreach (Filter.Step step in pipeline) process(step);
@@ -1024,7 +1062,9 @@ namespace ColorGlove
                 bitmap_.WritePixels(new Int32Rect(0, 0, bitmap_.PixelWidth, bitmap_.PixelHeight),
                     bitmap_bits_, bitmap_.PixelWidth * sizeof(int), 0);
             }));
-            /*
+            
+            */ 
+           /*
             ExecutionStopTime = DateTime.Now;
             ExecutionTime = ExecutionStopTime - ExecutionStartTime;
             Console.WriteLine("Use {0} ms for per frame update", ExecutionTime.TotalMilliseconds.ToString());          
