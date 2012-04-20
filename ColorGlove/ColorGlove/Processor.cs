@@ -64,6 +64,7 @@ namespace ColorGlove
         private WriteableBitmap depth_bitmap_;
         private WriteableBitmap pool_bitmap_;
         public byte[] bitmap_bits_;
+        public byte[] bitmap_bits_copy_;
         private byte[] tmp_buffer_;
         private int[] overlay_bitmap_bits_;
         private readonly int kNoOverlay = -1;
@@ -194,6 +195,7 @@ namespace ColorGlove
             depth_bitmap_ = new WriteableBitmap(640, 480, 96, 96, PixelFormats.Bgr32, null);
             pool_bitmap_ = new WriteableBitmap(640, 480, 96, 96, PixelFormats.Bgr32, null);
             bitmap_bits_ = new byte[640 * 480 * 4];
+            bitmap_bits_copy_ = new byte[640 * 480 * 4];
             tmp_buffer_ = new byte[640 * 480 * 4];
             overlay_bitmap_bits_ = new int[640 * 480 * 4]; // overlay
             
@@ -991,6 +993,12 @@ namespace ColorGlove
                 case Filter.Step.PoolingOnPerPixelClassification:
                     Filter.PoolingOnPerPixelClassification(state);
                     break;
+                case Filter.Step.RestoreBitmap:
+                    Filter.RestoreBitmap(state);
+                    break;
+                case Filter.Step.CheckpointCurrentBitmap:
+                    Filter.CheckpointCurrentBitmap(state);
+                    break;
             
             }
             ExecutionStopTime = DateTime.Now;
@@ -1009,7 +1017,7 @@ namespace ColorGlove
                 overlay_start_ref_, kNoOverlay, overlay_bitmap_bits_, kEmptyOverlay,
                 Feature, predict_output_, predict_labels_,
                 all_sockets_, pipeline,
-                HandGestureValue, RangeModeValue, pool_);
+                HandGestureValue, RangeModeValue, pool_, bitmap_bits_copy_);
         }
 
        public void update(KinectData data)
@@ -1048,6 +1056,7 @@ namespace ColorGlove
            
            #region Depth Image
            process(Filter.Step.CopyDepth);
+           process(Filter.Step.CheckpointCurrentBitmap);
            process(Filter.Step.EnablePredict);
            process(Filter.Step.PerPixelClassificationOnEnable);
            process(Filter.Step.ShowOverlay);
@@ -1059,6 +1068,7 @@ namespace ColorGlove
            #endregion
 
            #region Pool Image
+           process(Filter.Step.RestoreBitmap);
            process(Filter.Step.PoolingOnPerPixelClassification);
            process(Filter.Step.ShowOverlay);
            pool_bitmap_.Dispatcher.Invoke(new Action(() =>

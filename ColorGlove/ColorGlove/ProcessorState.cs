@@ -19,7 +19,7 @@ namespace ColorGlove
         public Ref<int> lower;
         public KinectData data_;
         public short[] depth;
-        public byte[] rgb, bitmap_bits;
+        public byte[] rgb, bitmap_bits_, bitmap_bits_copy_;
         public byte[] depth_label_;
 
         public Dictionary<Tuple<byte, byte, byte>, byte> nearest_cache_;
@@ -47,7 +47,7 @@ namespace ColorGlove
 
         public HandGestureFormat hand_gesture_value_;
         public RangeModeFormat range_mode_value_;
-
+       
         public ProcessorState(
             Ref<System.Drawing.Rectangle> crop, Ref<System.Drawing.Rectangle> crop_values, 
             Ref<int> upper, Ref<int> lower,
@@ -59,7 +59,7 @@ namespace ColorGlove
             FeatureExtractionLib.FeatureExtraction feature, float[] predict_output_, int[] predict_labels_,
             List<IWebSocketConnection> all_sockets_,
             Filter.Step[] pipeline,
-            HandGestureFormat hand_gesture_value_, RangeModeFormat range_mode_value_, int[] pool)
+            HandGestureFormat hand_gesture_value_, RangeModeFormat range_mode_value_, int[] pool, byte[] bitmap_bits_copy)
         {
             this.crop = crop;
             this.crop_values = crop_values;
@@ -68,8 +68,9 @@ namespace ColorGlove
             this.data_ = data_;
             this.depth = depth;
             this.rgb = rgb;
-            this.bitmap_bits = bitmap_bits;
+            this.bitmap_bits_ = bitmap_bits;
             this.depth_label_ = depth_label_;
+            this.bitmap_bits_copy_ = bitmap_bits_copy;
             
             this.nearest_cache_ = nearest_cache_;
             this.label_color_ = label_color_;
