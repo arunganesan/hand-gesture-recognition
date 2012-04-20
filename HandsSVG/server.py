@@ -13,8 +13,7 @@ class EchoServerProtocol(WebSocketServerProtocol):
       self.sendMessage(newMsg, binary)
       #self.sendMessage(msg, binary)
  
- 
-if __name__ == '__main__':
+ if __name__ == '__main__':
    print "Hello World"
    factory = WebSocketServerFactory("ws://localhost:9000")
    factory.protocol = EchoServerProtocol

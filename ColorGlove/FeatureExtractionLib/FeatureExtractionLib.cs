@@ -202,7 +202,7 @@ namespace FeatureExtractionLib
                     traningFilename = "F2000";
                     RandomGenerationMode = RandomGenerationModeFormat.Circular;
                     //RF_model_file_path_ = directory + "\\FeatureVectorF2000.400.rf.model";
-                    RF_model_file_path_ = directory + "\\RF.2000.350.3.model"; 
+                    RF_model_file_path_ = directory + "\\RF.2000.689.3.model"; 
                     num_classes_ = 5;
                     break;
                 case ModeFormat.F3000:

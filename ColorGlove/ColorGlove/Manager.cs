@@ -31,7 +31,7 @@ namespace ColorGlove
         }
         Thread poller;
         DataFeed datafeed;
-        public ProcessorModeFormat ProcessorMode = ProcessorModeFormat.Michael; // set the mode for processor here
+        public ProcessorModeFormat ProcessorMode = ProcessorModeFormat.Arun; // set the mode for processor here
 
 
         public Manager(MainWindow parent)  // Construct function
@@ -100,19 +100,20 @@ namespace ColorGlove
                     Filter.Step.Crop,
                     Filter.Step.PaintGreen,
                     //Filter.Step.CopyColor,
-                    Filter.Step.MatchColors,
-                    Filter.Step.FeatureExtractOnEnable,
+                    //Filter.Step.MatchColors,
+                    //Filter.Step.FeatureExtractOnEnable,
                     Filter.Step.ShowOverlay
                 );
 
 
                 processors[1].setFeatureExtraction(Processor.ShowExtractedFeatureFormat.PredictAllPixelsGPU);
                 processors[1].updatePipeline(
-                    Filter.Step.PaintGreen,
-                    Filter.Step.Crop,
+                    //Filter.Step.PaintGreen,
+                    //Filter.Step.Crop,
                     Filter.Step.CopyDepth,
-                    //Filter.Step.EnablePredict,
-                    //Filter.Step.PredictOnEnable,
+                    Filter.Step.EnablePredict,
+                    Filter.Step.PerPixelClassificationOnEnable,
+                    Filter.Step.PoolingOnPerPixelClassification,
                     Filter.Step.ShowOverlay);
                 
                  

@@ -609,10 +609,10 @@ namespace ColorGlove
                     // The minPts setting automatically filters out noise. So
                     // the clusters returned here can be safely assumed to be 
                     // hands. No need for outlier detection!
-                    double eps = 20;
-                    int minPts = 500;
-                    //double eps = 10;
-                    //int minPts = 400;
+                    //double eps = 20;
+                    //int minPts = 500;
+                    double eps = 10;
+                    int minPts = 400;
                     DateTime ExecutionStartTime;
                     DateTime ExecutionStopTime;
                     TimeSpan ExecutionTime;
@@ -634,16 +634,17 @@ namespace ColorGlove
                         if (dbclusters[cluster].Count > 0)
                         {
                             int center_x = 0, center_y = 0, average_depth = 0;
-                            foreach (int bitmap_index in dbclusters[cluster])
+                            foreach (int depth_index in dbclusters[cluster])
                             {
+                                int bitmap_index = depth_index * 4;
                                 //int bitmap_index = Util.toID(point.X, point.Y, width, height, kColorStride);
                                 state.overlay_bitmap_bits_[bitmap_index + 2] = (int)label_colors[cluster].Item1;
                                 state.overlay_bitmap_bits_[bitmap_index + 1] = (int)label_colors[cluster].Item2;
                                 state.overlay_bitmap_bits_[bitmap_index + 0] = (int)label_colors[cluster].Item3;
-                                System.Drawing.Point point = Util.toXY(bitmap_index, 640, 480, 1);
+                                System.Drawing.Point point = Util.toXY(bitmap_index, 640, 480, kColorStride);
                                 center_x += point.X;
                                 center_y += point.Y;
-                                average_depth += state.depth[bitmap_index];
+                                average_depth += state.depth[depth_index];
                             }
 
                             // Get majority label within this cluster
