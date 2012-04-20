@@ -147,6 +147,7 @@ namespace ColorGlove
             this.manager = manager;
             width = 640; height = 480;
             kColorStride = 4; kDepthStride = 1;
+            // generate an control element: image
             image_ = new System.Windows.Controls.Image();
             image_.Width = width;
             image_.Height = height;
@@ -183,6 +184,8 @@ namespace ColorGlove
             bitmap_bits_ = new byte[640 * 480 * 4];
             tmp_buffer_ = new byte[640 * 480 * 4];
             overlay_bitmap_bits_ = new int[640 * 480 * 4]; // overlay
+            
+            // Set property of the control element
             image_.Source = bitmap_;
 
             image_.MouseLeftButtonUp += ImageClick;
