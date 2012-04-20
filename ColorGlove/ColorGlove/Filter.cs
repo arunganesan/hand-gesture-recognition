@@ -20,7 +20,7 @@ namespace ColorGlove
             Crop,
             MappedDepth,
             MatchColors,
-            ColorLabelingInRGB,
+            //ColorLabelingInRGB,
             ShowOverlay,
             Denoise,
             EnableFeatureExtract,
@@ -611,7 +611,7 @@ namespace ColorGlove
                     // hands. No need for outlier detection!
                     //double eps = 20;
                     //int minPts = 500;
-                    double eps = 10;
+                    int eps = 10;
                     int minPts = 400;
                     DateTime ExecutionStartTime;
                     DateTime ExecutionStopTime;
@@ -622,15 +622,15 @@ namespace ColorGlove
                     
                     ExecutionStopTime = DateTime.Now;
                     ExecutionTime = ExecutionStopTime - ExecutionStartTime;
-                    Console.WriteLine("Use {0} ms for DBSCAN.GetClusters", ExecutionTime.TotalMilliseconds.ToString());
+                    Console.WriteLine("Use {0} ms for DBScan.GetClusters", ExecutionTime.TotalMilliseconds.ToString());
                     label_colors = Util.GiveMeNColors(dbclusters.Count);
 
-                    Console.WriteLine("Detected {0} clusters.", dbclusters.Count-1);
+                    Console.WriteLine("Detected {0} clusters.", dbclusters.Count);
 
                     ResetOverlay(state);
                     
                     // The following is to get the center, and depth for each cluster. Seems unnecessary to do it as this can be done in DBScan.
-                    for (int cluster = 1; cluster < dbclusters.Count; cluster++)
+                    for (int cluster = 0; cluster < dbclusters.Count; cluster++)
                         if (dbclusters[cluster].Count > 0)
                         {
                             int center_x = 0, center_y = 0, average_depth = 0;

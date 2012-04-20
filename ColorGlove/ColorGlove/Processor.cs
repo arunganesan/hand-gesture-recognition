@@ -914,8 +914,52 @@ namespace ColorGlove
         private void process(Filter.Step step)
         {
             Type type = typeof(Filter);
+            // this prohibit debugging
+            /* 
             MethodInfo Filtermethod = type.GetMethod(step.ToString());
             Filtermethod.Invoke(null, new object[]{state});
+             */
+            switch (step)
+            {
+                case Filter.Step.CopyColor:
+                    Filter.CopyColor(state);
+                    break;
+                case Filter.Step.PaintWhite:
+                    Filter.PaintWhite(state);
+                    break;
+                case Filter.Step.PaintGreen:
+                    Filter.PaintGreen(state);
+                    break;
+                case Filter.Step.CopyDepth:
+                    Filter.CopyDepth(state);
+                    break;
+                case Filter.Step.Crop:
+                    Filter.Crop(state);
+                    break;
+                case Filter.Step.MatchColors:
+                    Filter.MatchColors(state);
+                    break;
+                case Filter.Step.ShowOverlay:
+                    Filter.ShowOverlay(state);
+                    break;
+                case Filter.Step.EnableFeatureExtract:
+                    Filter.EnableFeatureExtract(state);
+                    break;
+                case Filter.Step.FeatureExtractOnEnable:
+                    Filter.FeatureExtractOnEnable(state);
+                    break;
+                case Filter.Step.EnablePredict:
+                    Filter.EnablePredict(state);
+                    break;
+                case Filter.Step.PerPixelClassificationOnEnable:
+                    Filter.PerPixelClassificationOnEnable(state);
+                    break;
+                case Filter.Step.PoolingOnPerPixelClassification:
+                    Filter.PoolingOnPerPixelClassification(state);
+                    break;
+            
+            }
+            
         }
 
         private void PackageState()

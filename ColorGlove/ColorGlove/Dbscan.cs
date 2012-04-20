@@ -90,14 +90,17 @@ namespace ColorGlove {
         }
         private const int NOISE = -1;
         private const int UNCLASSIFIED = 0;
+        private const int CLASSIFIED = 1;
         // 0 means background, >0 means target labels.
         private static int[] predict_label_;
         // -1 means NOISE, 0 means UNCLASSIFIED
         private static int[] pool_;
         private static int background_label_;
-        private static List<List<int>>  clusters = new List<List<int>>();
+        private static List<List<int>>  clusters_ = new List<List<int>>();
         private static Queue<int> seeds = new Queue<int>();
         private static int total_computation_;
+        private static int eps_;
+        private static int min_pts_;
         /* 
         // an array to store the label information.
         // 0 means background, >0 means target labels.
@@ -118,7 +121,7 @@ namespace ColorGlove {
         // input to GetCluster is a 1-dim array of predicted label, with the label of background
         // predict_label will be modified. 0 means background, >0 means target labels, -1 means NOISE, -2 means UNCLASSIFIED
         // output is a list of clusters. List[i] represents cluster i, ...  
-        public static List<List<int>> GetClusters(double eps, int minPts, int [] predict_label, int background_label, int [] pool)
+        public static List<List<int>> GetClusters(int eps, int minPts, int [] predict_label, int background_label, int [] pool)
         {
             if (predict_label == null) return null;
             predict_label_ = predict_label;
@@ -128,26 +131,21 @@ namespace ColorGlove {
             // treat every pixel as unclassified
             Array.Clear(pool_, 0, pool.Length);
             // a data structure to store cluster
-            //eps *= eps; // square eps
+            eps_ = eps;
+            min_pts_ = minPts;
             // cluster starts from 1 
-            clusters.Clear();
+            clusters_.Clear();
             // it should not be set to 0
-            int clusterId = 1;
-            clusters.Add(new List<int>());
-            clusters.Add(new List<int>()); 
-          
-            Debug.WriteLine("DBScan starts!");
+           
+            //            Debug.WriteLine("DBScan starts!");
 
             for (int i = 0; i < predict_label.Length; i++)
                 if (predict_label_[i]!= background_label)
                 {
                    if (pool_[i] == UNCLASSIFIED)
                     {
-                        if (ExpandCluster(i, clusterId, eps, minPts))
-                        {
-                            clusterId++;
-                            clusters.Add(new List<int>());
-                        }
+                        ExpandCluster(i);
+                        
                     }
                 }
             /*
@@ -164,18 +162,16 @@ namespace ColorGlove {
             return clusters;
             // ENDTODO
              */
-            return clusters;
+            return clusters_;
         }
        
-        static List<int> GetRegion(int p_index, double eps)
+        static List<int> GetRegion(int p_index)
         {
             // maybe can be improved by preallocation
             List<int> region =new List<int>();
-           
-            int radius = (int) (eps);
             System.Drawing.Point p = Util.toXY(p_index, 640, 480, 1);
-            for (int new_x = p.X - radius; new_x <= p.X + radius; new_x++)
-                for (int new_y = p.Y - radius; new_y <= p.Y + radius; new_y++)
+            for (int new_x = p.X - eps_; new_x <= p.X + eps_; new_x++)
+                for (int new_y = p.Y - eps_; new_y <= p.Y + eps_; new_y++)
                 {
                     if (new_x >= 0 && new_x < 640 && new_y >= 0 && new_y < 480)
                     {
@@ -189,38 +185,40 @@ namespace ColorGlove {
         }
         
         // Test if the current unvisited point has enough density. If yes, make a new cluster by bread-firth searching
-        static bool ExpandCluster( int index, int clusterId, double eps, int minPts)
+        static bool ExpandCluster( int index)
         {
             // used to store all interested points
             seeds.Clear();
             // get all neighbors that are within eps distance of i
-            List<int> p_neighbor = GetRegion(index, eps);
+            List<int> p_neighbor = GetRegion(index);
             // Current index is gauranteed to be a non-background point
-            if (p_neighbor.Count < minPts) // no core point
+            if (p_neighbor.Count < min_pts_) // no core point
             {
                 pool_[index] =  NOISE;
                 return false;
             }
             else // all points in seeds are density reachable from point 'p'
             {
-                pool_[index] = clusterId;
-                clusters[clusterId].Add(index);
+                pool_[index] = CLASSIFIED;
+                
+                List<int> cur_cluster=new List<int> () ;
+                cur_cluster.Add(index);
                 for (int i = 0; i < p_neighbor.Count; i++) {
                     // mark p_neighbor[i] belonged to a cluster
-                    pool_[p_neighbor[i]] = clusterId;
+                    pool_[p_neighbor[i]] = CLASSIFIED;
                     seeds.Enqueue(p_neighbor[i]);
-                    clusters[clusterId].Add(p_neighbor[i]);
+                    cur_cluster.Add(p_neighbor[i]);
                 } 
                 // Note: seeds shouldn't contain the current index any more
                 while (seeds.Count > 0)
                 {
                     total_computation_++;
                     if (total_computation_ % 10000 == 0)
-                        Debug.WriteLine("total computation {0}, cluterId: {1}, seeds size: {2}", total_computation_, clusterId, seeds.Count);
+                        Debug.WriteLine("total computation {0}, cluterId: {1}, seeds size: {2}", total_computation_, clusters_.Count, seeds.Count);
                     int currentP = seeds.Dequeue();
                     // currentP is gaurantted to be a labeled point and belongs to the clusterid
-                    List<int> result = GetRegion(currentP, eps);
-                    if (result.Count >= minPts)
+                    List<int> result = GetRegion(currentP);
+                    if (result.Count >= min_pts_)
                     {
                         for (int i = 0; i < result.Count; i++)
                         {
@@ -232,13 +230,14 @@ namespace ColorGlove {
                             {
                                 if (pool_[resultP] == UNCLASSIFIED) 
                                     seeds.Enqueue(resultP);
-                                pool_[resultP] = clusterId;
-                                clusters[clusterId].Add(resultP);
+                                pool_[resultP] = CLASSIFIED;
+                                cur_cluster.Add(resultP);
                             }
                         }
                     }
                     //seeds.Dequeue();
                 }
+                clusters_.Add(cur_cluster);
                 return true;
             }
         }
