@@ -169,13 +169,16 @@ namespace ColorGlove {
         {
             // maybe can be improved by preallocation
             List<int> region =new List<int>();
-            System.Drawing.Point p = Util.toXY(p_index, 640, 480, 1);
-            for (int new_x = p.X - eps_; new_x <= p.X + eps_; new_x++)
-                for (int new_y = p.Y - eps_; new_y <= p.Y + eps_; new_y++)
+            //System.Drawing.Point p = Util.toXY(p_index, 640, 480, 1);
+            int p_x = (int)(p_index) % 640;
+            int p_y = (int)(p_index) / 640;
+            for (int new_x = Math.Max( p_x - eps_, 0); new_x <= Math.Min(p_x + eps_, 639); new_x++)
+                for (int new_y = Math.Max( p_y - eps_, 0); new_y <= Math.Min( p_y + eps_, 479); new_y++)
                 {
-                    if (new_x >= 0 && new_x < 640 && new_y >= 0 && new_y < 480)
+                    //if (new_x >= 0 && new_x < 640 && new_y >= 0 && new_y < 480)
                     {
-                        int one_dim_index = Util.toID( new_x, new_y, 640, 480, 1);
+                        //int one_dim_index = Util.toID( new_x, new_y, 640, 480, 1);
+                        int one_dim_index = new_x + new_y * 640;
                         if (p_index != one_dim_index)
                             if (predict_label_[one_dim_index] != background_label_)
                              region.Add(one_dim_index);

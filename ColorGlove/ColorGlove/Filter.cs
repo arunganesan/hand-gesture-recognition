@@ -57,28 +57,58 @@ namespace ColorGlove
             {
                 for (int y = state.crop.Value.Y; y <= state.crop.Value.Height + state.crop.Value.Y; y++)
                 {
-                    int idx = Util.toID(x, y, width, height, kColorStride);
+                    // For performance
+                    //int idx = Util.toID(x, y, width, height, kColorStride);
+                    int idx = (y * 640 + x)*4;
                     Array.Copy(state.rgb, idx, state.bitmap_bits, idx, kColorStride);
                 }
             }
         }
 
-
+        // Diallowed cropping to improve performance
         // Copies over the depth value to the buffer, normalized for the range of shorts.
         public static void CopyDepth(ProcessorState state)
         {
+           /* 
             for (int x = state.crop.Value.X; x <= state.crop.Value.Width + state.crop.Value.X; x++)
             {
                 for (int y = state.crop.Value.Y; y <= state.crop.Value.Height + state.crop.Value.Y; y++)
                 {
-                    int idx = Util.toID(x, y, width, height, kDepthStride);
-                    
-                    state.bitmap_bits[4 * idx] =
-                    state.bitmap_bits[4 * idx + 1] =
-                    state.bitmap_bits[4 * idx + 2] =
-                    state.bitmap_bits[4 * idx + 3] = (byte)(255 * (short.MaxValue - state.depth[idx]) / short.MaxValue);
+                 //   int idx = Util.toID(x, y, width, height, kDepthStride);
+                    int idx = y * 640 + x;
+                    byte depth_value = (byte)(255 * (short.MaxValue - state.depth[idx]) / short.MaxValue);
+                    state.bitmap_bits[4 * idx] = depth_value;
+                    state.bitmap_bits[4 * idx + 1] = depth_value;
+                    state.bitmap_bits[4 * idx + 2] = depth_value;
+                    state.bitmap_bits[4 * idx + 3] = depth_value;
                 }
             }
+             */
+            
+            for (int i = 0; i < 640 * 480; i++)
+            {
+                byte depth_value = (byte)(255 * (short.MaxValue - state.depth[i]) / short.MaxValue);
+                state.bitmap_bits[4 * i] = depth_value;
+                state.bitmap_bits[4 * i+1] = depth_value;
+                state.bitmap_bits[4 * i+2] = depth_value;
+                state.bitmap_bits[4 * i+3] = depth_value;
+            }
+            
+            /*
+            for (int x = 0; x < 640; x++)
+            {
+                for (int y = 0; y < 480; y++)
+                {
+                    // int idx = Util.toID(x, y, width, height, kDepthStride);
+                    int idx = y * 640 + x;
+                    byte depth_value = (byte)(255 * (short.MaxValue - state.depth[idx]) / short.MaxValue);
+                    state.bitmap_bits[4 * idx] = depth_value;
+                    state.bitmap_bits[4 * idx + 1] = depth_value;
+                    state.bitmap_bits[4 * idx + 2] = depth_value;
+                    state.bitmap_bits[4 * idx + 3] = depth_value;
+                }
+            }
+            */ 
         }
 
         // Calls helper function with white.
@@ -162,15 +192,33 @@ namespace ColorGlove
         {
             if (state.overlay_start_.Value)
             {
+                /*
                 for (int x = state.crop.Value.X; x <= state.crop.Value.Width + state.crop.Value.X; x++)
                 {
                     for (int y = state.crop.Value.Y; y <= state.crop.Value.Height + state.crop.Value.Y; y++)
                     {
-                        int idx = Util.toID(x, y, width, height, kColorStride);
+                        // int idx = Util.toID(x, y, width, height, kColorStride);
+                        int idx = (y * 640 + x) * 4;
                         if (state.overlay_bitmap_bits_[idx] != state.kNoOverlay) state.bitmap_bits[idx] = (byte)state.overlay_bitmap_bits_[idx];
                         if (state.overlay_bitmap_bits_[idx + 1] != state.kNoOverlay) state.bitmap_bits[idx + 1] = (byte)state.overlay_bitmap_bits_[idx + 1];
                         if (state.overlay_bitmap_bits_[idx + 2] != state.kNoOverlay) state.bitmap_bits[idx + 2] = (byte)state.overlay_bitmap_bits_[idx + 2];
                         if (state.overlay_bitmap_bits_[idx + 3] != state.kNoOverlay) state.bitmap_bits[idx + 3] = (byte)state.overlay_bitmap_bits_[idx + 3];
+                    }
+                }
+                */
+                for (int x = 0; x < 640; x++)
+                {
+                    for (int y = 0; y < 480; y++)
+                    {
+                        // int idx = Util.toID(x, y, width, height, kColorStride);
+                        int idx = (y * 640 + x) * 4;
+                        if (state.overlay_bitmap_bits_[idx] != state.kNoOverlay)
+                        {
+                            state.bitmap_bits[idx] = (byte)state.overlay_bitmap_bits_[idx];
+                            state.bitmap_bits[idx + 1] = (byte)state.overlay_bitmap_bits_[idx + 1];
+                            state.bitmap_bits[idx + 2] = (byte)state.overlay_bitmap_bits_[idx + 2];
+                            state.bitmap_bits[idx + 3] = (byte)state.overlay_bitmap_bits_[idx + 3];
+                        }
                     }
                 }
             }
@@ -184,7 +232,8 @@ namespace ColorGlove
             if (state.predict_on_enable_.Value == false) return;
             AdjustDepth(state);
             PredictGPU(state);
-            DrawPredictionOverlay(state);
+            
+            //DrawPredictionOverlay(state);
             //Pooled gesture = Pool(PoolType.MedianMajority, state);
             /*
             List<Pooled> gestures = Pool(PoolType.KMeans, state);            
@@ -215,7 +264,7 @@ namespace ColorGlove
 
             ExecutionStopTime = DateTime.Now;
             ExecutionTime = ExecutionStopTime - ExecutionStartTime;
-            Console.WriteLine("Use {0} ms for pooling", ExecutionTime.TotalMilliseconds.ToString());
+            //Console.WriteLine("Use {0} ms for pooling", ExecutionTime.TotalMilliseconds.ToString());
             foreach (var gesture in gestures)
             {
                 DrawCrosshairAt(gesture, state);
@@ -378,6 +427,7 @@ namespace ColorGlove
             ExecutionTime = ExecutionStopTime - ExecutionStartTime;
             Console.WriteLine("Use {0} ms for getting Average and Variance", ExecutionTime.TotalMilliseconds.ToString());
             */
+            /*
             for (int y = state.crop.Value.Y; y <= state.crop.Value.Y + state.crop.Value.Height; y++)
             {
                 for (int x = state.crop.Value.X; x <= state.crop.Value.X + state.crop.Value.Width; x++)
@@ -393,6 +443,22 @@ namespace ColorGlove
                     state.predict_labels_[depth_index] = predict_label;
                 }
             }
+            */
+            for (int x=0; x<640; x++)
+                for (int y=0; y<480; y++)
+                {
+                    //int depth_index = Util.toID(x, y, width, height, kDepthStride);
+                    int depth_index = y*640 + x;
+                    int predict_label = 0;
+                    int y_index = depth_index * state.feature.num_classes_;
+
+                    for (int i = 1; i < state.feature.num_classes_; i++)
+                        if (state.predict_output_[y_index + i] > state.predict_output_[y_index + predict_label])
+                            predict_label = i;
+
+                    state.predict_labels_[depth_index] = predict_label;
+                }
+            
         }
 
         private static void ShowAverageAndVariance(float[] a, ProcessorState state)
@@ -625,7 +691,7 @@ namespace ColorGlove
                     Console.WriteLine("Use {0} ms for DBScan.GetClusters", ExecutionTime.TotalMilliseconds.ToString());
                     label_colors = Util.GiveMeNColors(dbclusters.Count);
 
-                    Console.WriteLine("Detected {0} clusters.", dbclusters.Count);
+                    Debug.WriteLine("Detected {0} clusters.", dbclusters.Count);
 
                     ResetOverlay(state);
                     
@@ -664,7 +730,7 @@ namespace ColorGlove
 
                             //center = new System.Drawing.Point(centroids[outlier].x(), centroids[outlier].y());
                             gestures.Add(new Pooled(center, depth, (HandGestureFormat)max.Item1));
-                            Console.WriteLine("Center: ({0}px, {1}px, {2}mm), Gesture: {3}", center.X, center.Y, depth, (HandGestureFormat)max.Item1);
+                            Debug.WriteLine("Center: ({0}px, {1}px, {2}mm), Gesture: {3}", center.X, center.Y, depth, (HandGestureFormat)max.Item1);
                         }
                         else {
                             Debug.WriteLine("Cluster size is 0!");

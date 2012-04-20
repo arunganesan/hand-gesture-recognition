@@ -14,6 +14,7 @@ namespace ColorGlove
     {
         public Ref<System.Drawing.Rectangle> crop;
         public Ref<System.Drawing.Rectangle> crop_values;
+        //public bool is_cropped_;
         public Ref<int> upper;
         public Ref<int> lower;
         public KinectData data_;

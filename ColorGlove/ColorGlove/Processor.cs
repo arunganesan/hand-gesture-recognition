@@ -919,6 +919,11 @@ namespace ColorGlove
             MethodInfo Filtermethod = type.GetMethod(step.ToString());
             Filtermethod.Invoke(null, new object[]{state});
              */
+            DateTime ExecutionStartTime;
+            DateTime ExecutionStopTime;
+            TimeSpan ExecutionTime;
+            ExecutionStartTime = DateTime.Now;
+
             switch (step)
             {
                 case Filter.Step.CopyColor:
@@ -959,7 +964,9 @@ namespace ColorGlove
                     break;
             
             }
-            
+            ExecutionStopTime = DateTime.Now;
+            ExecutionTime = ExecutionStopTime - ExecutionStartTime;
+            Console.WriteLine("Use {0} ms for step: {1}", ExecutionTime.TotalMilliseconds.ToString(), step.ToString());            
         }
 
         private void PackageState()
@@ -978,6 +985,12 @@ namespace ColorGlove
 
        public void update(KinectData data)
         {
+           /*
+            DateTime ExecutionStartTime;
+            DateTime ExecutionStopTime;
+            TimeSpan ExecutionTime;
+            ExecutionStartTime = DateTime.Now;
+           */
            // Is data_ going to be nullifies? (Michael) 
            if (data_ == null)
             {
@@ -988,17 +1001,31 @@ namespace ColorGlove
                 PackageState();
             }
 
+           DateTime ExecutionStartTime_new;
+           DateTime ExecutionStopTime_new;
+           TimeSpan ExecutionTime_new;
+           ExecutionStartTime_new = DateTime.Now;
+
             lock (bitmap_lock_)
             {
                 if (paused) return;
                 foreach (Filter.Step step in pipeline) process(step);
             }
-            bitmap_.Dispatcher.Invoke(new Action(() =>
+
+            ExecutionStopTime_new = DateTime.Now;
+            ExecutionTime_new = ExecutionStopTime_new - ExecutionStartTime_new;
+            Console.WriteLine("Use {0} ms for processing steps", ExecutionTime_new.TotalMilliseconds.ToString());
+            
+           bitmap_.Dispatcher.Invoke(new Action(() =>
             {
                 bitmap_.WritePixels(new Int32Rect(0, 0, bitmap_.PixelWidth, bitmap_.PixelHeight),
                     bitmap_bits_, bitmap_.PixelWidth * sizeof(int), 0);
             }));
-          
+            /*
+            ExecutionStopTime = DateTime.Now;
+            ExecutionTime = ExecutionStopTime - ExecutionStartTime;
+            Console.WriteLine("Use {0} ms for per frame update", ExecutionTime.TotalMilliseconds.ToString());          
+             */ 
         }
     }
 }

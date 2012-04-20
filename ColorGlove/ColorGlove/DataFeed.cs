@@ -70,9 +70,11 @@ namespace ColorGlove
                     frame.CopyPixelDataTo(data.depth());
 
             using (var frame = sensor_.ColorStream.OpenNextFrame(ColorTimeout))
-                if (frame != null) 
+                if (frame != null)
                     frame.CopyPixelDataTo(data.color());
 
+            // TODO
+            // this is only necessary in the generating the training sample
             sensor_.MapDepthFrameToColorFrame(DepthImageFormat.Resolution640x480Fps30, data.depth(), ColorImageFormat.RgbResolution640x480Fps30, data.mapped());
 
             return data;
