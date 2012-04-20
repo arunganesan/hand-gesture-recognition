@@ -97,6 +97,7 @@ namespace ColorGlove {
         private static int background_label_;
         private static List<List<int>>  clusters = new List<List<int>>();
         private static Queue<int> seeds = new Queue<int>();
+        private static int total_computation_;
         /* 
         // an array to store the label information.
         // 0 means background, >0 means target labels.
@@ -123,15 +124,17 @@ namespace ColorGlove {
             predict_label_ = predict_label;
             pool_ = pool;
             background_label_ = background_label;
+            total_computation_ = 0;
             // treat every pixel as unclassified
             Array.Clear(pool_, 0, pool.Length);
             // a data structure to store cluster
             //eps *= eps; // square eps
             // cluster starts from 1 
             clusters.Clear();
-            int clusterId = 0;
+            // it should not be set to 0
+            int clusterId = 1;
             clusters.Add(new List<int>());
-            
+            clusters.Add(new List<int>()); 
           
             Debug.WriteLine("DBScan starts!");
 
@@ -200,6 +203,7 @@ namespace ColorGlove {
             }
             else // all points in seeds are density reachable from point 'p'
             {
+                pool_[index] = clusterId;
                 clusters[clusterId].Add(index);
                 for (int i = 0; i < p_neighbor.Count; i++) {
                     // mark p_neighbor[i] belonged to a cluster
@@ -210,6 +214,9 @@ namespace ColorGlove {
                 // Note: seeds shouldn't contain the current index any more
                 while (seeds.Count > 0)
                 {
+                    total_computation_++;
+                    if (total_computation_ % 10000 == 0)
+                        Debug.WriteLine("total computation {0}, cluterId: {1}, seeds size: {2}", total_computation_, clusterId, seeds.Count);
                     int currentP = seeds.Dequeue();
                     // currentP is gaurantted to be a labeled point and belongs to the clusterid
                     List<int> result = GetRegion(currentP, eps);

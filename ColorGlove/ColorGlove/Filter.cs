@@ -625,12 +625,12 @@ namespace ColorGlove
                     Console.WriteLine("Use {0} ms for DBSCAN.GetClusters", ExecutionTime.TotalMilliseconds.ToString());
                     label_colors = Util.GiveMeNColors(dbclusters.Count);
 
-                    Console.WriteLine("Detected {0} clusters.", dbclusters.Count);
+                    Console.WriteLine("Detected {0} clusters.", dbclusters.Count-1);
 
                     ResetOverlay(state);
                     
                     // The following is to get the center, and depth for each cluster. Seems unnecessary to do it as this can be done in DBScan.
-                    for (int cluster = 0; cluster < dbclusters.Count; cluster++)
+                    for (int cluster = 1; cluster < dbclusters.Count; cluster++)
                         if (dbclusters[cluster].Count > 0)
                         {
                             int center_x = 0, center_y = 0, average_depth = 0;
