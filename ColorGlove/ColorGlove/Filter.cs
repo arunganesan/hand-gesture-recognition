@@ -232,8 +232,7 @@ namespace ColorGlove
             if (state.predict_on_enable_.Value == false) return;
             AdjustDepth(state);
             PredictGPU(state);
-            
-            //DrawPredictionOverlay(state);
+            DrawPredictionOverlay(state);
             //Pooled gesture = Pool(PoolType.MedianMajority, state);
             /*
             List<Pooled> gestures = Pool(PoolType.KMeans, state);            
@@ -249,7 +248,6 @@ namespace ColorGlove
             }
             */
             //DBSCAN.Test();
-
             state.predict_on_enable_.Value = false;
         }
 
@@ -259,7 +257,8 @@ namespace ColorGlove
             DateTime ExecutionStopTime;
             TimeSpan ExecutionTime;
             ExecutionStartTime = DateTime.Now;
-            
+            // Clear the per-pixel classfication effect
+            ResetOverlay(state); 
             List<Pooled> gestures = Pool(PoolType.DBSCAN, state);
 
             ExecutionStopTime = DateTime.Now;
@@ -692,9 +691,7 @@ namespace ColorGlove
                     label_colors = Util.GiveMeNColors(dbclusters.Count);
 
                     Debug.WriteLine("Detected {0} clusters.", dbclusters.Count);
-
-                    ResetOverlay(state);
-                    
+                   // ResetOverlay(state);
                     // The following is to get the center, and depth for each cluster. Seems unnecessary to do it as this can be done in DBScan.
                     for (int cluster = 0; cluster < dbclusters.Count; cluster++)
                         if (dbclusters[cluster].Count > 0)

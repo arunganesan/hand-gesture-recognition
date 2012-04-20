@@ -1034,14 +1034,39 @@ namespace ColorGlove
            DateTime ExecutionStopTime_new;
            TimeSpan ExecutionTime_new;
            ExecutionStartTime_new = DateTime.Now;
-          
+
+           #region Color Image
            process(Filter.Step.CopyColor);
+           // pontentially dangerous due to creating a new thread here. This is because bitmap_bits will be used later
            color_bitmap_.Dispatcher.Invoke(new Action(() =>
             {
                 color_bitmap_.WritePixels(new Int32Rect(0, 0, color_bitmap_.PixelWidth, color_bitmap_.PixelHeight),
                     bitmap_bits_, color_bitmap_.PixelWidth * sizeof(int), 0);
             }));
+
+           #endregion
            
+           #region Depth Image
+           process(Filter.Step.CopyDepth);
+           process(Filter.Step.EnablePredict);
+           process(Filter.Step.PerPixelClassificationOnEnable);
+           process(Filter.Step.ShowOverlay);
+           depth_bitmap_.Dispatcher.Invoke(new Action(() =>
+           {
+               depth_bitmap_.WritePixels(new Int32Rect(0, 0, depth_bitmap_.PixelWidth, depth_bitmap_.PixelHeight),
+                   bitmap_bits_, depth_bitmap_.PixelWidth * sizeof(int), 0);
+           }));
+           #endregion
+
+           #region Pool Image
+           process(Filter.Step.PoolingOnPerPixelClassification);
+           process(Filter.Step.ShowOverlay);
+           pool_bitmap_.Dispatcher.Invoke(new Action(() =>
+           {
+               pool_bitmap_.WritePixels(new Int32Rect(0, 0, pool_bitmap_.PixelWidth, pool_bitmap_.PixelHeight),
+                   bitmap_bits_, pool_bitmap_.PixelWidth * sizeof(int), 0);
+           }));
+           #endregion
            ExecutionStopTime_new = DateTime.Now;
            ExecutionTime_new = ExecutionStopTime_new - ExecutionStartTime_new;
            Console.WriteLine("Use {0} ms for processing steps", ExecutionTime_new.TotalMilliseconds.ToString());
