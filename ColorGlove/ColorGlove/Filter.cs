@@ -694,14 +694,15 @@ namespace ColorGlove
                     // hands. No need for outlier detection!
                     //double eps = 20;
                     //int minPts = 500;
-                    int eps = 10;
-                    int minPts = 400;
+                    //int radius_ = 10;
+                   // double density_ = 0.91;
+                    int minPts = (int)( (state.radius_+1)*(state.radius_+1)*state.density_);//400;
                     DateTime ExecutionStartTime;
                     DateTime ExecutionStopTime;
                     TimeSpan ExecutionTime;
                     ExecutionStartTime = DateTime.Now;
 
-                    List<List<int>> dbclusters = DBSCAN.GetClusters( eps, minPts, state.predict_labels_, (int)HandGestureFormat.Background, state.pool_);
+                    List<List<int>> dbclusters = DBSCAN.GetClusters( state.radius_, minPts, state.predict_labels_, (int)HandGestureFormat.Background, state.pool_);
                     
                     ExecutionStopTime = DateTime.Now;
                     ExecutionTime = ExecutionStopTime - ExecutionStartTime;
@@ -869,10 +870,12 @@ namespace ColorGlove
         private static void PaintAt(int x, int y, System.Drawing.Color paint, ProcessorState state)
         {
             int idx = Util.toID(x, y, width, height, kColorStride);
-
-            state.overlay_bitmap_bits_[idx] = paint.B;
-            state.overlay_bitmap_bits_[idx + 1] = paint.G;
-            state.overlay_bitmap_bits_[idx + 2] = paint.R;
+            if (idx < state.overlay_bitmap_bits_.Length)
+            {
+                state.overlay_bitmap_bits_[idx] = paint.B;
+                state.overlay_bitmap_bits_[idx + 1] = paint.G;
+                state.overlay_bitmap_bits_[idx + 2] = paint.R;
+            }
         }
 
         // Writes the gesture to the sockets. Uses gestures.ToString() method

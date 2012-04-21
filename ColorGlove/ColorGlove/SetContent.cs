@@ -43,6 +43,20 @@ namespace ColorGlove
                main_window_.poolImageLabel.Text = s;
            })); 
        }
- 
+        public static void SetRadiusText(string s)
+        {
+            main_window_.Dispatcher.BeginInvoke(new Action(() =>
+            {
+                main_window_.radiusText.Text = s;
+            }));
+        }
+
+        public static void SetDensityText(string s)
+        {
+            main_window_.Dispatcher.BeginInvoke(new Action(() =>
+            {
+                main_window_.densityText.Text = s;
+            }));
+        }
     }
 }

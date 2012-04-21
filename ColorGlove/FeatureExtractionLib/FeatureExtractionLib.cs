@@ -36,6 +36,7 @@ namespace FeatureExtractionLib
             F1000,
             F2000,
             F3000,
+            Demo1000,
         };
         public enum CPUorGPUFormat
         {
@@ -89,6 +90,7 @@ namespace FeatureExtractionLib
         private CPUorGPUFormat xPU_mode_;
 
         private int debug_current_depth_, max_depth_;
+        private const int kMaxDepth = 1000;
 
         // Construct fiunction
         public FeatureExtraction(ModeFormat setMode= ModeFormat.Maize, string varDirectory = defaultDirectory, CPUorGPUFormat to_set_xPU_mode=CPUorGPUFormat.GPU)        
@@ -131,6 +133,7 @@ namespace FeatureExtractionLib
                     numOfOffsetPairs = 2000;
                     uMin = 500;
                     uMax = 40 * 2000;
+                    //uMax = 100* 2000, 200*2000, 60*2000, 20*2000;
                     sampledNumberPerClass = 1000;
                     UpperBound = 10000;
                     kinect_mode_ = KinectModeFormat.Near;
@@ -218,7 +221,20 @@ namespace FeatureExtractionLib
                     RF_model_file_path_ = directory + "\\RF.2000.350.3.model"; 
                     num_classes_ = 5; 
                     break;
-
+                case ModeFormat.Demo1000:
+                    numOfOffsetPairs = 1000;
+                    uMin = 500;
+                    uMax = 40 * 2000;
+                    sampledNumberPerClass = 1000;
+                    UpperBound = 10000;
+                    kinect_mode_ = KinectModeFormat.Near;
+                    traningFilename = "Demo1000";
+                    RandomGenerationMode = RandomGenerationModeFormat.Circular;
+                    //RFModelFilePath = directory + "\\FeatureVectorF1000.400.rf.model";
+                    //RFModelFilePath = directory + "\\RF.1000.100.3.model";
+                    RF_model_file_path_ = directory + "\\RF.demo.1000.800.1.model";
+                    num_classes_ = 3;
+                    break;
                
             }
         }
@@ -230,9 +246,9 @@ namespace FeatureExtractionLib
             myGPU_ = new GPUCompute(); 
             
             // change the number of tree
-            decisionForest.ntrees = 3;
+            //decisionForest.ntrees = 3;
 
-            int[] new_trees;
+            //int[] new_trees;
             // Prune the random forest, change trees_int_
             PruneRFModel();
             
@@ -260,6 +276,7 @@ namespace FeatureExtractionLib
             #region prune
             int[] new_trees;
             // Prune the tree            
+            Debug.WriteLine("Start pruning");
             new_trees = new int[trees_int_.Length];
             PruneTrees(ref new_trees, trees_int_, 20, decisionForest.ntrees);
             trees_int_ = new_trees;
@@ -404,6 +421,12 @@ namespace FeatureExtractionLib
         // Helper, give a distribution of the labels in a given node
         private void HelperFindLablesInTree(int[] tree, int index, int offset, int[] y, int explored_depth) {
             // is a leaf
+            // if the depth is super long, make the prediction as background
+            if (explored_depth > kMaxDepth)
+            {
+                y[0]++;
+                return;
+            }
             if (tree[index] == -1)
             {
                 y[tree[index + 1]]++;

@@ -143,6 +143,10 @@ namespace ColorGlove
         private Ref<bool> predict_on_enable_ref_;
         private Ref<bool> feature_extract_on_enable_ref_;
         private Ref<bool> overlay_start_ref_;
+        
+        // for density-based pooling
+        public int radius_;
+        public double density_; 
         #endregion
 
         public Processor(Manager.ProcessorModeFormat processor_mode, MainWindow main_window_controller)
@@ -256,7 +260,8 @@ namespace ColorGlove
             //FeatureExtraction.ModeFormat MyMode = FeatureExtraction.ModeFormat.F1000; 
             if (processor_mode_ == Manager.ProcessorModeFormat.Michael)
             {
-                FeatureExtraction.ModeFormat MyMode = FeatureExtraction.ModeFormat.Blue;
+                //FeatureExtraction.ModeFormat MyMode = FeatureExtraction.ModeFormat.Blue;
+                FeatureExtraction.ModeFormat MyMode = FeatureExtraction.ModeFormat.Demo1000;
                 Feature = new FeatureExtractionLib.FeatureExtraction(MyMode);
             }
             else
@@ -1020,7 +1025,7 @@ namespace ColorGlove
                 overlay_start_ref_, kNoOverlay, overlay_bitmap_bits_, kEmptyOverlay,
                 Feature, predict_output_, predict_labels_,
                 all_sockets_, pipeline,
-                HandGestureValue, RangeModeValue, pool_, bitmap_bits_copy_);
+                HandGestureValue, RangeModeValue, pool_, bitmap_bits_copy_, radius_, density_);
         }
 
        public void update(KinectData data)

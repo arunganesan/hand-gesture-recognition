@@ -14,5 +14,9 @@
         <TextBlock Canvas.Left="1485" Canvas.Top="0" Height="480" Name="textBlockDepth" Text="Per Pixel Classification using GPU" Width="201" TextWrapping="Wrap" FontSize="30" />
         <TextBlock Canvas.Left="1485" Canvas.Top="138" FontSize="25" Height="70" Name="depthImageLabel" Text="Hahaha" TextWrapping="Wrap" Width="178" />
         <TextBlock Canvas.Left="12" Canvas.Top="690" FontSize="25" Height="70" Name="poolImageLabel" Text="Hahaha" TextWrapping="Wrap" Width="178" />
+        <Slider Canvas.Left="21" Canvas.Top="822" Height="30" Name="Radius" Width="135" Value="10" Maximum="100" Minimum="1" SmallChange="1" FontSize="20" IsSnapToTickEnabled="True" IsSelectionRangeEnabled="True" IsMoveToPointEnabled="True" ValueChanged="RadiusValueChanged" />
+        <TextBlock Canvas.Left="12" Canvas.Top="765" FontSize="25" Height="52" Name="radiusText" Text="Radius" TextWrapping="Wrap" Width="178" />
+        <TextBlock Canvas.Left="21" Canvas.Top="880" FontSize="25" Height="31" Name="densityText" Text="Density" TextWrapping="Wrap" Width="144" />
+        <Slider Canvas.Left="21" Canvas.Top="917" FontSize="20" Height="30" IsMoveToPointEnabled="True" IsSelectionRangeEnabled="True" IsSnapToTickEnabled="True" Maximum="100" Minimum="1" Name="Density" Value="91" Width="135" SelectionEnd="100" SmallChange="1" SelectionStart="0" ValueChanged="DensityValueChanged" />
     </Canvas>
 </Window>

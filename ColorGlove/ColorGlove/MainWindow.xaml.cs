@@ -30,8 +30,8 @@ namespace ColorGlove
         private Manager m;
         public MainWindow()
         {
-            InitializeComponent();
             SetContent.SetMainWindowControler(this);
+            InitializeComponent();
             // test
             SetContent.SetMetaInformation("Hi!!");
             m = new Manager(this);
@@ -54,6 +54,22 @@ namespace ColorGlove
                 m.AutoRange();
             else if (e.Key == Key.P)
                 m.Pool();
+        }
+
+        private void RadiusValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            SetContent.SetRadiusText(String.Format("radius: {0}",Radius.Value.ToString()));
+            if (m != null)
+                m.setRadius((int)Radius.Value);
+            //            Console.WriteLine("radius: {0}", Radius.Value.ToString());
+        }
+         private void DensityValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            double density = (Density.Value/100);
+            SetContent.SetDensityText(String.Format("density: {0}", density ));
+           if (m != null)
+             m.setDensity(density);
+             //            Console.WriteLine("radius: {0}", Radius.Value.ToString());
         }
     }
 }

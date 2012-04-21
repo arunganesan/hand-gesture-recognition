@@ -47,6 +47,8 @@ namespace ColorGlove
             processor = new Processor(processor_mode_, parent);
             processor.lower = 100;
             processor.upper = 1000;
+            setDensity(0.91);
+            setRadius(10);
             //    Image image = processors[i].getImage();
             //    parent.mainContainer.Children.Add(image);
             #endregion
@@ -129,6 +131,16 @@ namespace ColorGlove
             #endregion
             // why using a new thread? (Michael)
             poller = new Thread(new ThreadStart(this.poll));
+        }
+
+        public void setRadius(int radius)
+        {
+            processor.radius_ = radius;
+        }
+
+        public void setDensity(double density)
+        {
+            processor.density_ = density;
         }
 
         public void start()

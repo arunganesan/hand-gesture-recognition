@@ -40,6 +40,8 @@ namespace ColorGlove
         public float[] predict_output_;
         public int[] predict_labels_;
         public int[] pool_;
+        public int radius_;
+        public double density_;
 
         public List<IWebSocketConnection> all_sockets_;
 
@@ -59,7 +61,7 @@ namespace ColorGlove
             FeatureExtractionLib.FeatureExtraction feature, float[] predict_output_, int[] predict_labels_,
             List<IWebSocketConnection> all_sockets_,
             Filter.Step[] pipeline,
-            HandGestureFormat hand_gesture_value_, RangeModeFormat range_mode_value_, int[] pool, byte[] bitmap_bits_copy)
+            HandGestureFormat hand_gesture_value_, RangeModeFormat range_mode_value_, int[] pool, byte[] bitmap_bits_copy, int radius, double density)
         {
             this.crop = crop;
             this.crop_values = crop_values;
@@ -97,6 +99,9 @@ namespace ColorGlove
             this.range_mode_value_ = range_mode_value_;
 
             this.pool_ = pool;
+            this.radius_ = radius;
+            this.density_ = density;
+
         }
     }
 }
