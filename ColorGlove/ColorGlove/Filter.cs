@@ -208,7 +208,7 @@ namespace ColorGlove
             /************************************/
             /* CHANGE THIS WHEN SAVING IMAGES   */
             /************************************/
-            state.hand_gesture_value_ = HandGestureFormat.Fist;
+            state.hand_gesture_value_ = HandGestureFormat.CloseHand;
             /************************************/
             /*                                  */
             /************************************/
@@ -219,7 +219,7 @@ namespace ColorGlove
             Debug.Assert(color_match_index != -1 && this_index > color_match_index, "ColorMatch must precede this step in the pipeline.");
 
             var directory = "D:\\gr\\training\\blue\\" + state.hand_gesture_value_ + state.range_mode_value_;
-            //var directory = "..\\..\\..\\Data" + "\\" + HandGestureValue + RangeModeValue;  // assume the directory exist
+            //var directory = "..\\..\\..\\Data" + "\\" + state.hand_gesture_value_ + state.range_mode_value_;  // assume the directory exist
             TimeSpan t = (DateTime.UtcNow - new DateTime(1970, 1, 1));
             string filename = t.TotalSeconds.ToString();
 

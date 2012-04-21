@@ -73,16 +73,25 @@ namespace ColorGlove
                 //processors[0].updatePipeline(Filter.Step.ColorMatch);
                 //processors[1].SetTestModule(Processor.ShowExtractedFeatureFormat.PredictOnePixelCPU | Processor.ShowExtractedFeatureFormat.ShowTransformedForOnePixel); // 
                 // one should call SetTestModule to active the FeatureExtractionLib
-                processors[1].SetTestModule(Processor.ShowExtractedFeatureFormat.PredictAllPixelsGPU); 
+                //processors[1].SetTestModule(Processor.ShowExtractedFeatureFormat.PredictAllPixelsGPU); 
+                processors[1].SetTestModule(Processor.ShowExtractedFeatureFormat.ShowTransformedForOnePixel);
                 processors[1].updatePipeline(
                     // Show the rgb image
                     // Filter.Step.CopyColor
-                    // Show the depth image                                         
-                                            Filter.Step.CopyDepth,
-                                            Filter.Step.EnablePredict,
-                                            Filter.Step.PredictOnEnable,
+                    // Show the depth image 
+                    Filter.Step.PaintWhite,
+                    Filter.Step.Crop,
+                    Filter.Step.PaintGreen,
+                    Filter.Step.CopyDepth,
+                    //Filter.Step.MatchColors,
+                    //Filter.Step.FeatureExtractOnEnable,
+                    Filter.Step.ShowOverlay
+
+
+                                            //Filter.Step.EnablePredict,
+                                            //Filter.Step.PredictOnEnable,
                     // Show overlap offest
-                                            Filter.Step.ShowOverlay
+                                            //Filter.Step.ShowOverlay
                     // Show Mapped Depth Using RGB
                     // Filter.Step.PaintWhite,
                     // Filter.Step.MappedDepth

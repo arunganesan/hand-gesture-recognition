@@ -104,12 +104,12 @@ namespace FeatureExtractionLib
             SetMode(setMode);
             
              
-            LoadRFModel();
+            //LoadRFModel();
             RFfeatureVector = new double[numOfOffsetPairs];
             RFfeatureVectorShort = new short[numOfOffsetPairs];
             xPU_mode_ = to_set_xPU_mode;
             if (xPU_mode_ == CPUorGPUFormat.GPU) {
-                InitGPU();
+                //InitGPU();
             }
             
         }
@@ -127,7 +127,7 @@ namespace FeatureExtractionLib
                     traningFilename = "Maize";
                     RandomGenerationMode = RandomGenerationModeFormat.Default;
                     break;                
-                case ModeFormat.Blue:       
+                case ModeFormat.Blue:
                     numOfOffsetPairs = 2000;
                     uMin = 500;
                     uMax = 40 * 2000;
