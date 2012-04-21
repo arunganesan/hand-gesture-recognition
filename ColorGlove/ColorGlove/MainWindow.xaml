@@ -6,10 +6,13 @@
         <Image Canvas.Left="195" Canvas.Top="0" Height="480" Name="colorImage" Stretch="Fill" Width="640" />
         <Image Canvas.Left="840" Canvas.Top="0" Height="480" Name="depthImage" Stretch="Fill" Width="640" />
         <Image Canvas.Left="195" Canvas.Top="485" Height="480" Name="poolImage" Stretch="Fill" Width="640" />
-        <Label Canvas.Left="12" Canvas.Top="12" Content="Color Image" Height="70" Name="colorImageLabel" Width="178" FontSize="25" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" />
+        <TextBlock Canvas.Left="12" Canvas.Top="12" Text="Color Image" Height="70" Name="colorImageLabelConstant" Width="178" FontSize="25" TextWrapping="Wrap" />
+        <TextBlock Canvas.Left="12" Canvas.Top="88" Text="Hahaha" Height="70" Name="colorImageLabel" Width="178" FontSize="25" TextWrapping="Wrap" />
         <TextBlock Canvas.Left="12" Canvas.Top="485" Text="Pooling using CPU 
-                   (Density-based Clustering)" Height="168" Name="poolImageLabel" Width="178" FontSize="25" TextWrapping="Wrap" />
+                   (Density-based Clustering)" Height="168" Name="poolImageLabelConstant" Width="178" FontSize="25" TextWrapping="Wrap" />
         <Label Canvas.Left="888" Canvas.Top="530" Content="Hello World" Height="360" Name="MetaLabel" Width="592"  FontSize="40" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" BorderThickness="2" />
         <TextBlock Canvas.Left="1485" Canvas.Top="0" Height="480" Name="textBlockDepth" Text="Per Pixel Classification using GPU" Width="201" TextWrapping="Wrap" FontSize="30" />
+        <TextBlock Canvas.Left="1485" Canvas.Top="138" FontSize="25" Height="70" Name="depthImageLabel" Text="Hahaha" TextWrapping="Wrap" Width="178" />
+        <TextBlock Canvas.Left="12" Canvas.Top="690" FontSize="25" Height="70" Name="poolImageLabel" Text="Hahaha" TextWrapping="Wrap" Width="178" />
     </Canvas>
 </Window>

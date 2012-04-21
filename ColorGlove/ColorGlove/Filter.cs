@@ -55,16 +55,18 @@ namespace ColorGlove
         // Copies over the RGB value to the buffer.
         public static void CopyColor(ProcessorState state)
         {
-            for (int x = state.crop.Value.X; x <= state.crop.Value.Width + state.crop.Value.X; x++)
+            //for (int x = state.crop.Value.X; x <= state.crop.Value.Width + state.crop.Value.X; x++)
+            //{
+             //   for (int y = state.crop.Value.Y; y <= state.crop.Value.Height + state.crop.Value.Y; y++)
+            for (int i = 0; i < 640*480; i++)
             {
-                for (int y = state.crop.Value.Y; y <= state.crop.Value.Height + state.crop.Value.Y; y++)
-                {
                     // For performance
                     //int idx = Util.toID(x, y, width, height, kColorStride);
-                    int idx = (y * 640 + x)*4;
-                    Array.Copy(state.rgb, idx, state.bitmap_bits_, idx, kColorStride);
-                }
-            }
+  //                  int idx = (y * 640 + x)*4;
+                int idx = i * 4;    
+                Array.Copy(state.rgb, idx, state.bitmap_bits_, idx, kColorStride);
+             }
+           // }
         }
 
         public static void CheckpointCurrentBitmap(ProcessorState state)
@@ -224,14 +226,17 @@ namespace ColorGlove
                     {
                 
                 */ // int idx = Util.toID(x, y, width, height, kColorStride);
-               for ( int idx = 0; idx < 640*480*4; idx++)
-                        if (state.overlay_bitmap_bits_[idx] != state.kNoOverlay)
-                        {
-                            state.bitmap_bits_[idx] = (byte)state.overlay_bitmap_bits_[idx];
-                            state.bitmap_bits_[idx + 1] = (byte)state.overlay_bitmap_bits_[idx + 1];
-                            state.bitmap_bits_[idx + 2] = (byte)state.overlay_bitmap_bits_[idx + 2];
-                            state.bitmap_bits_[idx + 3] = (byte)state.overlay_bitmap_bits_[idx + 3];
-                        }
+                for (int i = 0; i < 640 * 480; i++)
+                {
+                    int idx = i * 4;
+                    if (state.overlay_bitmap_bits_[idx] != state.kNoOverlay)
+                    {
+                        state.bitmap_bits_[idx] = (byte)state.overlay_bitmap_bits_[idx];
+                        state.bitmap_bits_[idx + 1] = (byte)state.overlay_bitmap_bits_[idx + 1];
+                        state.bitmap_bits_[idx + 2] = (byte)state.overlay_bitmap_bits_[idx + 2];
+                        state.bitmap_bits_[idx + 3] = (byte)state.overlay_bitmap_bits_[idx + 3];
+                    }
+                }
             }
         }
 

@@ -60,6 +60,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="SetContent.cs" />
     <Compile Include="DataFeed.cs" />
     <Compile Include="Dbscan.cs" />
     <Compile Include="Filter.cs" />

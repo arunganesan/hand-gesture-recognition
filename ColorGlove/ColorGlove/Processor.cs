@@ -149,6 +149,7 @@ namespace ColorGlove
         {
 
             Debug.WriteLine("Start processor contruction");
+
             //this.manager = manager;
             processor_mode_ = processor_mode; 
             width = 640; height = 480;
@@ -161,6 +162,8 @@ namespace ColorGlove
             image_.Height = height;
              */ 
             depth_label_ = new byte[width * height];
+
+            //main_window_controller.MetaLabel.Content = "Hey what's {0}";
 
             crop_values_ = new System.Drawing.Rectangle(
                 Properties.Settings.Default.CropOffset.X,
@@ -1044,43 +1047,72 @@ namespace ColorGlove
            ExecutionStartTime_new = DateTime.Now;
 
            #region Color Image
+           DateTime ExecutionStartTime;
+           DateTime ExecutionStopTime;
+           TimeSpan ExecutionTime;
+           ExecutionStartTime = DateTime.Now;
+           
            process(Filter.Step.CopyColor);
            // pontentially dangerous due to creating a new thread here. This is because bitmap_bits will be used later
+
            color_bitmap_.Dispatcher.Invoke(new Action(() =>
+           //           color_bitmap_.Dispatcher.BeginInvoke(new Action(() =>
             {
                 color_bitmap_.WritePixels(new Int32Rect(0, 0, color_bitmap_.PixelWidth, color_bitmap_.PixelHeight),
                     bitmap_bits_, color_bitmap_.PixelWidth * sizeof(int), 0);
             }));
 
+           ExecutionStopTime = DateTime.Now;
+           ExecutionTime = ExecutionStopTime - ExecutionStartTime;
+           SetContent.SetColorImageLabel(String.Format("Use {0} ms", Math.Round(ExecutionTime.TotalMilliseconds)));
            #endregion
            
            #region Depth Image
+           ExecutionStartTime = DateTime.Now;
+
            process(Filter.Step.CopyDepth);
            process(Filter.Step.CheckpointCurrentBitmap);
            process(Filter.Step.EnablePredict);
            process(Filter.Step.PerPixelClassificationOnEnable);
            process(Filter.Step.ShowOverlay);
+
            depth_bitmap_.Dispatcher.Invoke(new Action(() =>
+           //           depth_bitmap_.Dispatcher.BeginInvoke(new Action(() =>
            {
                depth_bitmap_.WritePixels(new Int32Rect(0, 0, depth_bitmap_.PixelWidth, depth_bitmap_.PixelHeight),
                    bitmap_bits_, depth_bitmap_.PixelWidth * sizeof(int), 0);
            }));
+           
+           ExecutionStopTime = DateTime.Now;
+           ExecutionTime = ExecutionStopTime - ExecutionStartTime;
+           SetContent.SetDepthImageLabel(String.Format("Use {0} ms", Math.Round(ExecutionTime.TotalMilliseconds) ));
            #endregion
 
            #region Pool Image
+           ExecutionStartTime = DateTime.Now;
+
            process(Filter.Step.RestoreBitmap);
            process(Filter.Step.PoolingOnPerPixelClassification);
            process(Filter.Step.ShowOverlay);
+           
            pool_bitmap_.Dispatcher.Invoke(new Action(() =>
+           //pool_bitmap_.Dispatcher.BeginInvoke(new Action(() =>
            {
                pool_bitmap_.WritePixels(new Int32Rect(0, 0, pool_bitmap_.PixelWidth, pool_bitmap_.PixelHeight),
                    bitmap_bits_, pool_bitmap_.PixelWidth * sizeof(int), 0);
            }));
+           
+           
+           ExecutionStopTime = DateTime.Now;
+           ExecutionTime = ExecutionStopTime - ExecutionStartTime;
+           SetContent.SetPoolImageLabel(String.Format("Use {0} ms", Math.Round(ExecutionTime.TotalMilliseconds) ));
            #endregion
+
            ExecutionStopTime_new = DateTime.Now;
            ExecutionTime_new = ExecutionStopTime_new - ExecutionStartTime_new;
            Console.WriteLine("Use {0} ms for processing steps", ExecutionTime_new.TotalMilliseconds.ToString());
-           
+           SetContent.SetMetaInformation(String.Format("Use {0} ms for everything", Math.Round(ExecutionTime_new.TotalMilliseconds) ));
+ 
            /* 
            lock (bitmap_lock_)
             {

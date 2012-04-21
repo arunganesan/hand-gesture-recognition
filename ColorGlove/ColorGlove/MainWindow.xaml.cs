@@ -31,6 +31,9 @@ namespace ColorGlove
         public MainWindow()
         {
             InitializeComponent();
+            SetContent.SetMainWindowControler(this);
+            // test
+            SetContent.SetMetaInformation("Hi!!");
             m = new Manager(this);
             m.start();
         }
