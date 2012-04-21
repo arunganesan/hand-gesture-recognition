@@ -5874,7 +5874,7 @@ INPUT PARAMETERS:
     NPoints     -   dataset size, NPoints>=0
     NVars       -   number of independent variables, NVars>=1
 
-бшундмше оюпюлерпш:
+бшундмше оюпюлерп?
     Info        -   return code:
                     * -4, if SVD subroutine haven't converged
                     * -1, if wrong parameters has been passed (NPoints<0,
@@ -22333,7 +22333,7 @@ INPUT PARAMETERS:
     NPoints     -   dataset size, NPoints>=0
     NVars       -   number of independent variables, NVars>=1
 
-бшундмше оюпюлерпш:
+бшундмше оюпюлерп?
     Info        -   return code:
                     * -4, if SVD subroutine haven't converged
                     * -1, if wrong parameters has been passed (NPoints<0,

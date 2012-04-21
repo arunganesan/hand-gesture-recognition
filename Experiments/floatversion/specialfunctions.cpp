@@ -1731,7 +1731,7 @@ ACCURACY:
 arithmetic   domain     # trials      peak         rms
    IEEE       0,1        30000       2.5e-16     6.8e-17
 
-Алгоритм взят из библиотеки Cephes
+Алгоритм взя?из библиотеки Cephes
 *************************************************************************/
 float ellipticintegralkhighprecision(const float m1)
 {
@@ -7436,7 +7436,7 @@ ACCURACY:
 arithmetic   domain     # trials      peak         rms
    IEEE       0,1        30000       2.5e-16     6.8e-17
 
-Алгоритм взят из библиотеки Cephes
+Алгоритм взя?из библиотеки Cephes
 *************************************************************************/
 float ellipticintegralkhighprecision(float m1, ae_state *_state)
 {

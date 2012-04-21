@@ -32,11 +32,11 @@ namespace TestModuleNamespace
             Console.WriteLine("Hello World");
             TestModule FeatureExtractionTest = new TestModule();
             //FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.F1000);
-            FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.F2000);
+            //FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.F2000);
             //FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.F3000);
             //FeatureExtractionTest.TestGenerateOffset();
 
-            FeatureExtractionTest.TestGenerateFeatures("1150");
+            //FeatureExtractionTest.TestGenerateFeatures("1150");
 
             // Generating feature files for different training set sizes
             /*
@@ -88,7 +88,7 @@ namespace TestModuleNamespace
             //FeatureExtractionTest.TestTransformTree();            
 
             // Test on pruning trees
-            //FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.Blue);
+            FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.Demo1000);
             //FeatureExtractionTest.TestPruneTree();
 
             // Real task on pruning trees            
@@ -459,10 +459,10 @@ namespace TestModuleNamespace
             //Default direcotry: "..\\..\\..\\Data";
             // To setup the mode, see README in the library
             FeatureExtraction.ModeFormat MyMode = mode;
-            dir = "D:\\gr\\training\\blue\\";
+            //dir = "D:\\gr\\training\\blue\\";
             
             //feature_lib_obj_ = new FeatureExtraction(MyMode, dir);
-           
+          /* 
             const int kMaxStackSize = 1000000;
             //Thread oThread = new Thread(new ThreadStart(this.IAmFoo), kMaxStackSize);
             Thread oThread = new Thread(delegate()
@@ -472,7 +472,9 @@ namespace TestModuleNamespace
             oThread.Start();
             // Start the thread            
             oThread.Join();
-            //feature_lib_obj_ = new FeatureExtraction(MyMode, dir);
+           */
+           feature_lib_obj_ = new FeatureExtraction(MyMode, dir);
+           Debug.WriteLine("Sucessfully read model");
         }
 
         private void TestGenerateFeatures(string training_set_size)
