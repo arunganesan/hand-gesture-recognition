@@ -39,8 +39,8 @@ namespace TestModuleNamespace
             //FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.F2000);
             //FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.F3000);
             
-            FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.Range20);
-            //FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.Range40);
+            //FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.Range20);
+            FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.Range40);
             //FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.Range60);
             //FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.Range100);
             //FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.Range200);
