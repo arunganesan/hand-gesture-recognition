@@ -891,7 +891,8 @@ namespace FeatureExtractionLib
                 int countBackgounrdLabel = 0;
                 for (int i = 0; i < width * height; i++)
                 {
-                    // Michael: I think here is the place to add a virtual wall
+                    // Michael's advice: I think here is the place to add a virtual wall
+                    // Example: depth[i] = min(depth[i], 2000);
                     depth[i] = (short)int.Parse(parts[2 * i]);                  
                     label[i] = (byte)int.Parse(parts[2 * i + 1]);
 

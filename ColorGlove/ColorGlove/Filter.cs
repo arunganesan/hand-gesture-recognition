@@ -350,7 +350,8 @@ namespace ColorGlove
         // Scales all values in the depth image by the bitmaskshift.
         private static void AdjustDepth(ProcessorState state)
         {
-            // Michael: Can add virtual wall here
+            // Michael's plan: Can add virtual wall here
+            // depth[i] = min(depth[i], 2000)
             for (int i = 0; i < state.depth.Length; i++)
                 state.depth[i] = (short)(state.depth[i] >> DepthImageFrame.PlayerIndexBitmaskWidth);
         }

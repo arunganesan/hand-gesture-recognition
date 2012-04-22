@@ -74,16 +74,17 @@ namespace ColorGlove
                 //processors[1].SetTestModule(Processor.ShowExtractedFeatureFormat.PredictOnePixelCPU | Processor.ShowExtractedFeatureFormat.ShowTransformedForOnePixel); // 
                 // one should call SetTestModule to active the FeatureExtractionLib
 
-                processors[1].setFeatureExtraction(Processor.ShowExtractedFeatureFormat.PredictAllPixelsGPU); 
+                //processors[1].setFeatureExtraction(Processor.ShowExtractedFeatureFormat.PredictAllPixelsGPU); 
+                processors[1].setFeatureExtraction(Processor.ShowExtractedFeatureFormat.None); 
                 processors[1].updatePipeline(
                     // Show the rgb image
                     // Filter.Step.CopyColor
                     // Show the depth image                                         
-                                            Filter.Step.CopyDepth,
-                                            Filter.Step.EnablePredict,
-                                            Filter.Step.PerPixelClassificationOnEnable,
-                                            Filter.Step.PoolingOnPerPixelClassification,
-                                            Filter.Step.ShowOverlay
+                                            Filter.Step.CopyDepth
+                                //            Filter.Step.EnablePredict,
+                                //            Filter.Step.PerPixelClassificationOnEnable,
+                                //            Filter.Step.PoolingOnPerPixelClassification,
+                                //            Filter.Step.ShowOverlay
 
                     // Show Mapped Depth Using RGB
                     // Filter.Step.PaintWhite,

@@ -640,6 +640,9 @@ namespace ColorGlove
             System.Windows.Point click_position = e.GetPosition(image_);
             int baseIndex = ((int)click_position.Y * 640 + (int)click_position.X) * 4;
             Console.WriteLine("(x,y): (" + click_position.X + ", " + click_position.Y + ") RGB: {" + bitmap_bits_[baseIndex + 2] + ", " + bitmap_bits_[baseIndex + 1] + ", " + bitmap_bits_[baseIndex] + "}");
+            int _depthIndex = (int)click_position.Y * 640 + (int)click_position.X;
+            int _depthVal = depth_[_depthIndex] >> DepthImageFrame.PlayerIndexBitmaskWidth;
+            Console.WriteLine("depth: {0}", _depthVal);
             
             if ((ShowExtractedFeatureMode & ShowExtractedFeatureFormat.Extract30FeacturesForEveryPixel) == ShowExtractedFeatureFormat.Extract30FeacturesForEveryPixel)
             {
