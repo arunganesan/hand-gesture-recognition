@@ -47,8 +47,8 @@ namespace TestModuleNamespace
             
             //FeatureExtractionTest.TestGenerateOffset();
 
-            //FeatureExtractionTest.TestGenerateFeatures("demo.test");
-            //FeatureExtractionTest.TestGenerateFeatures("demo.800");
+            FeatureExtractionTest.TestGenerateFeatures("demo.test");
+            FeatureExtractionTest.TestGenerateFeatures("demo.943");
             FeatureExtractionTest.TestGenerateFeatures("Near");
             
             //FeatureExtractionTest.TestGenerateFeatures("large.test");

@@ -892,10 +892,13 @@ namespace FeatureExtractionLib
                 for (int i = 0; i < width * height; i++)
                 {
                     depth[i] = (short)int.Parse(parts[2 * i]);
-
-                    depth[i] = Math.Min(depth[i], (short)1500);
-                    
                     label[i] = (byte)int.Parse(parts[2 * i + 1]);
+
+                    if (depth[i] > (short)1500)
+                    {
+                        depth[i] = (short)1500;
+                        label[i] = 0;
+                    }
 
                     // XXX: This got screwed up! Somehow the label that is saved 
                     // to the image file is *not* the right label. It is always
