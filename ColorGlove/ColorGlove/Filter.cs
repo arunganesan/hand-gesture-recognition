@@ -283,7 +283,7 @@ namespace ColorGlove
             foreach (var gesture in gestures)
             {
                 DrawCrosshairAt(gesture, state);
-            //    SendToSockets(gesture, state);
+                SendToSockets(gesture, state);
             }
            // DBSCAN.Test();
         }
