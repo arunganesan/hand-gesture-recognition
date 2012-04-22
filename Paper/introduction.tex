@@ -16,11 +16,25 @@ Our system is designed to maximize user experience in the sense that the user sh
 \textbf{Arbitrary gestures} Our system should be able to easily incorporate new types of gestures that any developers would like to add. By training new gestures, the system can recognize arbitrary gestures, for example the American sign language. 
 
 \subsection{Main Ideas}
-Our system would not be possible without the use of Microsoft Kinect for PC, which we are probably among the first to obtain it in February 2012. Kinect is a multi-purpose sensor providing RGB camera, depth camera and audio sensor. The SDK has offered skeletal recognition, which is far away from hand gesture recognition. The SDK also provides raw pixels for the RGB image and depth image on a maximum frame rate of 30Hz. We use the depth image pixels for gesture recognition and both RGB and depth image for generating training samples. The depth image is the key factor that distinguishes our system most existing systems. The advantage of the depth image is that it offers an addition dimension, i.e. depth that is not present in the RGB image.      
+Our system would not be possible without the use of Microsoft Kinect for PC, which we are probably among the first to obtain it in February 2012. Kinect is a multi-purpose sensor including RGB camera, depth camera and audio sensor. The SDK has offered skeletal recognition, which is however far away from hand gesture recognition. The SDK also provides raw pixels for the RGB image and depth image on a maximum frame rate at 30Hz. We use the depth image pixels for gesture recognition and both RGB and depth image for generating training samples. The depth image is the key factor that distinguishes our system from most existing systems which mostly use RGB camera. The advantage of the depth image is that it offers an addition dimension, i.e. depth of each pixel that is not present in the RGB image. An illustrating example would be an object and its background has similar color but the depth of the two is drastically different. 
+
+Our systems adopt a data-driven approach: machine learning as opposed to hand-crafted rule-based systems. The adoption of machine learning transfers the human intelligent efforts from design rules/algorithms to design informative features. With the features on labeled data, machine learning allows computers to learn the rule/algorithm automatically. The key advantages of using machine learning in our system    
+are (1) easy to incorporate developer-defined gestures: developers just need to feed the system with the gesture images to be trained rather than deriving new algorithms (2) robust to various environments such as camera position, background, various size of the hands: developers just need to generate the gestures on various environments without worrying about anything more. 
+
+In a high-level overview, the system is separated into two parts: training and real-time prediction. Only the real-time prediction component is seen by the users. In the training component, we use color gloves to generate massive labeled data to the depth image. Random forest is trained to achieve both real-time performance and high accuracy. In the real-time prediction component, each pixel in the depth image is predicted the type of the gesture using GPU and then the prediction outputs are pooled to propose the final position and type of a gesture. [Need to elaborate more?] 
+
+
 
 \subsection{Contributions}
-* A data-driven approach for hand gesture recognition
-* An computational insight about random forest and support vector machine (SVM)
+
+We summarize our contributions as follows:
+
+\textbf{A system for real-time hand gesture recognition.} We design and implement a complete real-time hand gesture recognition system based on machine learning. The system can allow other application to read the 
+
+\textbf{An computational insight about random forest and support vector machine (SVM).} There seems to be no literature in comparing the SVM and random forest in a computational perspective. We provide an in-depth comparison in the sense of performance rather than merely predictability as done in most machine learning literature. 
+
+\textbf{Extensive experimental evaluations of the system.} We conduct extensive experiments evaluation on the effectiveness of the machine learning approach, i.e., random forest we use in a large space of parameters. Interesting results reveals a deeper understanding of random forest. 
 
 \subsection{Related Work}
- 
+
+There are two main techniques in hand gesture recognition - appearance based and model based. These are akin to probabilistic models of classification and generative models of classification respectively. \textbf{Appearance based} approaches read the pixels from the camera and build classifiers to label that as belonging to a finite set of classes. The main limitation of this technique is that the set of labels is finite and fixed ahead of time. The advantage of appearance based approaches is their implementation is often extremely fast and therefore suited for situations where live classification is important. Examples of appearance based techniques can be found in \cite{shotton2011, wang2009}. \textbf{Model based} approaches start with a set of hypotheses of the final classification based on rules of the object being classified. For instance, in the case of hand gestures a hypothesis can be a particular orientation of the joints.  An advantage here is that the hypotheses can be generated from an infinite space of possible classifications. The main disadvantage of model-based techniques is that they are often computationally expensive. In addition, model-based approaches tend to be very complex. An example of a model based technique can be found in \cite{oikonomidis2011}.

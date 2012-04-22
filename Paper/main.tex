@@ -41,7 +41,7 @@ Hello World
 \input{introduction}
 
 \section{System}
-\subsection{Overview}
+\subsection{System Architecture}
 There are three main stages to our system. First is acquiring training samples using a colored glove. Second is training a classifier on the samples. Third is live prediction and pooling. 
 
 The approach is pixel-level classification, and future pooling. The motivation for pixel-level classification is the potential of parallelizing the task and using the GPU to achieve real-time prediction. 
@@ -68,12 +68,17 @@ We aimed for real-time prediction of the hand gesture. The trained model from th
 \item k-meniods -- can be used to support multiple hands at once. and can be used to filter out the noise.
 \end{itemize}
 
+\input{Implementation}
+
 \section{Experimental results}
 \subsection{GPU performance enhancements}
 \subsection{Classification algorithm experiments}
 
-\section{Experience}
 
+
+\section{Experience}
+\subsection{Limitations}
+Our current system is not without limitations. First, the real-time prediction component cannot achieve a frame rate at 30Hz but at about 5Hz.
 \section{Conclusion}
 
 \bibliographystyle{unsrt}
