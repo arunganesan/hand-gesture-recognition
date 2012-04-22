@@ -1,13 +1,26 @@
 \section{Introduction}
-Natural user interface (NUI) has been regarded as a new way for human to interactive with machines. Among numerous NUIs which include multi-touch screen, eye tracking and many others, hand gesture seems to be one promising candidate. In this paper, we design and evaluate a novel hand gesture recognition system to demonstrate how much farther we are away from a actual production-level system. The reader should be noticed that we do not claim hand gesture is THE way user interface, and in fact there are some limitations such as users may feel fatigues (in )
+Natural user interface (NUI) is a new way for human to interactive with machines. Among numerous NUIs which include multi-touch screen, eye tracking and many others, hand gesture seems to be one promising candidate. In this paper, we design and evaluate a novel hand gesture recognition system to demonstrate how much farther we are away from a actual production-level system. The reader should be noticed that we do not claim hand gesture is THE way user interface, and in fact there are some limitations such as users may feel fatigues (in the movie Minority Report, Tom Cruise has to take breaks many time due to fatigue). Similar to many other new UI systems, we propose our system as one (maybe interesting) way to interact with the computer. We do not claim that the system would replace mouse and keyboard and we leave the usability problem to future research as building hand gesture recognition system alone is quite challenging. 
+
 
 \subsection{Design Goals}
-* Just hands
-* Real-time
-* No calibration
-* Accurate
+Our system is designed to maximize user experience in the sense that the user should not feel comfortable to use the system. Moreover, our system differs other existing systems in the following ways.
+
+\textbf{Just hands.} The users do not need any additional physical objects to use our systems. They just need to show up their hands. Many existing system such as [SixSense, MIT Minority Report, MIT color glove] require user to wear any gloves or markers  for the RGB camera to capture. We eliminate this since the user should not do anything more than showing their hands. 
+  
+\textbf{Real-time.} Our system should run smoothly on a modern machine with a graphical card not just high-end machines. The system should also recognize hand gesture in a high frame rate. Our desired frame rate 30Hz, although the current version has around 5Hz. Therefore in our design and implementation, we try our best to save every milliseconds. 
+
+\textbf{No calibration.} Our system should not require a new user to do anything to calibrate the system to be used to the user's shape or etc. 
+
+\textbf{Robust and Accurate} Our system should have an accurate estimation of where the users' hands are and what gestures they use. Moreover, the system should be insensitive to various background, user's location, camera position and other noise. 
+  
+\textbf{Arbitrary gestures} Our system should be able to easily incorporate new types of gestures that any developers would like to add. By training new gestures, the system can recognize arbitrary gestures, for example the American sign language. 
+
+\subsection{Main Ideas}
+Our system would not be possible without the use of Microsoft Kinect for PC, which we are probably among the first to obtain it in February 2012. Kinect is a multi-purpose sensor providing RGB camera, depth camera and audio sensor. The SDK has offered skeletal recognition, which is far away from hand gesture recognition. The SDK also provides raw pixels for the RGB image and depth image on a maximum frame rate of 30Hz. We use the depth image pixels for gesture recognition and both RGB and depth image for generating training samples. The depth image is the key factor that distinguishes our system most existing systems. The advantage of the depth image is that it offers an addition dimension, i.e. depth that is not present in the RGB image.      
+
 \subsection{Contributions}
 * A data-driven approach for hand gesture recognition
-* 
+* An computational insight about random forest and support vector machine (SVM)
+
 \subsection{Related Work}
  
