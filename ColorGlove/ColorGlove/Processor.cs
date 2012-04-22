@@ -261,7 +261,8 @@ namespace ColorGlove
             if (processor_mode_ == Manager.ProcessorModeFormat.Michael)
             {
                 //FeatureExtraction.ModeFormat MyMode = FeatureExtraction.ModeFormat.Blue;
-                FeatureExtraction.ModeFormat MyMode = FeatureExtraction.ModeFormat.Demo1000;
+                //FeatureExtraction.ModeFormat MyMode = FeatureExtraction.ModeFormat.Demo1000;
+                FeatureExtraction.ModeFormat MyMode = FeatureExtraction.ModeFormat.Demo3Trees1000Features;
                 Feature = new FeatureExtractionLib.FeatureExtraction(MyMode);
             }
             else
