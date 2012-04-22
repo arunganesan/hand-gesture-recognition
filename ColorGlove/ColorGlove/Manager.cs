@@ -73,6 +73,7 @@ namespace ColorGlove
                 //processors[0].updatePipeline(Filter.Step.ColorMatch);
                 //processors[1].SetTestModule(Processor.ShowExtractedFeatureFormat.PredictOnePixelCPU | Processor.ShowExtractedFeatureFormat.ShowTransformedForOnePixel); // 
                 // one should call SetTestModule to active the FeatureExtractionLib
+
                 processors[1].setFeatureExtraction(Processor.ShowExtractedFeatureFormat.PredictAllPixelsGPU); 
                 processors[1].updatePipeline(
                     // Show the rgb image
@@ -83,6 +84,7 @@ namespace ColorGlove
                                             Filter.Step.PerPixelClassificationOnEnable,
                                             Filter.Step.PoolingOnPerPixelClassification,
                                             Filter.Step.ShowOverlay
+
                     // Show Mapped Depth Using RGB
                     // Filter.Step.PaintWhite,
                     // Filter.Step.MappedDepth

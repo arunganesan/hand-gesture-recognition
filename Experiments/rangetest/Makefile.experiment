@@ -1,0 +1,62 @@
+range20:
+	nohup ./range 20 10 > nohup.range.20.10.out
+	nohup ./range 20 50 > nohup.range.20.50.out
+	nohup ./range 20 100 > nohup.range.20.100.out
+	nohup ./range 20 150 > nohup.range.20.150.out
+	nohup ./range 20 200 > nohup.range.20.200.out
+	nohup ./range 20 250 > nohup.range.20.250.out
+	nohup ./range 20 300 > nohup.range.20.300.out
+	nohup ./range 20 350 > nohup.range.20.350.out
+
+range40:
+	nohup ./range 40 10 > nohup.range.40.10.out
+	nohup ./range 40 50 > nohup.range.40.50.out
+	nohup ./range 40 100 > nohup.range.40.100.out
+	nohup ./range 40 150 > nohup.range.40.150.out
+	nohup ./range 40 200 > nohup.range.40.200.out
+	nohup ./range 40 250 > nohup.range.40.250.out
+	nohup ./range 40 300 > nohup.range.40.300.out
+	nohup ./range 40 350 > nohup.range.40.350.out
+
+range60:
+	nohup ./range 60 10 > nohup.range.60.10.out
+	nohup ./range 60 50 > nohup.range.60.50.out
+	nohup ./range 60 100 > nohup.range.60.100.out
+	nohup ./range 60 150 > nohup.range.60.150.out
+	nohup ./range 60 200 > nohup.range.60.200.out
+	nohup ./range 60 250 > nohup.range.60.250.out
+	nohup ./range 60 300 > nohup.range.60.300.out
+	nohup ./range 60 350 > nohup.range.60.350.out
+
+range100:
+	nohup ./range 100 10 > nohup.range.100.10.out
+	nohup ./range 100 50 > nohup.range.100.50.out
+	nohup ./range 100 100 > nohup.range.100.100.out
+	nohup ./range 100 150 > nohup.range.100.150.out
+	nohup ./range 100 200 > nohup.range.100.200.out
+	nohup ./range 100 250 > nohup.range.100.250.out
+	nohup ./range 100 300 > nohup.range.100.300.out
+	nohup ./range 100 350 > nohup.range.100.350.out
+
+range200:
+	nohup ./range 200 10 > nohup.range.200.10.out
+	nohup ./range 200 50 > nohup.range.200.50.out
+	nohup ./range 200 100 > nohup.range.200.100.out
+	nohup ./range 200 150 > nohup.range.200.150.out
+	nohup ./range 200 200 > nohup.range.200.200.out
+	nohup ./range 200 250 > nohup.range.200.250.out
+	nohup ./range 200 300 > nohup.range.200.300.out
+	nohup ./range 200 350 > nohup.range.200.350.out
+
+
+experiment.random:
+	./gesturetrain 1000 300 1
+	./gesturetrain 1000 300 1
+	./gesturetrain 1000 300 1
+	./gesturetrain 1000 300 1
+	./gesturetrain 1000 300 1
+	./gesturetrain 1000 300 1
+	./gesturetrain 1000 300 1
+	./gesturetrain 1000 300 1
+	./gesturetrain 1000 300 1
+	./gesturetrain 1000 300 1

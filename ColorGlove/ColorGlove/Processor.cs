@@ -55,7 +55,7 @@ namespace ColorGlove
         double[,] kMeans_clusters;
         int[] kMeans_assignments;
 
-        private RangeModeFormat RangeModeValue = RangeModeFormat.Default;
+        private RangeModeFormat RangeModeValue;
         private ShowExtractedFeatureFormat ShowExtractedFeatureMode = ShowExtractedFeatureFormat.None;
         // It seems not necessary to save the mapped result as byte[], byte should be enough.
         static private Dictionary<Tuple<byte, byte, byte>, byte> nearest_cache = new Dictionary<Tuple<byte, byte, byte>, byte>();         
@@ -191,6 +191,11 @@ namespace ColorGlove
             image_.MouseRightButtonUp += EndDrag;
 
             SetCentroidColorAndLabel();
+
+            if (manager.ProcessorMode == Manager.ProcessorModeFormat.Michael)
+                RangeModeValue = RangeModeFormat.Near;
+            else if (manager.ProcessorMode == Manager.ProcessorModeFormat.Arun)
+                RangeModeValue = RangeModeFormat.Default;
             
             FleckLog.Level = LogLevel.Debug;
             if (server == null)
@@ -530,6 +535,8 @@ namespace ColorGlove
             AddCentroid(147, 196, 210, targetLabel);
             AddCentroid(232, 242, 246, targetLabel);
 
+            AddCentroid(255, 255, 255, targetLabel);
+
 
             // For background color 
             AddCentroid(80, 80, 80, kBackgroundLabel);
@@ -633,9 +640,7 @@ namespace ColorGlove
             System.Windows.Point click_position = e.GetPosition(image_);
             int baseIndex = ((int)click_position.Y * 640 + (int)click_position.X) * 4;
             Console.WriteLine("(x,y): (" + click_position.X + ", " + click_position.Y + ") RGB: {" + bitmap_bits_[baseIndex + 2] + ", " + bitmap_bits_[baseIndex + 1] + ", " + bitmap_bits_[baseIndex] + "}");
-
-            return;
-
+            
             if ((ShowExtractedFeatureMode & ShowExtractedFeatureFormat.Extract30FeacturesForEveryPixel) == ShowExtractedFeatureFormat.Extract30FeacturesForEveryPixel)
             {
                 int depthIndex = (int)click_position.Y * 640 + (int)click_position.X;

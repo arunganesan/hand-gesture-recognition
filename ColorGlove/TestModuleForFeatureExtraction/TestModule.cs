@@ -31,26 +31,45 @@ namespace TestModuleNamespace
         {
             Console.WriteLine("Hello World");
             TestModule FeatureExtractionTest = new TestModule();
+            
+            //FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.Demo1000);
+            //FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.Demo2000);
+            
             //FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.F1000);
-            FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.F2000);
+            //FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.F2000);
             //FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.F3000);
+            
+            //FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.Range20);
+            //FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.Range40);
+            //FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.Range60);
+            //FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.Range100);
+            //FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.Range200);
+            
             //FeatureExtractionTest.TestGenerateOffset();
 
-            FeatureExtractionTest.TestGenerateFeatures("1150");
+            //FeatureExtractionTest.TestGenerateFeatures("demo.test");
+            //FeatureExtractionTest.TestGenerateFeatures("demo.800");
+            //FeatureExtractionTest.TestGenerateFeatures("Near");
+            
+            //FeatureExtractionTest.TestGenerateFeatures("large.test");
+            //FeatureExtractionTest.TestGenerateFeatures("large.689");
+            
+            //FeatureExtractionTest.TestGenerateFeatures("1000");
+            //FeatureExtractionTest.TestGenerateFeatures("1150");
 
             // Generating feature files for different training set sizes
-            /*
-            FeatureExtractionTest.TestGenerateFeatures("10");
-            FeatureExtractionTest.TestGenerateFeatures("50");
-            FeatureExtractionTest.TestGenerateFeatures("100");
-            FeatureExtractionTest.TestGenerateFeatures("150");
-            FeatureExtractionTest.TestGenerateFeatures("200");
-            FeatureExtractionTest.TestGenerateFeatures("250");
-            FeatureExtractionTest.TestGenerateFeatures("300");
-            FeatureExtractionTest.TestGenerateFeatures("350");
-            FeatureExtractionTest.TestGenerateFeatures("test");
+            
+            //FeatureExtractionTest.TestGenerateFeatures("10");
+            //FeatureExtractionTest.TestGenerateFeatures("50");
+            //FeatureExtractionTest.TestGenerateFeatures("100");
+            //FeatureExtractionTest.TestGenerateFeatures("150");
+            //FeatureExtractionTest.TestGenerateFeatures("200");
+            //FeatureExtractionTest.TestGenerateFeatures("250");
+            //FeatureExtractionTest.TestGenerateFeatures("300");
+            //FeatureExtractionTest.TestGenerateFeatures("350");
+            //FeatureExtractionTest.TestGenerateFeatures("test");
             Console.WriteLine("Generated features.");
-             */
+            
             // Test Random Forest
             // ##################
             //FeatureExtractionTest.FindMaxDepth();

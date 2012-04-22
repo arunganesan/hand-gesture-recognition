@@ -33,9 +33,19 @@ namespace FeatureExtractionLib
             //Blue149,
             Abstraction, // Operate in default Kinect mode, use a large box and a large number of offset
             BlueDefault,
+
             F1000,
             F2000,
             F3000,
+
+            Demo1000,
+            Demo2000,
+
+            Range20,
+            Range40,
+            Range60,
+            Range100,
+            Range200,
         };
         public enum CPUorGPUFormat
         {
@@ -104,12 +114,12 @@ namespace FeatureExtractionLib
             SetMode(setMode);
             
              
-            LoadRFModel();
+            //LoadRFModel();
             RFfeatureVector = new double[numOfOffsetPairs];
             RFfeatureVectorShort = new short[numOfOffsetPairs];
             xPU_mode_ = to_set_xPU_mode;
             if (xPU_mode_ == CPUorGPUFormat.GPU) {
-                InitGPU();
+                //InitGPU();
             }
             
         }
@@ -127,7 +137,7 @@ namespace FeatureExtractionLib
                     traningFilename = "Maize";
                     RandomGenerationMode = RandomGenerationModeFormat.Default;
                     break;                
-                case ModeFormat.Blue:       
+                case ModeFormat.Blue:
                     numOfOffsetPairs = 2000;
                     uMin = 500;
                     uMax = 40 * 2000;
@@ -177,7 +187,37 @@ namespace FeatureExtractionLib
                     break;
 
 
-                
+
+                case ModeFormat.Demo1000:
+                    numOfOffsetPairs = 1000;
+                    uMin = 500;
+                    uMax = 40 * 2000;
+                    sampledNumberPerClass = 1000;
+                    UpperBound = 10000;
+                    kinect_mode_ = KinectModeFormat.Near;
+                    traningFilename = "Demo1000";
+                    RandomGenerationMode = RandomGenerationModeFormat.Circular;
+                    //RFModelFilePath = directory + "\\FeatureVectorF1000.400.rf.model";
+                    //RFModelFilePath = directory + "\\RF.1000.100.3.model";
+                    //RF_model_file_path_ = directory + "\\RF.1000.10.2.model";
+                    num_classes_ = 3;
+                    break;
+
+                case ModeFormat.Demo2000:
+                    numOfOffsetPairs = 2000;
+                    uMin = 500;
+                    uMax = 40 * 2000;
+                    sampledNumberPerClass = 1000;
+                    UpperBound = 10000;
+                    kinect_mode_ = KinectModeFormat.Near;
+                    traningFilename = "Demo2000";
+                    RandomGenerationMode = RandomGenerationModeFormat.Circular;
+                    //RF_model_file_path_ = directory + "\\FeatureVectorF2000.400.rf.model";
+                    //RF_model_file_path_ = directory + "\\RF.2000.350.3.model";
+                    num_classes_ = 3;
+                    break;
+
+
                 case ModeFormat.F1000:
                     numOfOffsetPairs = 1000;
                     uMin = 500;
@@ -190,7 +230,7 @@ namespace FeatureExtractionLib
                     //RFModelFilePath = directory + "\\FeatureVectorF1000.400.rf.model";
                     //RFModelFilePath = directory + "\\RF.1000.100.3.model";
                     RF_model_file_path_ = directory + "\\RF.1000.10.2.model";
-                    num_classes_ = 5;
+                    num_classes_ = 2;
                     break;
                 case ModeFormat.F2000:
                     numOfOffsetPairs = 2000;
@@ -219,7 +259,74 @@ namespace FeatureExtractionLib
                     num_classes_ = 5; 
                     break;
 
-               
+
+
+
+                case ModeFormat.Range20:
+                    numOfOffsetPairs = 2000;
+                    uMin = 500;
+                    uMax = 20 * 2000;
+                    sampledNumberPerClass = 1000;
+                    UpperBound = 10000;
+                    kinect_mode_ = KinectModeFormat.Default;
+                    traningFilename = "Range20";
+                    RandomGenerationMode = RandomGenerationModeFormat.Circular;
+                    //RF_model_file_path_ = directory + "\\FeatureVectorF2000.400.rf.model";
+                    RF_model_file_path_ = directory + "\\RF.2000.350.3.model";
+                    num_classes_ = 5;
+                    break;
+                case ModeFormat.Range40:
+                    numOfOffsetPairs = 2000;
+                    uMin = 500;
+                    uMax = 40 * 2000;
+                    sampledNumberPerClass = 1000;
+                    UpperBound = 10000;
+                    kinect_mode_ = KinectModeFormat.Default;
+                    traningFilename = "Range40";
+                    RandomGenerationMode = RandomGenerationModeFormat.Circular;
+                    //RF_model_file_path_ = directory + "\\FeatureVectorF2000.400.rf.model";
+                    RF_model_file_path_ = directory + "\\RF.2000.350.3.model";
+                    num_classes_ = 5;
+                    break;
+                case ModeFormat.Range60:
+                    numOfOffsetPairs = 2000;
+                    uMin = 500;
+                    uMax = 60 * 2000;
+                    sampledNumberPerClass = 1000;
+                    UpperBound = 10000;
+                    kinect_mode_ = KinectModeFormat.Default;
+                    traningFilename = "Range60";
+                    RandomGenerationMode = RandomGenerationModeFormat.Circular;
+                    //RF_model_file_path_ = directory + "\\FeatureVectorF2000.400.rf.model";
+                    RF_model_file_path_ = directory + "\\RF.2000.350.3.model";
+                    num_classes_ = 5;
+                    break;
+                case ModeFormat.Range100:
+                    numOfOffsetPairs = 2000;
+                    uMin = 500;
+                    uMax = 100 * 2000;
+                    sampledNumberPerClass = 1000;
+                    UpperBound = 10000;
+                    kinect_mode_ = KinectModeFormat.Default;
+                    traningFilename = "Range100";
+                    RandomGenerationMode = RandomGenerationModeFormat.Circular;
+                    //RF_model_file_path_ = directory + "\\FeatureVectorF2000.400.rf.model";
+                    RF_model_file_path_ = directory + "\\RF.2000.350.3.model";
+                    num_classes_ = 5;
+                    break;
+                case ModeFormat.Range200:
+                    numOfOffsetPairs = 2000;
+                    uMin = 500;
+                    uMax = 200 * 2000;
+                    sampledNumberPerClass = 1000;
+                    UpperBound = 10000;
+                    kinect_mode_ = KinectModeFormat.Default;
+                    traningFilename = "Range200";
+                    RandomGenerationMode = RandomGenerationModeFormat.Circular;
+                    //RF_model_file_path_ = directory + "\\FeatureVectorF2000.400.rf.model";
+                    RF_model_file_path_ = directory + "\\RF.2000.350.3.model";
+                    num_classes_ = 5;
+                    break;
             }
         }
 
@@ -560,7 +667,7 @@ namespace FeatureExtractionLib
                         offset_list_int[index + 2] = offset_pair_list_[i][2];
                         offset_list_int[index + 3] = offset_pair_list_[i][3];
                     }                        
-                    myGPU_.LoadOffsets(offset_list_int);
+                    //myGPU_.LoadOffsets(offset_list_int);
                 }
             }
             catch {
@@ -771,7 +878,7 @@ namespace FeatureExtractionLib
             output_filestream_.WriteLine();
         }
 
-        private void ReadImageFileToGetDepthAndLabel(string filePath)
+        private void ReadImageFileToGetDepthAndLabel(string filePath, HandGestureFormat gesture)
         {
             using (System.IO.StreamReader file = new System.IO.StreamReader(filePath))
             {
@@ -784,12 +891,21 @@ namespace FeatureExtractionLib
                 int countBackgounrdLabel = 0;
                 for (int i = 0; i < width * height; i++)
                 {
+                    // Michael: I think here is the place to add a virtual wall
                     depth[i] = (short)int.Parse(parts[2 * i]);                  
                     label[i] = (byte)int.Parse(parts[2 * i + 1]);
+
+                    // XXX: This got screwed up! Somehow the label that is saved 
+                    // to the image file is *not* the right label. It is always
+                    // '4'. So adjusting the label number here.
+
                     if (depth[i] == -1)
                         countDepthMinusOne++;
                     if (label[i] != 0)
+                    {
                         countTargetLabel++;
+                        label[i] = (byte)gesture;
+                    }
                     else
                         countBackgounrdLabel++;
                 }
@@ -803,8 +919,9 @@ namespace FeatureExtractionLib
         {
             Array values = Enum.GetValues(typeof(HandGestureFormat));
             output_filestream_ = new StreamWriter(String.Format("{0}\\{1}.{2}.features.txt", directory, traningFilename, training_set_size));         
-            foreach (HandGestureFormat val in values) // go through each directory
+            for (int i = 0; i < num_classes_; i++)
             {
+                HandGestureFormat val = (HandGestureFormat)i;
                 //Console.WriteLine ("{0}: {1}", Enum.GetName(typeof(HandGestureFormat), val), val);
                 if (val == HandGestureFormat.Background)
                     continue;
@@ -824,7 +941,7 @@ namespace FeatureExtractionLib
                     string prefix = fileName.Substring(0, 10);
                     if (prefix == "depthLabel")
                     {
-                        ReadImageFileToGetDepthAndLabel(filePath);
+                        ReadImageFileToGetDepthAndLabel(filePath, val);
                         RandomSample(sampledNumberPerClass); // including writing to file
                     }
                     /*
