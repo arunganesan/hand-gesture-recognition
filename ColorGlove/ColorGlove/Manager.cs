@@ -74,7 +74,7 @@ namespace ColorGlove
                 //processors[1].SetTestModule(Processor.ShowExtractedFeatureFormat.PredictOnePixelCPU | Processor.ShowExtractedFeatureFormat.ShowTransformedForOnePixel); // 
                 // one should call SetTestModule to active the FeatureExtractionLib
                 //processors[1].SetTestModule(Processor.ShowExtractedFeatureFormat.PredictAllPixelsGPU); 
-                processors[1].SetTestModule(Processor.ShowExtractedFeatureFormat.ShowTransformedForOnePixel);
+                //processors[1].SetTestModule(Processor.ShowExtractedFeatureFormat.ShowTransformedForOnePixel);
                 processors[1].updatePipeline(
                     // Show the rgb image
                     // Filter.Step.CopyColor
@@ -83,8 +83,8 @@ namespace ColorGlove
                     Filter.Step.Crop,
                     Filter.Step.PaintGreen,
                     Filter.Step.CopyDepth,
-                    //Filter.Step.MatchColors,
-                    //Filter.Step.FeatureExtractOnEnable,
+                    Filter.Step.MatchColors,
+                    Filter.Step.FeatureExtractOnEnable,
                     Filter.Step.ShowOverlay
 
 

@@ -533,7 +533,12 @@ namespace ColorGlove
             AddCentroid(232, 242, 246, targetLabel);
 
             AddCentroid(255, 255, 255, targetLabel);
-
+            
+            AddCentroid(53, 64, 85, targetLabel);
+            AddCentroid(58, 64, 85, targetLabel);
+            AddCentroid(65, 73, 92, targetLabel);
+            AddCentroid(206, 206, 206, targetLabel);
+            AddCentroid(102, 100, 101, targetLabel);
 
             // For background color 
             AddCentroid(80, 80, 80, kBackgroundLabel);
