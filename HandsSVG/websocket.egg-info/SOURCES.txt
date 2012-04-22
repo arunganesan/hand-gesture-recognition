@@ -1,0 +1,5 @@
+README.txt
+websocket.egg-info/PKG-INFO
+websocket.egg-info/SOURCES.txt
+websocket.egg-info/dependency_links.txt
+websocket.egg-info/top_level.txt
