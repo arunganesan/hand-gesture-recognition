@@ -5,7 +5,6 @@ using System.Text;
 using System.Threading;
 using FeatureExtractionLib;
 using System.Diagnostics;
-using System.Linq;
 using System.IO;
 
 namespace TestModuleNamespace
@@ -29,7 +28,7 @@ namespace TestModuleNamespace
 
         static void Main(string[] args)
         {
-            Console.WriteLine("Hello World");
+            Console.WriteLine("Haha");
             TestModule FeatureExtractionTest = new TestModule();
             //FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.F1000);
             //FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.F2000);
@@ -96,11 +95,50 @@ namespace TestModuleNamespace
             //FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.Blue);
             //FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.F2000, "C:\\Users\\Michael Zhang\\Desktop\\HandGestureRecognition\\Experiments\\alglib");
             //FeatureExtractionTest.RealPruneTree();
+            
+            // Test reading from command line program
+            //FeatureExtractionTest.ReadFromCommandLine(); 
             Console.ReadKey();
         }
 
         public TestModule() { 
             //myGPU = new GPUCompute();
+        }
+
+        private void ReadFromCommandLine()
+        {
+            ProcessStartInfo start = new ProcessStartInfo();
+            start.FileName = @"C:\Users\Michael Zhang\Desktop\HandGestureRecognition\Experiments\floatversion\Test\Release\Test.exe"; // Specify exe name.
+            start.UseShellExecute = false;
+            start.RedirectStandardOutput = true;
+            start.Arguments = "\"C:\\Users\\Michael Zhang\\Desktop\\HandGestureRecognition\\ColorGlove\\Data\\RF.demo.1000.800.1.model\"";
+            //
+            // Start the process.
+            //
+            using (Process process = Process.Start(start))
+            {
+                //
+                // Read in all the text from the process with the StreamReader.
+                //
+                using (StreamReader reader = process.StandardOutput)
+                {
+                    string result = reader.ReadToEnd();
+                    string[] parts = result.Split(' ');
+                    int nvars = int.Parse(parts[0]);
+                    int nclass = int.Parse(parts[1]);
+                    int ntrees = int.Parse(parts[2]);
+                    int bufsize = int.Parse(parts[3]);
+                    int[] buf = new int[bufsize];
+                    for (int i = 0; i < bufsize; i++)
+                    {
+                        buf[i] =int.Parse(parts[4 + i]);
+                    }
+                     
+                    Console.Write("Done in reading the file from a C++ program. bufsize: {0}", bufsize);
+                    //Console.Write(result);
+
+                }
+            }
         }
 
         private void RealPruneTree()

@@ -18,7 +18,8 @@ namespace ColorGlove
             main_window_.Dispatcher.BeginInvoke(new Action(() =>
             //main_window_.MetaLabel.Dispatcher.BeginInvoke(new Action(() =>
            {
-              main_window_.MetaLabel.Content = s;            }));
+              main_window_.MetaLabel.Content = s; 
+           }));
               
         }
         public static void SetColorImageLabel(string s)

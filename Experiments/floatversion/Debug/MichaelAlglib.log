@@ -1,0 +1,32 @@
+﻿Build started 4/21/2012 3:34:27 PM.
+     1>Project "C:\Users\Michael Zhang\Desktop\HandGestureRecognition\Experiments\floatversion\MichaelAlglib.vcxproj" on node 2 (build target(s)).
+     1>InitializeBuildStatus:
+         Touching "Debug\MichaelAlglib.unsuccessfulbuild".
+       GenerateTargetFrameworkMonikerAttribute:
+       Skipping target "GenerateTargetFrameworkMonikerAttribute" because all output files are up-to-date with respect to the input files.
+       ClCompile:
+         C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\CL.exe /c /AI"C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.0" /Zi /clr /nologo /W3 /WX- /Od /Oy- /D WIN32 /D _DEBUG /D _CONSOLE /EHa /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Debug\\" /Fd"Debug\vc100.pdb" /TP /analyze- /errorReport:prompt readModelFile.cpp /clr:nostdlib 
+         readModelFile.cpp
+     1>c:\users\michael zhang\desktop\handgesturerecognition\experiments\floatversion\linalg.h(2091): warning C4819: The file contains a character that cannot be represented in the current code page (936). Save the file in Unicode format to prevent data loss
+     1>c:\users\michael zhang\desktop\handgesturerecognition\experiments\floatversion\linalg.h(2745): warning C4819: The file contains a character that cannot be represented in the current code page (936). Save the file in Unicode format to prevent data loss
+     1>c:\users\michael zhang\desktop\handgesturerecognition\experiments\floatversion\linalg.h(2091): warning C4819: The file contains a character that cannot be represented in the current code page (936). Save the file in Unicode format to prevent data loss
+     1>c:\users\michael zhang\desktop\handgesturerecognition\experiments\floatversion\linalg.h(2745): warning C4819: The file contains a character that cannot be represented in the current code page (936). Save the file in Unicode format to prevent data loss
+     1>c:\users\michael zhang\desktop\handgesturerecognition\experiments\floatversion\specialfunctions.h(866): warning C4819: The file contains a character that cannot be represented in the current code page (936). Save the file in Unicode format to prevent data loss
+     1>c:\users\michael zhang\desktop\handgesturerecognition\experiments\floatversion\specialfunctions.h(866): warning C4819: The file contains a character that cannot be represented in the current code page (936). Save the file in Unicode format to prevent data loss
+     1>c:\users\michael zhang\desktop\handgesturerecognition\experiments\floatversion\linalg.h(2091): warning C4819: The file contains a character that cannot be represented in the current code page (936). Save the file in Unicode format to prevent data loss
+     1>c:\users\michael zhang\desktop\handgesturerecognition\experiments\floatversion\linalg.h(2745): warning C4819: The file contains a character that cannot be represented in the current code page (936). Save the file in Unicode format to prevent data loss
+     1>c:\users\michael zhang\desktop\handgesturerecognition\experiments\floatversion\linalg.h(2091): warning C4819: The file contains a character that cannot be represented in the current code page (936). Save the file in Unicode format to prevent data loss
+     1>c:\users\michael zhang\desktop\handgesturerecognition\experiments\floatversion\linalg.h(2745): warning C4819: The file contains a character that cannot be represented in the current code page (936). Save the file in Unicode format to prevent data loss
+     1>readModelFile.cpp(26): warning C4996: 'sscanf': This function or variable may be unsafe. Consider using sscanf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include\stdio.h(325) : see declaration of 'sscanf'
+     1>readModelFile.cpp(38): warning C4996: 'sscanf': This function or variable may be unsafe. Consider using sscanf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include\stdio.h(325) : see declaration of 'sscanf'
+     1>readModelFile.cpp(62): error C2061: syntax error : identifier '_TCHAR'
+     1>readModelFile.cpp(85): error C2065: 'argv' : undeclared identifier
+     1>readModelFile.cpp(86): error C2065: 'argv' : undeclared identifier
+     1>readModelFile.cpp(87): error C2065: 'argv' : undeclared identifier
+     1>Done Building Project "C:\Users\Michael Zhang\Desktop\HandGestureRecognition\Experiments\floatversion\MichaelAlglib.vcxproj" (build target(s)) -- FAILED.
+
+Build FAILED.
+
+Time Elapsed 00:00:00.70

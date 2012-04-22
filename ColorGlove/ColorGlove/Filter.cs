@@ -709,12 +709,17 @@ namespace ColorGlove
                     Console.WriteLine("Use {0} ms for DBScan.GetClusters", ExecutionTime.TotalMilliseconds.ToString());
                     label_colors = Util.GiveMeNColors(dbclusters.Count);
 
-                    Debug.WriteLine("Detected {0} clusters.", dbclusters.Count);
+                 
+                   
+                   Debug.WriteLine("Detected {0} clusters.", dbclusters.Count);
                    // ResetOverlay(state);
                     // The following is to get the center, and depth for each cluster. Seems unnecessary to do it as this can be done in DBScan.
                     for (int cluster = 0; cluster < dbclusters.Count; cluster++)
                         if (dbclusters[cluster].Count > 0)
                         {
+                            // quit if there are too many clusters
+                            if (cluster > 5)
+                                break;
                             int center_x = 0, center_y = 0, average_depth = 0;
                             foreach (int depth_index in dbclusters[cluster])
                             {
@@ -870,7 +875,7 @@ namespace ColorGlove
         private static void PaintAt(int x, int y, System.Drawing.Color paint, ProcessorState state)
         {
             int idx = Util.toID(x, y, width, height, kColorStride);
-            if (idx < state.overlay_bitmap_bits_.Length)
+            if (idx + 2 < state.overlay_bitmap_bits_.Length && idx>=0)
             {
                 state.overlay_bitmap_bits_[idx] = paint.B;
                 state.overlay_bitmap_bits_[idx + 1] = paint.G;

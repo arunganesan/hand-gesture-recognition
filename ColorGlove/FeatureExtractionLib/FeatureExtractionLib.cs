@@ -4,6 +4,8 @@ using System.Linq;
 using System.Text;
 using System.IO;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
+//using alglib;
 
 namespace FeatureExtractionLib
 {
@@ -422,11 +424,13 @@ namespace FeatureExtractionLib
         private void HelperFindLablesInTree(int[] tree, int index, int offset, int[] y, int explored_depth) {
             // is a leaf
             // if the depth is super long, make the prediction as background
+            /*
             if (explored_depth > kMaxDepth)
             {
                 y[0]++;
                 return;
             }
+             */ 
             if (tree[index] == -1)
             {
                 y[tree[index + 1]]++;
@@ -475,8 +479,8 @@ namespace FeatureExtractionLib
 
         private void SetDirectory(string dir)
         // set working directory
-        {     
-            directory = dir;
+        {
+            directory = Path.GetFullPath(dir);
             Console.WriteLine("Current directory: {0}", directory);
             Console.WriteLine("Current working directory: {0}", Directory.GetCurrentDirectory());
         }
@@ -497,6 +501,8 @@ namespace FeatureExtractionLib
             return directory + "\\" + "Offset" + Mode + ".txt";
         }
 
+        #region load random forest model
+        /*
         public void LoadRFModel(string file_name = "")
         {
             if (file_name == "")
@@ -521,6 +527,53 @@ namespace FeatureExtractionLib
             for (int i = 0; i < decisionForest.trees.Length; i++)
                 trees_int_[i] = (int)Math.Ceiling(decisionForest.trees[i]);
 
+        }
+        */
+        #endregion
+
+        public void LoadRFModel(string file_name = "")
+        {
+            if (file_name == "")
+                file_name = RF_model_file_path_;
+            decisionForest = new dforest.decisionforest();
+            ProcessStartInfo start = new ProcessStartInfo();
+            start.FileName = @"..\..\..\..\Experiments\floatversion\Test\Release\Test.exe";// @"C:\Users\Michael Zhang\Desktop\HandGestureRecognition\Experiments\floatversion\Test\Release\Test.exe"; // Specify exe name.
+            Console.WriteLine(" Read model file exe: {0}", Path.GetFullPath(start.FileName)); 
+            start.UseShellExecute = false;// "..\\..\\..\\Data"
+            start.RedirectStandardOutput = true;
+            start.Arguments = "\"" + file_name  + "\"";   // "\"C:\\Users\\Michael Zhang\\Desktop\\HandGestureRecognition\\ColorGlove\\Data\\RF.demo.1000.800.1.model\"";
+            Console.WriteLine(" Read model file: {0}", start.Arguments);
+            //
+            // Start the process.
+            //
+            using (Process process = Process.Start(start))
+            {
+                //
+                // Read in all the text from the process with the StreamReader.
+                //
+                using (StreamReader reader = process.StandardOutput)
+                {
+                    string result = reader.ReadToEnd();
+                    string[] parts = result.Split(' ');
+                    int nvars = int.Parse(parts[0]);
+                    int nclass = int.Parse(parts[1]);
+                    int ntrees = int.Parse(parts[2]);
+                    int bufsize = int.Parse(parts[3]);
+                    int[] buf = new int[bufsize];
+                    for (int i = 0; i < bufsize; i++)
+                    {
+                        buf[i] = int.Parse(parts[4 + i]);
+                    }
+                    decisionForest.nvars = nvars;
+                    decisionForest.nclasses = nclass;
+                    decisionForest.ntrees = ntrees;
+                    decisionForest.bufsize = bufsize;
+                    trees_int_ = buf;
+                    Debug.WriteLine("Done in reading the file from a C++ program. bufsize: {0}", bufsize);
+                    //Console.Write(result);
+
+                }
+            }
         }
 
         public void WriteRFModel(string file_name) { 

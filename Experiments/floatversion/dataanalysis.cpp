@@ -18,7 +18,8 @@ http://www.fsf.org/licensing/licenses
 *************************************************************************/
 #include "stdafx.h"
 #include "dataanalysis.h"
-
+#include <iostream>
+#include <math.h>
 // disable some irrelevant warnings
 #if (AE_COMPILER==AE_MSVC)
 #pragma warning(disable:4100)
@@ -8798,10 +8799,19 @@ void dfunserialize(ae_serializer* s,
      * Unserialize data
      */
     ae_serializer_unserialize_int(s, &forest->nvars, _state);
-    ae_serializer_unserialize_int(s, &forest->nclasses, _state);
-    ae_serializer_unserialize_int(s, &forest->ntrees, _state);
-    ae_serializer_unserialize_int(s, &forest->bufsize, _state);
-    unserializerealarray(s, &forest->trees, _state);
+    cout << forest->nvars<< " " ;
+	ae_serializer_unserialize_int(s, &forest->nclasses, _state);
+    cout  << forest->nclasses<< " ";
+	ae_serializer_unserialize_int(s, &forest->ntrees, _state);
+    cout  << forest->ntrees<< " ";
+	ae_serializer_unserialize_int(s, &forest->bufsize, _state);
+	cout << forest ->bufsize<< " ";
+	unserializerealarray(s, &forest->trees, _state);
+	for (int i=0; i< forest->bufsize; i++)
+	{
+		cout << (int) (ceil( forest->trees.ptr.p_float[i] ))<< " ";
+//->ptr.p_float
+	}
 }
 
 
