@@ -308,7 +308,7 @@ namespace FeatureExtractionLib
                     sampledNumberPerClass = 1000;
                     UpperBound = 10000;
                     kinect_mode_ = KinectModeFormat.Default;
-                    traningFilename = "Range80";
+                    traningFilename = "Range100";
                     RandomGenerationMode = RandomGenerationModeFormat.Circular;
                     //RF_model_file_path_ = directory + "\\FeatureVectorF2000.400.rf.model";
                     RF_model_file_path_ = directory + "\\RF.2000.350.3.model";
@@ -321,7 +321,7 @@ namespace FeatureExtractionLib
                     sampledNumberPerClass = 1000;
                     UpperBound = 10000;
                     kinect_mode_ = KinectModeFormat.Default;
-                    traningFilename = "Range100";
+                    traningFilename = "Range200";
                     RandomGenerationMode = RandomGenerationModeFormat.Circular;
                     //RF_model_file_path_ = directory + "\\FeatureVectorF2000.400.rf.model";
                     RF_model_file_path_ = directory + "\\RF.2000.350.3.model";

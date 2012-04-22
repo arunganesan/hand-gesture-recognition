@@ -40,7 +40,7 @@ namespace TestModuleNamespace
             //FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.F3000);
             
             //FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.Range20);
-            FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.Range40);
+            //FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.Range40);
             //FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.Range60);
             //FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.Range100);
             //FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.Range200);
@@ -59,15 +59,15 @@ namespace TestModuleNamespace
 
             // Generating feature files for different training set sizes
             
-            FeatureExtractionTest.TestGenerateFeatures("10");
-            FeatureExtractionTest.TestGenerateFeatures("50");
-            FeatureExtractionTest.TestGenerateFeatures("100");
-            FeatureExtractionTest.TestGenerateFeatures("150");
-            FeatureExtractionTest.TestGenerateFeatures("200");
-            FeatureExtractionTest.TestGenerateFeatures("250");
-            FeatureExtractionTest.TestGenerateFeatures("300");
-            FeatureExtractionTest.TestGenerateFeatures("350");
-            FeatureExtractionTest.TestGenerateFeatures("test");
+            //FeatureExtractionTest.TestGenerateFeatures("10");
+            //FeatureExtractionTest.TestGenerateFeatures("50");
+            //FeatureExtractionTest.TestGenerateFeatures("100");
+            //FeatureExtractionTest.TestGenerateFeatures("150");
+            //FeatureExtractionTest.TestGenerateFeatures("200");
+            //FeatureExtractionTest.TestGenerateFeatures("250");
+            //FeatureExtractionTest.TestGenerateFeatures("300");
+            //FeatureExtractionTest.TestGenerateFeatures("350");
+            //FeatureExtractionTest.TestGenerateFeatures("test");
             Console.WriteLine("Generated features.");
             
             // Test Random Forest
