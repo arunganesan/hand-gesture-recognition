@@ -146,7 +146,8 @@ namespace ColorGlove
         
         // for density-based pooling
         public int radius_;
-        public double density_; 
+        public double density_;
+        public int cluster_threshold_count_;
         #endregion
 
         public Processor(Manager.ProcessorModeFormat processor_mode, MainWindow main_window_controller)
@@ -166,7 +167,7 @@ namespace ColorGlove
             image_.Height = height;
              */ 
             depth_label_ = new byte[width * height];
-
+            cluster_threshold_count_ = 100;
             //main_window_controller.MetaLabel.Content = "Hey what's {0}";
 
             crop_values_ = new System.Drawing.Rectangle(
@@ -1026,7 +1027,7 @@ namespace ColorGlove
                 overlay_start_ref_, kNoOverlay, overlay_bitmap_bits_, kEmptyOverlay,
                 Feature, predict_output_, predict_labels_,
                 all_sockets_, pipeline,
-                HandGestureValue, RangeModeValue, pool_, bitmap_bits_copy_, radius_, density_);
+                HandGestureValue, RangeModeValue, pool_, bitmap_bits_copy_, radius_, density_, cluster_threshold_count_);
         }
 
        public void update(KinectData data)

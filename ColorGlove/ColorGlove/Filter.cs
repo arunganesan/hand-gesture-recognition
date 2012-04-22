@@ -714,40 +714,47 @@ namespace ColorGlove
                    Debug.WriteLine("Detected {0} clusters.", dbclusters.Count);
                    // ResetOverlay(state);
                     // The following is to get the center, and depth for each cluster. Seems unnecessary to do it as this can be done in DBScan.
+                   int largest_cluster_count = 0;
+                   int largest_cluster = 0;
+
                     for (int cluster = 0; cluster < dbclusters.Count; cluster++)
-                        if (dbclusters[cluster].Count > 0)
+                        if (dbclusters[cluster].Count > largest_cluster_count)
+                        {       
+                            largest_cluster_count = dbclusters[cluster].Count;
+                            largest_cluster = cluster;
+                        }
+                   if (dbclusters.Count>0)
+                        if (dbclusters[largest_cluster].Count> state.cluster_threshold_count_)
                         {
-                            // quit if there are too many clusters
-                            if (cluster > 5)
-                                break;
                             int center_x = 0, center_y = 0, average_depth = 0;
-                            foreach (int depth_index in dbclusters[cluster])
+                            // Get majority label within this cluster
+                            label_counts = new int[state.feature.num_classes_];
+                            Array.Clear(label_counts, 0, label_counts.Length);
+                            foreach (int point_index in dbclusters[largest_cluster])
+                                label_counts[state.predict_labels_[point_index]]++;
+
+                            max = Util.MaxNonBackground(label_counts);
+//                            Debug.Assert(dbclusters[largest_cluster].Count > 0);
+
+                            foreach (int depth_index in dbclusters[largest_cluster])
                             {
                                 int bitmap_index = depth_index * 4;
                                 //int bitmap_index = Util.toID(point.X, point.Y, width, height, kColorStride);
-                                state.overlay_bitmap_bits_[bitmap_index + 2] = (int)label_colors[cluster].Item1;
-                                state.overlay_bitmap_bits_[bitmap_index + 1] = (int)label_colors[cluster].Item2;
-                                state.overlay_bitmap_bits_[bitmap_index + 0] = (int)label_colors[cluster].Item3;
+                                state.overlay_bitmap_bits_[bitmap_index + 2] = (int)label_colors[max.Item1].Item1;
+                                state.overlay_bitmap_bits_[bitmap_index + 1] = (int)label_colors[max.Item1].Item2;
+                                state.overlay_bitmap_bits_[bitmap_index + 0] = (int)label_colors[max.Item1].Item3;
                                 System.Drawing.Point point = Util.toXY(bitmap_index, 640, 480, kColorStride);
                                 center_x += point.X;
                                 center_y += point.Y;
                                 average_depth += state.depth[depth_index];
                             }
-
-                            // Get majority label within this cluster
-                            label_counts = new int[state.feature.num_classes_];
-                            Array.Clear(label_counts, 0, label_counts.Length);
-                            foreach (int point_index in dbclusters[cluster])
-                                label_counts[state.predict_labels_[point_index]]++;
-
-                            max = Util.MaxNonBackground(label_counts);
-                            Debug.Assert(dbclusters[cluster].Count > 0);
+                            
                             center = new System.Drawing.Point(
-                                (int)(center_x / dbclusters[cluster].Count),
-                                (int)(center_y / dbclusters[cluster].Count)
+                                (int)(center_x / dbclusters[largest_cluster].Count),
+                                (int)(center_y / dbclusters[largest_cluster].Count)
                                 );
                             // use average to get the depth
-                            int depth = (int)(average_depth / dbclusters[cluster].Count);
+                            int depth = (int)(average_depth / dbclusters[largest_cluster].Count);
 
                             //center = new System.Drawing.Point(centroids[outlier].x(), centroids[outlier].y());
                             gestures.Add(new Pooled(center, depth, (HandGestureFormat)max.Item1));

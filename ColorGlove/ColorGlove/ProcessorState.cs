@@ -42,6 +42,7 @@ namespace ColorGlove
         public int[] pool_;
         public int radius_;
         public double density_;
+        public int cluster_threshold_count_;
 
         public List<IWebSocketConnection> all_sockets_;
 
@@ -61,7 +62,7 @@ namespace ColorGlove
             FeatureExtractionLib.FeatureExtraction feature, float[] predict_output_, int[] predict_labels_,
             List<IWebSocketConnection> all_sockets_,
             Filter.Step[] pipeline,
-            HandGestureFormat hand_gesture_value_, RangeModeFormat range_mode_value_, int[] pool, byte[] bitmap_bits_copy, int radius, double density)
+            HandGestureFormat hand_gesture_value_, RangeModeFormat range_mode_value_, int[] pool, byte[] bitmap_bits_copy, int radius, double density, int cluster_threshold_count)
         {
             this.crop = crop;
             this.crop_values = crop_values;
@@ -101,6 +102,7 @@ namespace ColorGlove
             this.pool_ = pool;
             this.radius_ = radius;
             this.density_ = density;
+            this.cluster_threshold_count_ = cluster_threshold_count;
 
         }
     }
