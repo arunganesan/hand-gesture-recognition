@@ -28,7 +28,7 @@ class MouseClient(WebSocketClient):
         
         scaledX = x*self.scaleX;
         scaledY = y*self.scaleY;
-        
+
         if (self.state != gesture):
             self.state = gesture;
             if (gesture == "OpenHand"): up(scaledX, scaledY)
