@@ -36,7 +36,7 @@ namespace ColorGlove
         public Manager(MainWindow parent)  // Construct function
         {
             if (processor_mode_ == ProcessorModeFormat.Michael)
-                datafeed = new DataFeed(DataFeed.DataSource.Kinect, DataFeed.RangeModeFormat.Near);
+                datafeed = new DataFeed(DataFeed.DataSource.Kinect, DataFeed.RangeModeFormat.Default);
             else
                 datafeed = new DataFeed(DataFeed.DataSource.Kinect, DataFeed.RangeModeFormat.Default);
             

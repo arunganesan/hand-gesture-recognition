@@ -33,7 +33,7 @@ namespace TestModuleNamespace
             TestModule FeatureExtractionTest = new TestModule();
             
             //FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.Demo1000);
-            FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.Demo2000);
+            //FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.Demo2000);
             
             //FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.F1000);
             //FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.F2000);
