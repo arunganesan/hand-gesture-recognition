@@ -3476,8 +3476,7 @@ namespace FeatureExtractionLib
             }
 
             /************************************************************************
-            // Michael: This is a crucial function, I am going to modify this to float
-             * This function unserializes double value from string
+            This function unserializes double value from string
 
             buf         buffer which contains value; leading spaces/tabs/newlines are 
                         ignored, traling spaces/tabs/newlines are treated as  end  of
@@ -3558,7 +3557,7 @@ namespace FeatureExtractionLib
                     _bytes[i] = bytes[i];        
                 if( !System.BitConverter.IsLittleEndian )
                     System.Array.Reverse(_bytes);        
-                return System.BitConverter.ToDouble(_bytes,0); 
+                return System.BitConverter.ToDouble(_bytes,0);
             }
         }
     }

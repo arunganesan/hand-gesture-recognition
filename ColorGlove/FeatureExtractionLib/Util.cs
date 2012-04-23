@@ -27,11 +27,8 @@ namespace FeatureExtractionLib
         // Returns n [evenly spaced out ]RGB values
         public static List<Tuple<byte, byte, byte>> GiveMeNColors(int n)
         {
-            /*
-            if (n > 10)
-                return null;
             Debug.Assert(n <= 10, "Only supports maximum 10 colors.");
-            */
+
             List<Tuple<byte, byte, byte>> colors = new List<Tuple<byte, byte, byte>>();
             
             colors.Add(new Tuple<byte, byte, byte>(255, 0, 0));

@@ -1,22 +1,6 @@
 ﻿<Window x:Class="ColorGlove.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="MainWindow" Height="1205" Width="1720" KeyDown="Window_KeyDown" WindowState="Maximized">
-    <Canvas Height="1020" Name="canvas1" Width="1698">
-        <Image Canvas.Left="195" Canvas.Top="0" Height="480" Name="colorImage" Stretch="Fill" Width="640" />
-        <Image Canvas.Left="840" Canvas.Top="0" Height="480" Name="depthImage" Stretch="Fill" Width="640" />
-        <Image Canvas.Left="195" Canvas.Top="485" Height="480" Name="poolImage" Stretch="Fill" Width="640" />
-        <TextBlock Canvas.Left="12" Canvas.Top="12" Text="Color Image" Height="70" Name="colorImageLabelConstant" Width="178" FontSize="25" TextWrapping="Wrap" />
-        <TextBlock Canvas.Left="12" Canvas.Top="88" Text="Hahaha" Height="70" Name="colorImageLabel" Width="178" FontSize="25" TextWrapping="Wrap" />
-        <TextBlock Canvas.Left="12" Canvas.Top="485" Text="Pooling using CPU 
-                   (Density-based Clustering)" Height="168" Name="poolImageLabelConstant" Width="178" FontSize="25" TextWrapping="Wrap" />
-        <Label Canvas.Left="888" Canvas.Top="530" Content="Hello World" Height="360" Name="MetaLabel" Width="592"  FontSize="40" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" BorderThickness="2" />
-        <TextBlock Canvas.Left="1485" Canvas.Top="0" Height="480" Name="textBlockDepth" Text="Per Pixel Classification using GPU" Width="201" TextWrapping="Wrap" FontSize="30" />
-        <TextBlock Canvas.Left="1485" Canvas.Top="138" FontSize="25" Height="70" Name="depthImageLabel" Text="Hahaha" TextWrapping="Wrap" Width="178" />
-        <TextBlock Canvas.Left="12" Canvas.Top="690" FontSize="25" Height="70" Name="poolImageLabel" Text="Hahaha" TextWrapping="Wrap" Width="178" />
-        <Slider Canvas.Left="21" Canvas.Top="822" Height="30" Name="Radius" Width="135" Value="10" Maximum="100" Minimum="1" SmallChange="1" FontSize="20" IsSnapToTickEnabled="True" IsSelectionRangeEnabled="True" IsMoveToPointEnabled="True" ValueChanged="RadiusValueChanged" />
-        <TextBlock Canvas.Left="12" Canvas.Top="765" FontSize="25" Height="52" Name="radiusText" Text="Radius" TextWrapping="Wrap" Width="178" />
-        <TextBlock Canvas.Left="21" Canvas.Top="880" FontSize="25" Height="31" Name="densityText" Text="Density" TextWrapping="Wrap" Width="144" />
-        <Slider Canvas.Left="21" Canvas.Top="917" FontSize="20" Height="30" IsMoveToPointEnabled="True" IsSelectionRangeEnabled="True" IsSnapToTickEnabled="True" Maximum="100" Minimum="1" Name="Density" Value="91" Width="135" SelectionEnd="100" SmallChange="1" SelectionStart="0" ValueChanged="DensityValueChanged" />
-    </Canvas>
+        Title="MainWindow" Height="600" Width="1380" KeyDown="Window_KeyDown">
+    <StackPanel Height="600" Name="mainContainer" Width="1380" Orientation="Horizontal"/>
 </Window>

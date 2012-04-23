@@ -44,19 +44,15 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AlglibHelper.cs">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Include="FeatureExtractionLib.cs" />
     <Compile Include="GPU.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="RandomForest.cs">
-      <SubType>Code</SubType>
-    </Compile>
+    <Compile Include="RandomForest.cs" />
+    <Compile Include="AlglibHelper.cs" />
     <Compile Include="Util.cs" />
   </ItemGroup>
   <ItemGroup>
-    <WCFMetadata Include="Service References\" />
+    <None Include="ClassDiagram1.cd" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

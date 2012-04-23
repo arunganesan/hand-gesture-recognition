@@ -24,42 +24,41 @@ namespace ColorGlove
     public class Manager
     {
         private KinectData data;
-        private Processor processor;
+        private Processor[] processors;
         public enum ProcessorModeFormat {
             Arun,
             Michael,
         }
         Thread poller;
         DataFeed datafeed;
-        private ProcessorModeFormat processor_mode_ = ProcessorModeFormat.Michael; // set the mode for processor here
+        public ProcessorModeFormat ProcessorMode = ProcessorModeFormat.Michael; // set the mode for processor here
+
 
         public Manager(MainWindow parent)  // Construct function
         {
-            if (processor_mode_ == ProcessorModeFormat.Michael)
+            if (ProcessorMode == ProcessorModeFormat.Michael)
                 datafeed = new DataFeed(DataFeed.DataSource.Kinect, DataFeed.RangeModeFormat.Near);
             else
                 datafeed = new DataFeed(DataFeed.DataSource.Kinect, DataFeed.RangeModeFormat.Default);
             
-            #region Create one processor
-            // the processor is passed by the current object and the main window controller
-            // Note about the new design: there is only one processor which do all the processing, and pass the processed image to a
-            // corresponding image control element
-            processor = new Processor(processor_mode_, parent);
-            processor.lower = 100;
-            processor.upper = 1000;
-            setDensity(0.91);
-            setRadius(10);
-            //    Image image = processors[i].getImage();
-            //    parent.mainContainer.Children.Add(image);
+            #region Create and arrange Images
+            int total_processors = 2;
+            processors = new Processor[total_processors];
+            for (int i = 0; i < total_processors; i++)
+            {
+                processors[i] = new Processor(this);
+                processors[i].lower = 100;
+                processors[i].upper = 1000;
+                Image image = processors[i].getImage();
+                parent.mainContainer.Children.Add(image);
+            }
             #endregion
 
             #region Processor configurations
-            if (processor_mode_ == ProcessorModeFormat.Michael)
+			
+            
+            if (ProcessorMode == ProcessorModeFormat.Michael)
             {
-                // Whic pipelines to show is decided by the processor.
-                processor.setFeatureExtraction(Processor.ShowExtractedFeatureFormat.PredictAllPixelsGPU); 
-                
-                /*
                 processors[0].updatePipeline(
                     // Show the rgb image
                                             Filter.Step.CopyColor
@@ -74,16 +73,22 @@ namespace ColorGlove
                 //processors[0].updatePipeline(Filter.Step.ColorMatch);
                 //processors[1].SetTestModule(Processor.ShowExtractedFeatureFormat.PredictOnePixelCPU | Processor.ShowExtractedFeatureFormat.ShowTransformedForOnePixel); // 
                 // one should call SetTestModule to active the FeatureExtractionLib
-                processors[1].setFeatureExtraction(Processor.ShowExtractedFeatureFormat.PredictAllPixelsGPU); 
+
+                //processors[1].SetTestModule(Processor.ShowExtractedFeatureFormat.PredictAllPixelsGPU); 
+                //processors[1].SetTestModule(Processor.ShowExtractedFeatureFormat.ShowTransformedForOnePixel);
                 processors[1].updatePipeline(
                     // Show the rgb image
                     // Filter.Step.CopyColor
-                    // Show the depth image                                         
-                                            Filter.Step.CopyDepth,
-                                            Filter.Step.EnablePredict,
-                                            Filter.Step.PerPixelClassificationOnEnable,
-                                            Filter.Step.PoolingOnPerPixelClassification,
-                                            Filter.Step.ShowOverlay
+                    // Show the depth image 
+                    Filter.Step.PaintWhite,
+                    Filter.Step.Crop,
+                    Filter.Step.PaintGreen,
+                    Filter.Step.CopyDepth,
+                    Filter.Step.MatchColors,
+                    Filter.Step.FeatureExtractOnEnable,
+                    Filter.Step.ShowOverlay
+
+
                     // Show Mapped Depth Using RGB
                     // Filter.Step.PaintWhite,
                     // Filter.Step.MappedDepth
@@ -93,33 +98,30 @@ namespace ColorGlove
                     // Denoise
                     //                        Filter.Step.Denoise
                 );
-                 */ 
             }
-            else if (processor_mode_ == ProcessorModeFormat.Arun) {
-                /*
+            else if (ProcessorMode == ProcessorModeFormat.Arun) {
                 processors[0].setFeatureExtraction(Processor.ShowExtractedFeatureFormat.ShowTransformedForOnePixel); 
                 processors[0].updatePipeline(
                     Filter.Step.PaintWhite,
                     Filter.Step.Crop,
                     Filter.Step.PaintGreen,
                     //Filter.Step.CopyColor,
-                    //Filter.Step.MatchColors,
-                    //Filter.Step.FeatureExtractOnEnable,
+                    Filter.Step.MatchColors,
+                    Filter.Step.FeatureExtractOnEnable,
                     Filter.Step.ShowOverlay
                 );
 
 
                 processors[1].setFeatureExtraction(Processor.ShowExtractedFeatureFormat.PredictAllPixelsGPU);
                 processors[1].updatePipeline(
-                    //Filter.Step.PaintGreen,
-                    //Filter.Step.Crop,
+                    Filter.Step.PaintGreen,
+                    Filter.Step.Crop,
                     Filter.Step.CopyDepth,
-                    Filter.Step.EnablePredict,
-                    Filter.Step.PerPixelClassificationOnEnable,
-                    Filter.Step.PoolingOnPerPixelClassification,
+                    //Filter.Step.EnablePredict,
+                    //Filter.Step.PredictOnEnable,
                     Filter.Step.ShowOverlay);
                 
-                */ 
+                 
                 /*processors[1].SetTestModule(Processor.ShowExtractedFeatureFormat.ShowTransformedForOnePixel);
                 processors[1].updatePipeline(
                    Processor.Step.PaintGreen,
@@ -129,18 +131,8 @@ namespace ColorGlove
                 
             }
             #endregion
-            // why using a new thread? (Michael)
+
             poller = new Thread(new ThreadStart(this.poll));
-        }
-
-        public void setRadius(int radius)
-        {
-            processor.radius_ = radius;
-        }
-
-        public void setDensity(double density)
-        {
-            processor.density_ = density;
         }
 
         public void start()
@@ -157,8 +149,7 @@ namespace ColorGlove
 
         public void saveImages()
         {
-            processor.EnableFeatureExtract();  
-            //foreach(Processor p in processors) p.EnableFeatureExtract();
+            foreach(Processor p in processors) p.EnableFeatureExtract();
             //poller.Suspend();
             //foreach (Processor p in processors) p.processAndSave();
             //processors[0].ProcessAndSave();
@@ -169,29 +160,20 @@ namespace ColorGlove
 
         public void AutoRange()
         {
-           /*
             processors[0].AutoDetectRange();
             processors[1].AutoDetectRange();
-            */
-            processor.AutoDetectRange();
         }
 
         public void increaseRange()
         {
-            /*
             processors[0].IncreaseRange();
             processors[1].IncreaseRange();
-            */
-            processor.IncreaseRange();
         }
 
         public void decreaseRange()
         {
-            /*
             processors[0].DecreaseRange();
             processors[1].DecreaseRange();
-            */
-            processor.DecreaseRange();
         }
 
         public void poll()
@@ -199,18 +181,12 @@ namespace ColorGlove
             while (true)
             {
                 data = datafeed.PullData(); 
-                /*
                 foreach (Processor p in processors) p.update(data);
-                */
-                processor.update(data);
             }
         }
 
 
-        public void kMeans() { 
-            //processors[0].kMeans(); 
-            processor.kMeans();
-        }
+        public void kMeans() { processors[0].kMeans(); }
         
 
         // Just adds pooling to the pipeline. 
@@ -219,8 +195,7 @@ namespace ColorGlove
         // added to the pipeline will then perform that action.
         public void Pool() 
         {
-            //processors[1].EnablePredict(); 
-            processor.EnablePredict();
+            processors[1].EnablePredict(); 
         }
     }
 }

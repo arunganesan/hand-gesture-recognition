@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading;
 using FeatureExtractionLib;
 using System.Diagnostics;
+using System.Linq;
 using System.IO;
 
 namespace TestModuleNamespace
@@ -28,28 +29,47 @@ namespace TestModuleNamespace
 
         static void Main(string[] args)
         {
-            Console.WriteLine("Haha");
+            Console.WriteLine("Hello World");
             TestModule FeatureExtractionTest = new TestModule();
+            
+            //FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.Demo1000);
+            FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.Demo2000);
+            
             //FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.F1000);
             //FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.F2000);
             //FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.F3000);
+            
+            //FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.Range20);
+            //FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.Range40);
+            //FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.Range60);
+            //FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.Range100);
+            //FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.Range200);
+            
             //FeatureExtractionTest.TestGenerateOffset();
 
+            FeatureExtractionTest.TestGenerateFeatures("demo.test");
+            FeatureExtractionTest.TestGenerateFeatures("demo.943");
+            FeatureExtractionTest.TestGenerateFeatures("Near");
+            
+            //FeatureExtractionTest.TestGenerateFeatures("large.test");
+            //FeatureExtractionTest.TestGenerateFeatures("large.689");
+            
+            //FeatureExtractionTest.TestGenerateFeatures("1000");
             //FeatureExtractionTest.TestGenerateFeatures("1150");
 
             // Generating feature files for different training set sizes
-            /*
-            FeatureExtractionTest.TestGenerateFeatures("10");
-            FeatureExtractionTest.TestGenerateFeatures("50");
-            FeatureExtractionTest.TestGenerateFeatures("100");
-            FeatureExtractionTest.TestGenerateFeatures("150");
-            FeatureExtractionTest.TestGenerateFeatures("200");
-            FeatureExtractionTest.TestGenerateFeatures("250");
-            FeatureExtractionTest.TestGenerateFeatures("300");
-            FeatureExtractionTest.TestGenerateFeatures("350");
-            FeatureExtractionTest.TestGenerateFeatures("test");
+            
+            //FeatureExtractionTest.TestGenerateFeatures("10");
+            //FeatureExtractionTest.TestGenerateFeatures("50");
+            //FeatureExtractionTest.TestGenerateFeatures("100");
+            //FeatureExtractionTest.TestGenerateFeatures("150");
+            //FeatureExtractionTest.TestGenerateFeatures("200");
+            //FeatureExtractionTest.TestGenerateFeatures("250");
+            //FeatureExtractionTest.TestGenerateFeatures("300");
+            //FeatureExtractionTest.TestGenerateFeatures("350");
+            //FeatureExtractionTest.TestGenerateFeatures("test");
             Console.WriteLine("Generated features.");
-             */
+            
             // Test Random Forest
             // ##################
             //FeatureExtractionTest.FindMaxDepth();
@@ -87,7 +107,7 @@ namespace TestModuleNamespace
             //FeatureExtractionTest.TestTransformTree();            
 
             // Test on pruning trees
-            FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.Demo1000);
+            //FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.Blue);
             //FeatureExtractionTest.TestPruneTree();
 
             // Real task on pruning trees            
@@ -95,50 +115,11 @@ namespace TestModuleNamespace
             //FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.Blue);
             //FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.F2000, "C:\\Users\\Michael Zhang\\Desktop\\HandGestureRecognition\\Experiments\\alglib");
             //FeatureExtractionTest.RealPruneTree();
-            
-            // Test reading from command line program
-            //FeatureExtractionTest.ReadFromCommandLine(); 
             Console.ReadKey();
         }
 
         public TestModule() { 
             //myGPU = new GPUCompute();
-        }
-
-        private void ReadFromCommandLine()
-        {
-            ProcessStartInfo start = new ProcessStartInfo();
-            start.FileName = @"C:\Users\Michael Zhang\Desktop\HandGestureRecognition\Experiments\floatversion\Test\Release\Test.exe"; // Specify exe name.
-            start.UseShellExecute = false;
-            start.RedirectStandardOutput = true;
-            start.Arguments = "\"C:\\Users\\Michael Zhang\\Desktop\\HandGestureRecognition\\ColorGlove\\Data\\RF.demo.1000.800.1.model\"";
-            //
-            // Start the process.
-            //
-            using (Process process = Process.Start(start))
-            {
-                //
-                // Read in all the text from the process with the StreamReader.
-                //
-                using (StreamReader reader = process.StandardOutput)
-                {
-                    string result = reader.ReadToEnd();
-                    string[] parts = result.Split(' ');
-                    int nvars = int.Parse(parts[0]);
-                    int nclass = int.Parse(parts[1]);
-                    int ntrees = int.Parse(parts[2]);
-                    int bufsize = int.Parse(parts[3]);
-                    int[] buf = new int[bufsize];
-                    for (int i = 0; i < bufsize; i++)
-                    {
-                        buf[i] =int.Parse(parts[4 + i]);
-                    }
-                     
-                    Console.Write("Done in reading the file from a C++ program. bufsize: {0}", bufsize);
-                    //Console.Write(result);
-
-                }
-            }
         }
 
         private void RealPruneTree()
@@ -497,10 +478,10 @@ namespace TestModuleNamespace
             //Default direcotry: "..\\..\\..\\Data";
             // To setup the mode, see README in the library
             FeatureExtraction.ModeFormat MyMode = mode;
-            //dir = "D:\\gr\\training\\blue\\";
+            dir = "D:\\gr\\training\\blue\\";
             
             //feature_lib_obj_ = new FeatureExtraction(MyMode, dir);
-          /* 
+           
             const int kMaxStackSize = 1000000;
             //Thread oThread = new Thread(new ThreadStart(this.IAmFoo), kMaxStackSize);
             Thread oThread = new Thread(delegate()
@@ -510,9 +491,7 @@ namespace TestModuleNamespace
             oThread.Start();
             // Start the thread            
             oThread.Join();
-           */
-           feature_lib_obj_ = new FeatureExtraction(MyMode, dir);
-           Debug.WriteLine("Sucessfully read model");
+            //feature_lib_obj_ = new FeatureExtraction(MyMode, dir);
         }
 
         private void TestGenerateFeatures(string training_set_size)

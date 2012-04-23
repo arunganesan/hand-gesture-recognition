@@ -55,28 +55,23 @@ namespace ColorGlove
         double[,] kMeans_clusters;
         int[] kMeans_assignments;
 
-        private RangeModeFormat RangeModeValue = RangeModeFormat.Default;
+        private RangeModeFormat RangeModeValue;
         private ShowExtractedFeatureFormat ShowExtractedFeatureMode = ShowExtractedFeatureFormat.None;
         // It seems not necessary to save the mapped result as byte[], byte should be enough.
         static private Dictionary<Tuple<byte, byte, byte>, byte> nearest_cache = new Dictionary<Tuple<byte, byte, byte>, byte>();         
-        //private WriteableBitmap bitmap_;
-        private WriteableBitmap color_bitmap_;
-        private WriteableBitmap depth_bitmap_;
-        private WriteableBitmap pool_bitmap_;
+        private WriteableBitmap bitmap_;
         public byte[] bitmap_bits_;
-        public byte[] bitmap_bits_copy_;
         private byte[] tmp_buffer_;
         private int[] overlay_bitmap_bits_;
         private readonly int kNoOverlay = -1;
         private int[] kEmptyOverlay;
 
-        private Manager.ProcessorModeFormat processor_mode_;
         private Object bitmap_lock_ = new Object();
         private static Object depth_lock_ = new Object();
 
         private bool overlayStart;
-        // Disallow image interactive operactions at this poing
-        //private System.Windows.Controls.Image image_;
+        private System.Windows.Controls.Image image_;
+        private Manager manager;
         public int lower, upper; // range for thresholding in show_mapped_depth(),  show_color_depth(). Set by the manager.
         
         // *OnEnable counters
@@ -143,32 +138,19 @@ namespace ColorGlove
         private Ref<bool> predict_on_enable_ref_;
         private Ref<bool> feature_extract_on_enable_ref_;
         private Ref<bool> overlay_start_ref_;
-        
-        // for density-based pooling
-        public int radius_;
-        public double density_;
-        public int cluster_threshold_count_;
         #endregion
 
-        public Processor(Manager.ProcessorModeFormat processor_mode, MainWindow main_window_controller)
+        public Processor(Manager manager)
         {
 
             Debug.WriteLine("Start processor contruction");
-
-            //this.manager = manager;
-            processor_mode_ = processor_mode; 
+            this.manager = manager;
             width = 640; height = 480;
             kColorStride = 4; kDepthStride = 1;
-            // The following is commented because it's done by the XAML already
-            /*
-            // generate an control element: image
             image_ = new System.Windows.Controls.Image();
             image_.Width = width;
             image_.Height = height;
-             */ 
             depth_label_ = new byte[width * height];
-            cluster_threshold_count_ = 100;
-            //main_window_controller.MetaLabel.Content = "Hey what's {0}";
 
             crop_values_ = new System.Drawing.Rectangle(
                 Properties.Settings.Default.CropOffset.X,
@@ -197,28 +179,23 @@ namespace ColorGlove
             MinSatTarget = 1F;
             MaxSatTarget = 0F;            
 			            
-            //bitmap_ = new WriteableBitmap(640, 480, 96, 96, PixelFormats.Bgr32, null);
-            
-            color_bitmap_ = new WriteableBitmap(640, 480, 96, 96, PixelFormats.Bgr32, null);
-            depth_bitmap_ = new WriteableBitmap(640, 480, 96, 96, PixelFormats.Bgr32, null);
-            pool_bitmap_ = new WriteableBitmap(640, 480, 96, 96, PixelFormats.Bgr32, null);
+            bitmap_ = new WriteableBitmap(640, 480, 96, 96, PixelFormats.Bgr32, null);
             bitmap_bits_ = new byte[640 * 480 * 4];
-            bitmap_bits_copy_ = new byte[640 * 480 * 4];
             tmp_buffer_ = new byte[640 * 480 * 4];
             overlay_bitmap_bits_ = new int[640 * 480 * 4]; // overlay
-            
-            // Set property of the control elements, epsecially those images
-            //image_.Source = bitmap_;
-            main_window_controller.colorImage.Source = color_bitmap_;
-            main_window_controller.depthImage.Source = depth_bitmap_;
-            main_window_controller.poolImage.Source = pool_bitmap_;
-            /*
+            image_.Source = bitmap_;
+
             image_.MouseLeftButtonUp += ImageClick;
             image_.MouseRightButtonDown += StartDrag;
             image_.MouseMove += Drag;
             image_.MouseRightButtonUp += EndDrag;
-            */ 
+
             SetCentroidColorAndLabel();
+
+            if (manager.ProcessorMode == Manager.ProcessorModeFormat.Michael)
+                RangeModeValue = RangeModeFormat.Near;
+            else if (manager.ProcessorMode == Manager.ProcessorModeFormat.Arun)
+                RangeModeValue = RangeModeFormat.Default;
             
             FleckLog.Level = LogLevel.Debug;
             if (server == null)
@@ -259,11 +236,9 @@ namespace ColorGlove
 
             // User dependent. Notice that this is important
             //FeatureExtraction.ModeFormat MyMode = FeatureExtraction.ModeFormat.F1000; 
-            if (processor_mode_ == Manager.ProcessorModeFormat.Michael)
+            if (manager.ProcessorMode == Manager.ProcessorModeFormat.Michael)
             {
-                //FeatureExtraction.ModeFormat MyMode = FeatureExtraction.ModeFormat.Blue;
-                //FeatureExtraction.ModeFormat MyMode = FeatureExtraction.ModeFormat.Demo1000;
-                FeatureExtraction.ModeFormat MyMode = FeatureExtraction.ModeFormat.Demo3Trees1000Features;
+                FeatureExtraction.ModeFormat MyMode = FeatureExtraction.ModeFormat.Blue;
                 Feature = new FeatureExtractionLib.FeatureExtraction(MyMode);
             }
             else
@@ -481,11 +456,9 @@ namespace ColorGlove
             Console.WriteLine("Unpausing.");
             paused = false;
         }
-       
-        // disable at this time due to the use of image_
+        
         private void UpdateKMeansCentroid(MouseButtonEventArgs e)
         {
-            /*
             Console.WriteLine("Click acquired.");
 
             lock (centroidColor)
@@ -520,7 +493,6 @@ namespace ColorGlove
             }
 
             overlayStart = false;
-             */
         }
 
         private void DummyPauseDelegate(MouseButtonEventArgs e) { }
@@ -563,6 +535,13 @@ namespace ColorGlove
             AddCentroid(147, 196, 210, targetLabel);
             AddCentroid(232, 242, 246, targetLabel);
 
+            AddCentroid(255, 255, 255, targetLabel);
+            
+            AddCentroid(53, 64, 85, targetLabel);
+            AddCentroid(58, 64, 85, targetLabel);
+            AddCentroid(65, 73, 92, targetLabel);
+            AddCentroid(206, 206, 206, targetLabel);
+            AddCentroid(102, 100, 101, targetLabel);
 
             // For background color 
             AddCentroid(80, 80, 80, kBackgroundLabel);
@@ -654,10 +633,9 @@ namespace ColorGlove
             ExecutionTime = ExecutionStopTime - ExecutionStartTime;
             Console.WriteLine("Use {0} ms for getting the 33 transformed points", ExecutionTime.TotalMilliseconds.ToString());
         }
-        // disable at this time due to the use of image_ 
+        
         private void ImageClick(object sender, MouseButtonEventArgs e)
         {
-            /*
             if (paused)
             {
                 UnPause(e);
@@ -667,9 +645,10 @@ namespace ColorGlove
             System.Windows.Point click_position = e.GetPosition(image_);
             int baseIndex = ((int)click_position.Y * 640 + (int)click_position.X) * 4;
             Console.WriteLine("(x,y): (" + click_position.X + ", " + click_position.Y + ") RGB: {" + bitmap_bits_[baseIndex + 2] + ", " + bitmap_bits_[baseIndex + 1] + ", " + bitmap_bits_[baseIndex] + "}");
-
-            return;
-
+            int _depthIndex = (int)click_position.Y * 640 + (int)click_position.X;
+            int _depthVal = depth_[_depthIndex] >> DepthImageFrame.PlayerIndexBitmaskWidth;
+            Console.WriteLine("depth: {0}", _depthVal);
+            
             if ((ShowExtractedFeatureMode & ShowExtractedFeatureFormat.Extract30FeacturesForEveryPixel) == ShowExtractedFeatureFormat.Extract30FeacturesForEveryPixel)
             {
                 int depthIndex = (int)click_position.Y * 640 + (int)click_position.X;
@@ -844,22 +823,18 @@ namespace ColorGlove
 
                 overlayStart = true;
             }
-             */
         }
-        // disable at this time due to the use of image_
+
         private void StartDrag(object sender, MouseButtonEventArgs e)
         {
-            /*
             System.Windows.Point click_position = e.GetPosition(image_);
             dragging = true;
             startDrag.X = (int)click_position.X;
             startDrag.Y = (int)click_position.Y;
-            */
         }
-        // disable at this time due to the use of image_
+
         private void Drag(object sender, MouseEventArgs e)
         {
-            /*
             System.Windows.Point position = e.GetPosition(image_);
             if (dragging)
             {
@@ -871,12 +846,10 @@ namespace ColorGlove
                 crop_values_.Width = Math.Abs(startDrag.X - endDrag.X);
                 crop_values_.Height = Math.Abs(startDrag.Y - endDrag.Y);
             }
-            */
         }
-        // disable at this time due to the use of image_
+
         private void EndDrag(object sender, MouseButtonEventArgs e)
         {
-            /*
             System.Windows.Point click_position = e.GetPosition(image_);
             dragging = false;
             endDrag.X = (int)click_position.X;
@@ -888,7 +861,6 @@ namespace ColorGlove
             crop_values_.Height = Math.Abs(startDrag.Y - endDrag.Y);
             UpdateCropSettings();
             //Console.WriteLine("New crop values are {0}", cropValues);
-            */
         }
 
         public void ProcessAndSave()
@@ -936,7 +908,7 @@ namespace ColorGlove
             }
         }
 
-        //public System.Windows.Controls.Image getImage() { return image_; }
+        public System.Windows.Controls.Image getImage() { return image_; }
 
         // seems like a better name to be setPipeline?
         public void updatePipeline(params Filter.Step [] steps)
@@ -955,65 +927,8 @@ namespace ColorGlove
         private void process(Filter.Step step)
         {
             Type type = typeof(Filter);
-            // this prohibit debugging
-            /* 
             MethodInfo Filtermethod = type.GetMethod(step.ToString());
             Filtermethod.Invoke(null, new object[]{state});
-             */
-            DateTime ExecutionStartTime;
-            DateTime ExecutionStopTime;
-            TimeSpan ExecutionTime;
-            ExecutionStartTime = DateTime.Now;
-
-            switch (step)
-            {
-                case Filter.Step.CopyColor:
-                    Filter.CopyColor(state);
-                    break;
-                case Filter.Step.PaintWhite:
-                    Filter.PaintWhite(state);
-                    break;
-                case Filter.Step.PaintGreen:
-                    Filter.PaintGreen(state);
-                    break;
-                case Filter.Step.CopyDepth:
-                    Filter.CopyDepth(state);
-                    break;
-                case Filter.Step.Crop:
-                    Filter.Crop(state);
-                    break;
-                case Filter.Step.MatchColors:
-                    Filter.MatchColors(state);
-                    break;
-                case Filter.Step.ShowOverlay:
-                    Filter.ShowOverlay(state);
-                    break;
-                case Filter.Step.EnableFeatureExtract:
-                    Filter.EnableFeatureExtract(state);
-                    break;
-                case Filter.Step.FeatureExtractOnEnable:
-                    Filter.FeatureExtractOnEnable(state);
-                    break;
-                case Filter.Step.EnablePredict:
-                    Filter.EnablePredict(state);
-                    break;
-                case Filter.Step.PerPixelClassificationOnEnable:
-                    Filter.PerPixelClassificationOnEnable(state);
-                    break;
-                case Filter.Step.PoolingOnPerPixelClassification:
-                    Filter.PoolingOnPerPixelClassification(state);
-                    break;
-                case Filter.Step.RestoreBitmap:
-                    Filter.RestoreBitmap(state);
-                    break;
-                case Filter.Step.CheckpointCurrentBitmap:
-                    Filter.CheckpointCurrentBitmap(state);
-                    break;
-            
-            }
-            ExecutionStopTime = DateTime.Now;
-            ExecutionTime = ExecutionStopTime - ExecutionStartTime;
-            Console.WriteLine("Use {0} ms for step: {1}", ExecutionTime.TotalMilliseconds.ToString(), step.ToString());            
         }
 
         private void PackageState()
@@ -1027,17 +942,11 @@ namespace ColorGlove
                 overlay_start_ref_, kNoOverlay, overlay_bitmap_bits_, kEmptyOverlay,
                 Feature, predict_output_, predict_labels_,
                 all_sockets_, pipeline,
-                HandGestureValue, RangeModeValue, pool_, bitmap_bits_copy_, radius_, density_, cluster_threshold_count_);
+                HandGestureValue, RangeModeValue, pool_);
         }
 
        public void update(KinectData data)
         {
-           /*
-            DateTime ExecutionStartTime;
-            DateTime ExecutionStopTime;
-            TimeSpan ExecutionTime;
-            ExecutionStartTime = DateTime.Now;
-           */
            // Is data_ going to be nullifies? (Michael) 
            if (data_ == null)
             {
@@ -1048,101 +957,17 @@ namespace ColorGlove
                 PackageState();
             }
 
-           DateTime ExecutionStartTime_new;
-           DateTime ExecutionStopTime_new;
-           TimeSpan ExecutionTime_new;
-           ExecutionStartTime_new = DateTime.Now;
-
-           #region Color Image
-           DateTime ExecutionStartTime;
-           DateTime ExecutionStopTime;
-           TimeSpan ExecutionTime;
-           ExecutionStartTime = DateTime.Now;
-           
-           process(Filter.Step.CopyColor);
-           // pontentially dangerous due to creating a new thread here. This is because bitmap_bits will be used later
-
-           color_bitmap_.Dispatcher.Invoke(new Action(() =>
-           //           color_bitmap_.Dispatcher.BeginInvoke(new Action(() =>
-            {
-                color_bitmap_.WritePixels(new Int32Rect(0, 0, color_bitmap_.PixelWidth, color_bitmap_.PixelHeight),
-                    bitmap_bits_, color_bitmap_.PixelWidth * sizeof(int), 0);
-            }));
-
-           ExecutionStopTime = DateTime.Now;
-           ExecutionTime = ExecutionStopTime - ExecutionStartTime;
-           SetContent.SetColorImageLabel(String.Format("Use {0} ms", Math.Round(ExecutionTime.TotalMilliseconds)));
-           #endregion
-           
-           #region Depth Image
-           ExecutionStartTime = DateTime.Now;
-
-           process(Filter.Step.CopyDepth);
-           process(Filter.Step.CheckpointCurrentBitmap);
-           process(Filter.Step.EnablePredict);
-           process(Filter.Step.PerPixelClassificationOnEnable);
-           process(Filter.Step.ShowOverlay);
-
-           depth_bitmap_.Dispatcher.Invoke(new Action(() =>
-           //           depth_bitmap_.Dispatcher.BeginInvoke(new Action(() =>
-           {
-               depth_bitmap_.WritePixels(new Int32Rect(0, 0, depth_bitmap_.PixelWidth, depth_bitmap_.PixelHeight),
-                   bitmap_bits_, depth_bitmap_.PixelWidth * sizeof(int), 0);
-           }));
-           
-           ExecutionStopTime = DateTime.Now;
-           ExecutionTime = ExecutionStopTime - ExecutionStartTime;
-           SetContent.SetDepthImageLabel(String.Format("Use {0} ms", Math.Round(ExecutionTime.TotalMilliseconds) ));
-           #endregion
-
-           #region Pool Image
-           ExecutionStartTime = DateTime.Now;
-
-           process(Filter.Step.RestoreBitmap);
-           process(Filter.Step.PoolingOnPerPixelClassification);
-           process(Filter.Step.ShowOverlay);
-           
-           pool_bitmap_.Dispatcher.Invoke(new Action(() =>
-           //pool_bitmap_.Dispatcher.BeginInvoke(new Action(() =>
-           {
-               pool_bitmap_.WritePixels(new Int32Rect(0, 0, pool_bitmap_.PixelWidth, pool_bitmap_.PixelHeight),
-                   bitmap_bits_, pool_bitmap_.PixelWidth * sizeof(int), 0);
-           }));
-           
-           
-           ExecutionStopTime = DateTime.Now;
-           ExecutionTime = ExecutionStopTime - ExecutionStartTime;
-           SetContent.SetPoolImageLabel(String.Format("Use {0} ms", Math.Round(ExecutionTime.TotalMilliseconds) ));
-           #endregion
-
-           ExecutionStopTime_new = DateTime.Now;
-           ExecutionTime_new = ExecutionStopTime_new - ExecutionStartTime_new;
-           Console.WriteLine("Use {0} ms for processing steps", ExecutionTime_new.TotalMilliseconds.ToString());
-           SetContent.SetMetaInformation(String.Format("Use {0} ms for everything", Math.Round(ExecutionTime_new.TotalMilliseconds) ));
- 
-           /* 
-           lock (bitmap_lock_)
+            lock (bitmap_lock_)
             {
                 if (paused) return;
                 foreach (Filter.Step step in pipeline) process(step);
             }
-
-            ExecutionStopTime_new = DateTime.Now;
-            ExecutionTime_new = ExecutionStopTime_new - ExecutionStartTime_new;
-            Console.WriteLine("Use {0} ms for processing steps", ExecutionTime_new.TotalMilliseconds.ToString());
-            
-           bitmap_.Dispatcher.Invoke(new Action(() =>
+            bitmap_.Dispatcher.Invoke(new Action(() =>
             {
                 bitmap_.WritePixels(new Int32Rect(0, 0, bitmap_.PixelWidth, bitmap_.PixelHeight),
                     bitmap_bits_, bitmap_.PixelWidth * sizeof(int), 0);
             }));
-            
-            */ 
-           /*
-            ExecutionStopTime = DateTime.Now;
-            ExecutionTime = ExecutionStopTime - ExecutionStartTime;
-            Console.WriteLine("Use {0} ms for per frame update", ExecutionTime.TotalMilliseconds.ToString());          
-             */ 
+          
         }
     }
 }
