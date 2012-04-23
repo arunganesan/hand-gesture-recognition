@@ -7,10 +7,10 @@ In this section, we describe the main classification algorithm used in the syste
 \label{sec: feacture_extraction}
 For each pixel \textbf{x}, we extract a group of features. Each group say $\theta=\{\bf{u}, \bf{v} \}$ corresponds to the depth difference between two points offset from \textbf{x} normalized by its depth:
 
-\begin{equation} 
+\begin{align} 
 \label{eqn:feature}
-f_{\theta}(x) = d\left(\bf{x} + \frac{\bf{u}}{d(\bf{x})}\right) - d\left(\bf{x} + \frac{\bf{v}}{d(\bf{x})}\right)
-\end{equation}
+f_{\theta}(x) = d\left(\textbf{x} + \frac{\textbf{u}}{d(\textbf{x})}\right) - d\left(\textbf{x} + \frac{\textbf{v}}{d(\textbf{x})}\right)
+\end{align}
 
 \begin{figure}
 	\includegraphics[width=0.23\textwidth]{fig/OpenHandNearOffset.jpg}
@@ -20,12 +20,24 @@ f_{\theta}(x) = d\left(\bf{x} + \frac{\bf{u}}{d(\bf{x})}\right) - d\left(\bf{x} 
 	\label{fig:offset}
 \end{figure}
 
-This feature extraction method is also used by \cite{shotton2011}. The offsets $\theta=\{\bf{u}, \bf{v} \}$ are obtained randomly. In our design, we make those offsets to be uniformly sampled from a bounded circular area. As we can see from Figure \ref{fig:offset}, the offset pairs are located within the neighborhood of the palm and is adaptive to the depth.  
+This feature extraction method is also used in \cite{shotton2011}. The offsets $\theta=\{\bf{u}, \bf{v} \}$ are generated randomly. In our design, we make those offsets to be uniformly sampled from a bounded circular area.  
+$\textbf{u}$ and $\textbf{v}$ are obtained as
+\begin{align}
+\label{enq: offest}
+ (r \cos \beta, r \sin \beta),
+\end{align}
+where $r$ and $\beta$ are uniform random variable:
+\begin{align}
+ r &= U[R_{\text{min}}, R_{\text{min}}] \\
+ \beta &= U[0, 2\pi]
+\end{align}
+
+ As we can see from Figure \ref{fig:offset}, the offset pairs are located within the neighborhood of the palm and is adaptive to the depth.  
 \todo{DO WE NEED MORE EXPLANATION?}
 
 \subsection{The Classifier: SVM or Random Forest?}
 
-In the training samples each pixel is labeled (we would deal with how to generate massive labeled sample in Section \ref{sec: generating_training}) and we have to use a supervised learning methods. Two methods come into our decision of choice: linear SVM and random forest. Let us make the notation as follows: the number of training samples: $l$, the number of features: $n$, the number of classes (types of gestures): $c$. Our main criteria for choosing the best algorithm are (1) prediction time and (2) accuracy. 
+In the training samples each pixel is labeled (we would deal with how to generate massive labeled sample in Section \ref{sec: generating_training}   and we have to use a supervised learning methods. Two methods come into our decision of choice: linear SVM and random forest. Let us make the notation as follows: the number of training samples: $l$, the number of features: $n$, the number of classes (types of gestures): $c$. Our main criteria for choosing the best algorithm are (1) prediction time and (2) accuracy. 
 
 \textbf{Linear SVM.} In linear SVM, a model that is $c$ number of weight vector length of $n$ is trained. In prediction, the prediction is based on the dot product between the trained weight vectors and the feature vector. Therefore,  the run-time complexity for predicting each pixel is $O(n\times c)$.
 
@@ -41,10 +53,5 @@ Say the maximum depth is $d_{\text{tree}}$, the prediction complexity can go dow
 \textbf{Training.} Training in linear SVM can be very fast as it can has a run-time complexity of $O(n\times l)$ and there exists technique to scale the training to distributed system \todo{Cite Michael's paper}. Training in random forest, however, does not have an optimization-based foundation. We use brute force to determine the right feature and right threshold for each node in the decision forest. In determining the right threshold, we use grid search. In the training of random forest, it is highly recommended to put the training data in the main memory. 
 
 
-\subsubsection{GPU} 
-* OpenCL
-
-Running the prediction algorithm using the CPU proved to be very slow. For a $640\times480$ image, our system took 2.5 minutes to classify all the pixels. Given that this problem is highly parallelizable, we turned to the GPU. Re-implementing the prediction algorithm with the GPU reduced the prediction time from 2.5 minutes to 400 milliseconds - a 99.7\% speedup!
-
-
-\subsection{GPU performance enhancements}
+\subsubsection{GPU For Real-time Prediction} 
+There are $307,200$ $(640\times 480)$ pixels in a frame. Each pixel will undertake $O(d_{\text{tree}}\times n_{\text{tree}})$ operations for prediction. We first tried to implement the random forest prediction using CPU. It takes about 1 minute to process a frame! GPU has to be used since it allows massive parallelism. In fact GPU is more suitable for high-parallelism and high-latency jobs, while CPU is better fit for low-parallelism and low-latency jobs. In our system, each pixel has fired a thread to make prediction using random forest. In a typical GPU, more than thousands of threads are running concurrently thanks to the special architecture of GPU. As a result, per-pixel classification can be done in about 40ms \todo{Exact number}.    
