@@ -735,6 +735,10 @@ namespace ColorGlove
 
                             max = Util.MaxNonBackground(label_counts);
 //                            Debug.Assert(dbclusters[largest_cluster].Count > 0);
+                            int length = dbclusters[largest_cluster].Count;
+                            List<int> x_list = new List<int>(length); 
+                            List<int> y_list = new List<int>(length);
+                            List<int> depth_list = new List<int> (length);
 
                             foreach (int depth_index in dbclusters[largest_cluster])
                             {
@@ -744,18 +748,25 @@ namespace ColorGlove
                                 state.overlay_bitmap_bits_[bitmap_index + 1] = (int)label_colors[max.Item1].Item2;
                                 state.overlay_bitmap_bits_[bitmap_index + 0] = (int)label_colors[max.Item1].Item3;
                                 System.Drawing.Point point = Util.toXY(bitmap_index, 640, 480, kColorStride);
+                                /*
                                 center_x += point.X;
                                 center_y += point.Y;
                                 average_depth += state.depth[depth_index];
+                                */
+                                x_list.Add(point.X);
+                                y_list.Add(point.Y);
+                                depth_list.Add(state.depth[depth_index]);
                             }
-                            
+
+                            x_list.Sort();
+                            y_list.Sort();
+                            depth_list.Sort();
                             center = new System.Drawing.Point(
-                                (int)(center_x / dbclusters[largest_cluster].Count),
-                                (int)(center_y / dbclusters[largest_cluster].Count)
+                                x_list[(int)(x_list.Count/2)],
+                                y_list[(int)(y_list.Count/2)]
                                 );
                             // use average to get the depth
-                            int depth = (int)(average_depth / dbclusters[largest_cluster].Count);
-
+                            int depth = depth_list[(int)(depth_list.Count / 2)];
                             //center = new System.Drawing.Point(centroids[outlier].x(), centroids[outlier].y());
                             gestures.Add(new Pooled(center, depth, (HandGestureFormat)max.Item1));
                             Debug.WriteLine("Center: ({0}px, {1}px, {2}mm), Gesture: {3}", center.X, center.Y, depth, (HandGestureFormat)max.Item1);
