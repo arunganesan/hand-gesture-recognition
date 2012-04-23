@@ -1,12 +1,25 @@
 \section{Implementation}
-* Use Kinect SDK to map the color pixel to depth pixel
-* Color gloves with fingers colored is not trained due the low resolution of the Kinect depth camera.
+
+There are several implementation details that worth mentioning here. 
+
+\subsection{Kinect}
+We have purchased two Kinect sensors: one for XBox the other for Windows. Kinect SDK is a Windows-based API allowing us to access the raw depth and RGB images from both versions of Kinect. The Windows version offers a near mode to permit objects to be within 30cm of the Kinect. In the labeling the color gloves to generate training samples, we use the built-in function provided by Kinect SDK to map the color pixel to depth pixel. The color detection turns out not to work very well since there are many noises due to lighting and the camera. However with cropping and depth-thresholding, we managed to labeled hundreds of images. At this time, we did not use the gloves with fingers colored, as we found (1) it is difficult to produce a perfectly built color gloves and (2) the low resolution of the Kinect sensor might not capture the details of figure very well.
+
+\subsection{GPU Implementation}
+From a programmer's perspective, GPU is seen as an I/O device: one has to move the data from main memory to the GPU memory and move back the processed data to the main memory. There are several libraries for us to consider to program on GPU: Microsoft DirectX, Microsoft DirectCompute, OpenCL, CUDA. We decided to use OpenCL as it is a standard library for general purpose computing on GPU and can run on almost all GPU (as opposed on CUDA which can only run on NVidia cards). OpenCL is using C as the programming language and has an event-queue framework to process incoming data. 
+
+
 * OpenCL
 * GPU has lot cache hit. It's limited by memory bandwidth since for the processor unit to get objects the GPU memory will take hundreds of operations
 * Virtual wall
+
+\subsection{Training}
+* EC2
+
+* Changing double to float saves a lot of space
+
+
+\textbf{Actual System.}
+* Use C$^\sharp$ and C++
 * Show actual system picture here
 
-
-\subsection{Refinements}
-* Changing double to float saves a lot of space
-* Use EC2
