@@ -10,13 +10,21 @@ From a programmer's perspective, GPU is seen as an I/O device: one has to move t
 
 We have considered the layout of the decision tree in the GPU memory since we found the cache hit is low. We have tested (1) recursively root-> left sub-tree and then right sub-tree, and (2) breath first data structures. It turns out there is no significant difference between the two data structures. So we use the first data structure.  
 
-\subsection{Training}
-* EC2
-* Virtual wall
-* Changing double to float saves a lot of space
+\subsection{Training Random Forest}
+
+The training samples generated is big, usually more than 10 GB. We customize a random forest library \cite{alglib}, for example via changing the double type to float type to save the memory size by halt. We wish we could have optimize more on the library since we spend some long time on training, e.g., the longest one lasts more than 24 hours. It would be an interesting research topic to parallelize random forest to multi-core and distributed systems.     
+
+We use Amazon Elastic Computing Cloud (EC2) to offload our massive training workloads to cloud servers.  
+
+\subsection{Refinements}
+
+Several improvements we found are very important for our systems.
+
+\textbf{Adding a virtual wall.} Our system will be placed in a variety of environments and therefore the background will be drastically variable. We decide to add a virtual wall after 1.5m so every pixel farther than 1.5m is treated as 1.5m. We found this technique can deal with a lot of variability of the backgrounds and make prediction accurate. 
 
 
-\textbf{Actual System.}
-* Use C$^\sharp$ and C++
-* Show actual system picture here
+\subsection{Actual System}
+
+Our main application is written in C$^\sharp$ in Windows, training algorithm is written in C++, and GPU prediction is written in C. The actual system would show three images: color image, depth image with per-pixel classification, pooled image with the largest cluster's position and type. Also the system would report the real-time performance for each stage. An illustrating example is shown in Fig \todo{Actual System Figure}
+
 
