@@ -1,0 +1,33 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ClassDiagram MajorVersion="1" MinorVersion="1">
+  <Class Name="FeatureExtractionLib.FeatureExtraction">
+    <Position X="1.25" Y="0.5" Width="8.5" />
+    <NestedTypes>
+      <Enum Name="FeatureExtractionLib.FeatureExtraction.ModeFormat" Collapsed="true">
+        <TypeIdentifier>
+          <NewMemberFileName>FeatureExtractionLib.cs</NewMemberFileName>
+        </TypeIdentifier>
+      </Enum>
+      <Enum Name="FeatureExtractionLib.FeatureExtraction.CPUorGPUFormat" Collapsed="true">
+        <TypeIdentifier>
+          <NewMemberFileName>FeatureExtractionLib.cs</NewMemberFileName>
+        </TypeIdentifier>
+      </Enum>
+      <Enum Name="FeatureExtractionLib.FeatureExtraction.KinectModeFormat" Collapsed="true">
+        <TypeIdentifier>
+          <NewMemberFileName>FeatureExtractionLib.cs</NewMemberFileName>
+        </TypeIdentifier>
+      </Enum>
+      <Enum Name="FeatureExtractionLib.FeatureExtraction.RandomGenerationModeFormat" Collapsed="true">
+        <TypeIdentifier>
+          <NewMemberFileName>FeatureExtractionLib.cs</NewMemberFileName>
+        </TypeIdentifier>
+      </Enum>
+    </NestedTypes>
+    <TypeIdentifier>
+      <HashCode>IkAIxBAEh4BRAxWUQIhcCAIBGUEgUAICDSQ8egAGsAo=</HashCode>
+      <FileName>FeatureExtractionLib.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Font Name="Segoe UI" Size="9" />
+</ClassDiagram>
