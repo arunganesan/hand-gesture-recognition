@@ -41,6 +41,9 @@ namespace FeatureExtractionLib
             Demo1000,
             Demo2000,
 
+            Range05,
+            Range1,
+            Range10,
             Range20,
             Range40,
             Range60,
@@ -260,8 +263,45 @@ namespace FeatureExtractionLib
                     break;
 
 
-
-
+                case ModeFormat.Range05:
+                    numOfOffsetPairs = 2000;
+                    uMin = 500;
+                    uMax = 2000/2;
+                    sampledNumberPerClass = 1000;
+                    UpperBound = 10000;
+                    kinect_mode_ = KinectModeFormat.Default;
+                    traningFilename = "Range05";
+                    RandomGenerationMode = RandomGenerationModeFormat.Circular;
+                    //RF_model_file_path_ = directory + "\\FeatureVectorF2000.400.rf.model";
+                    RF_model_file_path_ = directory + "\\RF.2000.350.3.model";
+                    num_classes_ = 5;
+                    break;
+                case ModeFormat.Range1:
+                    numOfOffsetPairs = 2000;
+                    uMin = 500;
+                    uMax = 1 * 2000;
+                    sampledNumberPerClass = 1000;
+                    UpperBound = 10000;
+                    kinect_mode_ = KinectModeFormat.Default;
+                    traningFilename = "Range1";
+                    RandomGenerationMode = RandomGenerationModeFormat.Circular;
+                    //RF_model_file_path_ = directory + "\\FeatureVectorF2000.400.rf.model";
+                    RF_model_file_path_ = directory + "\\RF.2000.350.3.model";
+                    num_classes_ = 5;
+                    break;
+                case ModeFormat.Range10:
+                    numOfOffsetPairs = 2000;
+                    uMin = 500;
+                    uMax = 10 * 2000;
+                    sampledNumberPerClass = 1000;
+                    UpperBound = 10000;
+                    kinect_mode_ = KinectModeFormat.Default;
+                    traningFilename = "Range10";
+                    RandomGenerationMode = RandomGenerationModeFormat.Circular;
+                    //RF_model_file_path_ = directory + "\\FeatureVectorF2000.400.rf.model";
+                    RF_model_file_path_ = directory + "\\RF.2000.350.3.model";
+                    num_classes_ = 5;
+                    break;
                 case ModeFormat.Range20:
                     numOfOffsetPairs = 2000;
                     uMin = 500;
@@ -917,13 +957,13 @@ namespace FeatureExtractionLib
                 //Console.WriteLine("countTargetLabel:{0}, countDepthMinusOne:{1}, countBackgroundLabel:{2}, totalNumber:{3}", countTargetLabel, countDepthMinusOne, countBackgounrdLabel, width * height);
                 file.Close();
             };
-
         }
 
         public void GenerateFeatureVectorViaImageFiles(string training_set_size)
         {
             Array values = Enum.GetValues(typeof(HandGestureFormat));
             output_filestream_ = new StreamWriter(String.Format("{0}\\{1}.{2}.features.txt", directory, traningFilename, training_set_size));         
+                        
             for (int i = 0; i < num_classes_; i++)
             {
                 HandGestureFormat val = (HandGestureFormat)i;

@@ -36,7 +36,7 @@ namespace ColorGlove
         public Manager(MainWindow parent)  // Construct function
         {
             if (processor_mode_ == ProcessorModeFormat.Michael)
-                datafeed = new DataFeed(DataFeed.DataSource.Kinect, DataFeed.RangeModeFormat.Default);
+                datafeed = new DataFeed(DataFeed.DataSource.Kinect, DataFeed.RangeModeFormat.Near);
             else
                 datafeed = new DataFeed(DataFeed.DataSource.Kinect, DataFeed.RangeModeFormat.Default);
             
@@ -129,6 +129,7 @@ namespace ColorGlove
                 
             }
             #endregion
+
             // why using a new thread? (Michael)
             poller = new Thread(new ThreadStart(this.poll));
         }

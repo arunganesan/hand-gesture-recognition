@@ -1,19 +1,50 @@
-\section{Per-pixel Classification}
+\section{Feature Extraction and Per-pixel Classification}
+\label{sec: Classification}
 
-\subsection{Acquiring training samples}
-Color glove approach. To simplify the data acquisition step, we used cropping, depth thresholding, and a single colored glove. We used 4 gestures, giving a total of 5 classes including the background. We collected 400 training samples evenly spread across the gestures.  
+In this section, we describe the main classification algorithm used in the system. At each frame, the system looks at the depth image, and predicts each pixel's type of gestures (e.g., open hand, close hand or background). The prediction result on every pixel will be fed into a pooling stage to propose the final gesture location and type. The driving reason for us to choose per-pixel classification is that it allows massive parallelism using GPU since each pixel is using the same predicting algorithm.  
 
-\subsection{Training classifier}
-We trained the classifier on different subsets of the 400 training samples to study the effect of the training sample size. Also, we set aside 50 samples for testing purposes. Because our prediction is at the pixel level, we sample 1000 pixels from each of the training image, trying to get a good balance between the background and the gesture.
+\subsection{Feature Extractions}
+\label{sec: feacture_extraction}
+For each pixel \textbf{x}, we extract a group of features. Each group say $\theta=\{\bf{u}, \bf{v} \}$ corresponds to the depth difference between two points offset from \textbf{x} normalized by its depth:
 
-We used a depth-invariant feature vector for each pixel in our training sample. Each feature in the feature vector is the difference in the depth value of two offset pixels from the current pixel. We experimented with different number of such offset pairs for the feature vector.
+\begin{equation} 
+\label{eqn:feature}
+f_{\theta}(x) = d\left(\bf{x} + \frac{\bf{u}}{d(\bf{x})}\right) - d\left(\bf{x} + \frac{\bf{v}}{d(\bf{x})}\right)
+\end{equation}
 
-We trained two classifiers - an SVM classifier for baseline testing, and a random forest classifier with multiple configurations. The random forest classifier can have multiple trees. We explored the effect of different number of trees in the forest.
+\begin{figure}
+	\includegraphics[width=0.23\textwidth]{fig/OpenHandNearOffset.jpg}
+	\includegraphics[width=0.23\textwidth]{fig/OpenHandFarOffset.jpg}
+	
+	\caption{Offset pairs for a given pixel. In the left figure, the reference pixel is the center of the palm. In the right figure, the reference pixel is the center of the palm of the person that stands. }
+	\label{fig:offset}
+\end{figure}
 
-\subsection{Prediction}
-We aimed for real-time prediction of the hand gesture. The trained model from the classifier is used for per-pixel classification. That is, each pixel is classified as belonging to one of the four gestures or to the background. From here we have to first identify the likely gesture, and then find the location of that gesture, a process we called `pooling'. 
+This feature extraction method is also used by \cite{shotton2011}. The offsets $\theta=\{\bf{u}, \bf{v} \}$ are obtained randomly. In our design, we make those offsets to be uniformly sampled from a bounded circular area. As we can see from Figure \ref{fig:offset}, the offset pairs are located within the neighborhood of the palm and is adaptive to the depth.  
+\todo{DO WE NEED MORE EXPLANATION?}
 
-\subsubsection{GPU} Running the prediction algorithm using the CPU proved to be very slow. For a $640\times480$ image, our system took 2.5 minutes to classify all the pixels. Given that this problem is highly parallelizable, we turned to the GPU. Re-implementing the prediction algorithm with the GPU reduced the prediction time from 2.5 minutes to 400 milliseconds - a 99.7\% speedup!
+\subsection{The Classifier: SVM or Random Forest?}
+
+In the training samples each pixel is labeled (we would deal with how to generate massive labeled sample in Section \ref{sec: generating_training}) and we have to use a supervised learning methods. Two methods come into our decision of choice: linear SVM and random forest. Let us make the notation as follows: the number of training samples: $l$, the number of features: $n$, the number of classes (types of gestures): $c$. Our main criteria for choosing the best algorithm are (1) prediction time and (2) accuracy. 
+
+\textbf{Linear SVM.} In linear SVM, a model that is $c$ number of weight vector length of $n$ is trained. In prediction, the prediction is based on the dot product between the trained weight vectors and the feature vector. Therefore,  the run-time complexity for predicting each pixel is $O(n\times c)$.
+
+
+
+\textbf{Random Forest.} Random forest is built on an ensemble of decision trees that are trained on a bootstrap the training samples. Each node in the decision tree has one feature and a threshold to determine which branch to go to. Without pruning the decision tree, the depth of the tree is approximately as $O(\log l)$. Therefore $O(\log l)$ queries of features are made in a single decision tree when prediction. The run-time complexity for random forest is then $O(\log l \times n_{\text{tree}})$. In fact, we can prune each decision tree to limit its depth. [TO DO(how to prune)]
+Say the maximum depth is $d_{\text{tree}}$, the prediction complexity can go down to $O(d_{\text{tree}}\times n_{\text{tree}})$. 
+
+\todo{Show RF algorithm}
+
+\textbf{Comparison.} Let us do a simple calculation in which we use a realistic parameter setting. Suppose we have 2000 features, 3 classes, and using 3 trees with maximum depth of 20, the random forest is 100 times faster than linear SVM! Moreover, in our experimental evaluation, random forest has proven to be far superior than linear SVM in accuracy. Although linear SVM might use some advanced feature learning technique such as deep learning to achieve similar accuracy as to random forest, SVM is still too slow for us to adopt in the system. Inheriting from decision tree, random forest allows the system to extract features \textbf{on-demand}, which has been extremely crucial for real-time application as in the case of our system. The second author \todo{HOW ABOUT THE FIRST AUTHOR?} is really surprised by this analysis since he used to believe linear SVM is unbeatable in practice.  
+
+\textbf{Training.} Training in linear SVM can be very fast as it can has a run-time complexity of $O(n\times l)$ and there exists technique to scale the training to distributed system \todo{Cite Michael's paper}. Training in random forest, however, does not have an optimization-based foundation. We use brute force to determine the right feature and right threshold for each node in the decision forest. In determining the right threshold, we use grid search. In the training of random forest, it is highly recommended to put the training data in the main memory. 
+
+
+\subsubsection{GPU} 
+* OpenCL
+
+Running the prediction algorithm using the CPU proved to be very slow. For a $640\times480$ image, our system took 2.5 minutes to classify all the pixels. Given that this problem is highly parallelizable, we turned to the GPU. Re-implementing the prediction algorithm with the GPU reduced the prediction time from 2.5 minutes to 400 milliseconds - a 99.7\% speedup!
 
 
 \subsection{GPU performance enhancements}

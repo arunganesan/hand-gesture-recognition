@@ -75,17 +75,17 @@ namespace ColorGlove
                 // one should call SetTestModule to active the FeatureExtractionLib
 
                 //processors[1].SetTestModule(Processor.ShowExtractedFeatureFormat.PredictAllPixelsGPU); 
-                //processors[1].SetTestModule(Processor.ShowExtractedFeatureFormat.ShowTransformedForOnePixel);
+                processors[1].setFeatureExtraction(Processor.ShowExtractedFeatureFormat.ShowTransformedForOnePixel); 
                 processors[1].updatePipeline(
                     // Show the rgb image
                     // Filter.Step.CopyColor
                     // Show the depth image 
                     Filter.Step.PaintWhite,
-                    Filter.Step.Crop,
+                 //   Filter.Step.Crop,
                     Filter.Step.PaintGreen,
                     Filter.Step.CopyDepth,
-                    Filter.Step.MatchColors,
-                    Filter.Step.FeatureExtractOnEnable,
+                //    Filter.Step.MatchColors,
+                //    Filter.Step.FeatureExtractOnEnable,
                     Filter.Step.ShowOverlay
 
 
