@@ -53,4 +53,12 @@ In the training samples each pixel is labeled (we would deal with how to generat
 
 
 \subsubsection{GPU For Real-time Prediction} 
-There are $307,200$ $(640\times 480)$ pixels in a frame. Each pixel will undertake $O(d_{\text{tree}}\times n_{\text{tree}})$ operations for prediction. We first tried to implement the random forest prediction using CPU. It takes about 1 minute to process a frame! GPU has to be used since it allows massive parallelism. In fact GPU is more suitable for high-parallelism and high-latency jobs, while CPU is better fit for low-parallelism and low-latency jobs. In our system, each pixel has fired a thread to make prediction using random forest. In a typical GPU, more than thousands of threads are running concurrently thanks to the special architecture of GPU. As a result, per-pixel classification can be done in about 40ms \todo{Exact number}.    
+There are $307,200$ $(640\times 480)$ pixels in a frame. Each pixel will undertake $O(d_{\text{tree}}\times n_{\text{tree}})$ operations for prediction. We first tried to implement the random forest prediction using CPU. It takes about 1 minute to process a frame! GPU has to be used since it allows massive parallelism. As can be seen in Figure~\ref{fig: GPUvsCPU}, GPU is more suitable for high-parallelism and high-latency jobs, while CPU is better fit for low-parallelism and low-latency jobs. 
+
+\begin{figure}
+	\includegraphics[width=0.45 \textwidth]{fig/GPUvsCPU.pdf}   
+    \caption{A computational comparison between GPU and CPU. A simple experiment is conducted by varying the number of iterations in a for-loop. GPU would parallelize the for loop.}
+    \label{fig: GPUvsCPU}
+\end{figure}
+
+In our system, each pixel has fired a thread to make prediction using random forest. In a typical GPU, more than thousands of threads are running concurrently thanks to the special architecture of GPU. As a result, per-pixel classification can be done in about 40ms \todo{Exact number}.    
