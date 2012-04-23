@@ -415,7 +415,11 @@ namespace ColorGlove
         private static void AdjustDepth(ProcessorState state)
         {
             for (int i = 0; i < state.depth.Length; i++)
+            {
                 state.depth[i] = (short)(state.depth[i] >> DepthImageFrame.PlayerIndexBitmaskWidth);
+                if (state.depth[i] > 1500)
+                    state.depth[i] = 1500;
+            }
         }
 
         // Uses (awesome) GPU code for prediction, and counts the majority 
