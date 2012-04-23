@@ -1,0 +1,12 @@
+\section{System Architecture}
+
+There are three main stages to our system. First is acquiring training samples using a colored glove. Second is training a classifier on the samples. Third is live prediction and pooling. 
+
+The approach is pixel-level classification, and future pooling. The motivation for pixel-level classification is the potential of parallelizing the task and using the GPU to achieve real-time prediction. 
+
+\begin{figure}
+\centering
+	\includegraphics[width=0.5\textwidth]{fig/SystemArchitecture.pdf}
+	\caption{System architecture}
+\label{fig: architecture}
+\end{figure}

@@ -15,3 +15,5 @@ C:\cygwin\home\Arun\EECS582\AlignRGBDepth\AlignRGBDepth\obj\x86\Release\AlignRGB
 C:\cygwin\home\Arun\EECS582\AlignRGBDepth\AlignRGBDepth\obj\x86\Release\AlignRGBDepth.pdb
 C:\cygwin\home\Arun\EECS-582\AlignRGBDepth\AlignRGBDepth\obj\x86\Release\AlignRGBDepth.exe
 C:\cygwin\home\Arun\EECS-582\AlignRGBDepth\AlignRGBDepth\obj\x86\Release\AlignRGBDepth.pdb
+C:\Users\Michael Zhang\Desktop\HandGestureRecognition\AlignRGBDepth\AlignRGBDepth\obj\x86\Release\AlignRGBDepth.exe
+C:\Users\Michael Zhang\Desktop\HandGestureRecognition\AlignRGBDepth\AlignRGBDepth\obj\x86\Release\AlignRGBDepth.pdb

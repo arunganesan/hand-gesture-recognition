@@ -5178,7 +5178,7 @@ Input parameters:
 
 
 Output parameters:
-    H   –   contains the matrix T.
+    H   ?  contains the matrix T.
             Array whose indexes range within [1..N, 1..N].
             All elements below the blocks on the main diagonal are equal
             to 0.

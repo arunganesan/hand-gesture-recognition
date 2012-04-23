@@ -92,3 +92,5 @@ C:\cygwin\home\Arun\EECS582\SkeletalTracking\SkeletalTracking\bin\Release\Fleck.
 C:\cygwin\home\Arun\EECS582\SkeletalTracking\SkeletalTracking\bin\Release\Microsoft.Samples.Kinect.WpfViewers.pdb
 C:\cygwin\home\Arun\EECS-582\SkeletalTracking\SkeletalTracking\obj\x86\Release\SkeletalTracking.exe
 C:\cygwin\home\Arun\EECS-582\SkeletalTracking\SkeletalTracking\obj\x86\Release\SkeletalTracking.pdb
+C:\Users\Michael Zhang\Desktop\HandGestureRecognition\SkeletalTracking\SkeletalTracking\obj\x86\Release\SkeletalTracking.exe
+C:\Users\Michael Zhang\Desktop\HandGestureRecognition\SkeletalTracking\SkeletalTracking\obj\x86\Release\SkeletalTracking.pdb

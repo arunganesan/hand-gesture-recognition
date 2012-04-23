@@ -1,0 +1,87 @@
+\documentclass[letterpaper,twocolumn,10pt]{article}
+\usepackage{usenix,epsfig,endnotes}
+\usepackage{graphicx, amsfonts, amsmath, amsthm, wrapfig, color}
+\usepackage{hyperref}
+\usepackage[parfill]{parskip}
+\usepackage{fullpage}
+
+\newcommand{\includeimage}[2] {\fbox{ \includegraphics[width=#1]{#2}}}
+ 
+\begin{document}
+
+%don't want date printed
+\date{}
+
+%make title bold and 14 pt font (Latex default is non-bold, 16 pt)
+\title{\Large \bf A Real-time Hand Gesture Recognition System}
+
+%for single author (just remove % characters)
+\author{
+{\rm Arun Ganesan}\\
+University of Michigan, Ann Arbor
+\and
+{\rm Caoxie (Michael) Zhang}\\
+University of Michigan, Ann Arbor
+% copy the following lines to add more authors
+% \and
+% {\rm Name}\\
+%Name Institution
+} % end author
+
+\maketitle
+
+% Use the following at camera-ready time to suppress page numbers.
+% Comment it out when you first submit the paper for review.
+\thispagestyle{empty}
+
+\begin{abstract}
+Hello World
+\end{abstract}
+
+\input{introduction}
+
+\input{System}
+
+\input{Classification}
+
+\input{Pooling}
+
+
+\input{Implementation}
+
+\input{Experiments}
+
+
+
+
+\section{Experience}
+\subsection{Limitations}
+Our current system is not without limitations. First, the real-time prediction component cannot achieve a frame rate at 30Hz but at about 5Hz.
+\section{Conclusion}
+
+\bibliographystyle{unsrt}
+\begin{thebibliography}{9}
+
+\bibitem{shotton2011} J. Shotton, A. Fitzgibbon, M. Cook, T. Sharp, M. Finocchio, R. Moore, A. Kipman, A. Blake. Real-time human pose recognition in parts from single depth images. CVPR, 2011.
+
+\bibitem{wang2009} R. Wang and J. Popovi\'c. Real-time hand-tracking with a color glove. In Proc. ACM SIGGRAPH, 2009.
+
+\bibitem{oikonomidis2011} I. Oikonomidis, N. Kyriazis, and A. Argyros. Efficient model-based 3D tracking of hand articulations using kinect. In BMVC, Aug 2011.
+
+\bibitem{lepetit2005} V. Lepetit, P. Lagger, and P. Fua. Randomized trees for real-time keypoint recognition. In Proc. CVPR, pages 2:775-781, 2005. 
+
+\bibitem{liblinear} R.-E. Fan, K.-W. Chang, C.-J. Hsieh, X.-R. Wang, and C.-J. Lin. LIBLINEAR: A library for large linear classification Journal of Machine Learning Research 9(2008), 1871-1874.
+
+\bibitem{schneiderman1996} B. Schneiderman. The eyes have it: a task by data type taxonomy for information visualizations. Visual Languages, 1996.
+
+\bibitem{keim2002} D.A. Keim. Information visualization and visual data mining. Visualization and Computer Graphics, IEEE Transactions. Vol 8, no.1, pp. 1-8, Jan 2002.
+
+\bibitem{stuerzlinger2010} W. Stuerzlinger, C Wingrave. The value of constraints for 3D user interfaces. Dagstuhl Seminar on VR, 2010.
+
+\bibitem{hoffman2010} M. Hoffman, P. Varcholik, and J. LaViola. Breaking the status quo: improving 3D gesture recognition with spatially convenient input devices. IEEE VR, 2010.
+
+\bibitem{alglib} V. Bystritsky. ALGLIB. 14 Aug 1999. Web. \url{http://www.alglib.net}.
+
+\end{thebibliography}
+
+\end{document}
