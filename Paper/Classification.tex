@@ -41,8 +41,9 @@ Say the maximum depth is $d_{\text{tree}}$, the prediction complexity can go dow
 \textbf{Training.} Training in linear SVM can be very fast as it can has a run-time complexity of $O(n\times l)$ and there exists technique to scale the training to distributed system \todo{Cite Michael's paper}. Training in random forest, however, does not have an optimization-based foundation. We use brute force to determine the right feature and right threshold for each node in the decision forest. In determining the right threshold, we use grid search. In the training of random forest, it is highly recommended to put the training data in the main memory. 
 
 
-\subsubsection{GPU} 
-* OpenCL
+\subsubsection{GPU For Real-time Prediction} 
+There are $307,200$ $(640\times 480)$ pixels in a frame. Each pixel will undertake $O(d_{\text{tree}}\times n_{\text{tree}})$ operations for prediction. We first tried to implement the random forest prediction using CPU. It takes about 1 minute to process a frame! GPU has to be used since it allows massive parallelism. In fact GPU is more suitable for high-parallelism and high-latency jobs, while CPU is better fit for low-parallelism and low-latency jobs. In the system, each pixel has fired a thread to make prediction using random forest. In a typical GPU, more than thousands of threads are running currently thanks the special architecture of GPU.   
+
 
 Running the prediction algorithm using the CPU proved to be very slow. For a $640\times480$ image, our system took 2.5 minutes to classify all the pixels. Given that this problem is highly parallelizable, we turned to the GPU. Re-implementing the prediction algorithm with the GPU reduced the prediction time from 2.5 minutes to 400 milliseconds - a 99.7\% speedup!
 
