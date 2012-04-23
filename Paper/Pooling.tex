@@ -4,6 +4,6 @@ After training on the labeled data sets and making per-pixel prediction, our sys
 
 \textbf{K-means.} K-means is probably the most commonly used clustering algorithm. A parameter K, the number of clusters, has to be specified beforehand. K-means is fast, with a complexity of $O(2N_{\text{non-background}})$, where $N_{\text{non-background}}$ is the number of non-background pixels. We found that however there is a significant weakness in the application of K-means to our system: (1) K-means assume each cluster has an equal size of points; and (2) K-means is not robust to outliers. As a result, K-means is very likely to divide a hand as two clusters. Therefore we abandon the use of K-means in our system.
 
-\textbf{Density-based clustering.} Density-based cluster is more suitable for graphics application as it tries to cluster points that has a density exceeding pre-determine threshold. We customize the density-based clustering as in Algorithm \todo{DBScan algorithm}. The complexity is O($N_{\text{non-background} \epsilon^2}$), where $\epsilon$ is the radius of interested pixel that is used in Algorithm \todo{DBScan algorithm}.
+\textbf{Density-based clustering.} Density-based cluster is more suitable for graphics application as it tries to cluster points that has a density exceeding pre-determine threshold. We customize the density-based clustering as in Algorithm \todo{DBScan algorithm}. The complexity is O($N_{\text{non-background} }\epsilon^2$), where $\epsilon$ is the radius of the interested pixels that is used in Algorithm \todo{DBScan algorithm}.
 
  
