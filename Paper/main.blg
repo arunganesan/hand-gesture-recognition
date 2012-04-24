@@ -1,7 +1,4 @@
 This is BibTeX, Version 0.99dThe top-level auxiliary file: Main.aux
-The style file: unsrt.bst
 I found no \bibdata command---while reading file Main.aux
-Warning--I didn't find a database entry for "shotton2011"
-Warning--I didn't find a database entry for "wang2009"
-Warning--I didn't find a database entry for "oikonomidis2011"
-(There was 1 error message)
+I found no \bibstyle command---while reading file Main.aux
+(There were 2 error messages)
