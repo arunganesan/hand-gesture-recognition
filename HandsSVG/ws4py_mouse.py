@@ -1,3 +1,5 @@
+#! /usr/bin/env python
+
 import re
 import win32api, win32con
 from ws4py.client.threadedclient import WebSocketClient
@@ -19,8 +21,10 @@ class MouseClient(WebSocketClient):
     
     def received_message(self, m):
         print "=> %d %s" % (len(m), str(m))
-        m = re.match(r'\((.*),(.*),(.*),(.*)\)', str(m))
+        return 
 
+        m = re.match(r'\((.*),(.*),(.*),(.*)\)', str(m))
+        
         gesture = m.group(1)
         x = int(m.group(2))
         y = int(m.group(3))
@@ -41,7 +45,7 @@ class MouseClient(WebSocketClient):
 
 if __name__ == '__main__':
     try:
-        ws = MouseClient('ws://localhost:8181/', protocols=['sample'])
+        ws = MouseClient('ws://localhost:8181/', protocols=['kinect'])
         ws.daemon = False
         ws.connect()
     except KeyboardInterrupt:

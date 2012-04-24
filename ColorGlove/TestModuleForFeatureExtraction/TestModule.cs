@@ -33,7 +33,7 @@ namespace TestModuleNamespace
             TestModule FeatureExtractionTest = new TestModule();
             
             //FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.Demo1000);
-            FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.Demo2000);
+            //FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.Demo2000);
             
             //FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.F1000);
             //FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.F2000);
@@ -44,12 +44,53 @@ namespace TestModuleNamespace
             //FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.Range60);
             //FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.Range100);
             //FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.Range200);
+
+            /*
+            FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.Range05);
+            FeatureExtractionTest.TestGenerateFeatures("10");
+            FeatureExtractionTest.TestGenerateFeatures("50");
+            FeatureExtractionTest.TestGenerateFeatures("100");
+            FeatureExtractionTest.TestGenerateFeatures("150");
+            FeatureExtractionTest.TestGenerateFeatures("200");
+            FeatureExtractionTest.TestGenerateFeatures("250");
+            FeatureExtractionTest.TestGenerateFeatures("300");
+            FeatureExtractionTest.TestGenerateFeatures("350");
+            FeatureExtractionTest.TestGenerateFeatures("test"); 
             
+            
+            
+            FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.Range1);
+            FeatureExtractionTest.TestGenerateFeatures("10");
+            FeatureExtractionTest.TestGenerateFeatures("50");
+            FeatureExtractionTest.TestGenerateFeatures("100");
+            FeatureExtractionTest.TestGenerateFeatures("150");
+            FeatureExtractionTest.TestGenerateFeatures("200");
+            FeatureExtractionTest.TestGenerateFeatures("250");
+            FeatureExtractionTest.TestGenerateFeatures("300");
+            FeatureExtractionTest.TestGenerateFeatures("350");
+            FeatureExtractionTest.TestGenerateFeatures("test");
+            */
+            
+            FeatureExtractionTest.SetupFeatureExtraction(FeatureExtraction.ModeFormat.Range10);
+            
+            /*
+            FeatureExtractionTest.TestGenerateFeatures("10");
+            FeatureExtractionTest.TestGenerateFeatures("50");
+            FeatureExtractionTest.TestGenerateFeatures("100");
+            FeatureExtractionTest.TestGenerateFeatures("150");
+            FeatureExtractionTest.TestGenerateFeatures("200");
+            FeatureExtractionTest.TestGenerateFeatures("250");
+            FeatureExtractionTest.TestGenerateFeatures("300");
+            */
+            
+            FeatureExtractionTest.TestGenerateFeatures("350");
+            FeatureExtractionTest.TestGenerateFeatures("test");
+
             //FeatureExtractionTest.TestGenerateOffset();
 
-            FeatureExtractionTest.TestGenerateFeatures("demo.test");
-            FeatureExtractionTest.TestGenerateFeatures("demo.943");
-            FeatureExtractionTest.TestGenerateFeatures("Near");
+            //FeatureExtractionTest.TestGenerateFeatures("demo.test");
+            //FeatureExtractionTest.TestGenerateFeatures("demo.943");
+            //FeatureExtractionTest.TestGenerateFeatures("Near");
             
             //FeatureExtractionTest.TestGenerateFeatures("large.test");
             //FeatureExtractionTest.TestGenerateFeatures("large.689");
@@ -58,16 +99,7 @@ namespace TestModuleNamespace
             //FeatureExtractionTest.TestGenerateFeatures("1150");
 
             // Generating feature files for different training set sizes
-            
-            //FeatureExtractionTest.TestGenerateFeatures("10");
-            //FeatureExtractionTest.TestGenerateFeatures("50");
-            //FeatureExtractionTest.TestGenerateFeatures("100");
-            //FeatureExtractionTest.TestGenerateFeatures("150");
-            //FeatureExtractionTest.TestGenerateFeatures("200");
-            //FeatureExtractionTest.TestGenerateFeatures("250");
-            //FeatureExtractionTest.TestGenerateFeatures("300");
-            //FeatureExtractionTest.TestGenerateFeatures("350");
-            //FeatureExtractionTest.TestGenerateFeatures("test");
+
             Console.WriteLine("Generated features.");
             
             // Test Random Forest
@@ -478,6 +510,7 @@ namespace TestModuleNamespace
             //Default direcotry: "..\\..\\..\\Data";
             // To setup the mode, see README in the library
             FeatureExtraction.ModeFormat MyMode = mode;
+
             dir = "D:\\gr\\training\\blue\\";
             
             //feature_lib_obj_ = new FeatureExtraction(MyMode, dir);

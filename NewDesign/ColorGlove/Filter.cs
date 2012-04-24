@@ -433,7 +433,6 @@ namespace ColorGlove
             ExecutionStartTime = DateTime.Now;
             
             state.feature.PredictGPU(state.depth, ref state.predict_output_);
-            
 
             ExecutionStopTime = DateTime.Now;
             ExecutionTime = ExecutionStopTime - ExecutionStartTime;
@@ -908,9 +907,17 @@ namespace ColorGlove
         // Writes the gesture to the sockets. Uses gestures.ToString() method
         private static void SendToSockets(Pooled gesture, ProcessorState state)
         {
-            string message = gesture.ToString();
-            Console.WriteLine("Sending: {0}", message);
-            foreach (var socket in state.all_sockets_.ToList()) socket.Send(message);
+            try
+            {
+                string message = gesture.ToString();
+                Console.WriteLine("Sending: {0}", message);
+                foreach (var socket in state.all_sockets_.ToList())
+                    socket.Send(message);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("Error");
+            }
         }
 
         #endregion

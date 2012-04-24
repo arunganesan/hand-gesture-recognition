@@ -129,6 +129,7 @@ namespace ColorGlove
                 
             }
             #endregion
+
             // why using a new thread? (Michael)
             poller = new Thread(new ThreadStart(this.poll));
         }
