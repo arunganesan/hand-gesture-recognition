@@ -263,7 +263,7 @@ namespace ColorGlove
             {
                 //FeatureExtraction.ModeFormat MyMode = FeatureExtraction.ModeFormat.Blue;
                 //FeatureExtraction.ModeFormat MyMode = FeatureExtraction.ModeFormat.Demo1000;
-                FeatureExtraction.ModeFormat MyMode = FeatureExtraction.ModeFormat.Demo3Trees1000Features;
+                FeatureExtraction.ModeFormat MyMode = FeatureExtraction.ModeFormat.Demo3Trees1000FeaturesWithWall;
                 Feature = new FeatureExtractionLib.FeatureExtraction(MyMode);
             }
             else

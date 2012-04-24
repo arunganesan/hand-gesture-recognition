@@ -417,8 +417,8 @@ namespace ColorGlove
             for (int i = 0; i < state.depth.Length; i++)
             {
                 state.depth[i] = (short)(state.depth[i] >> DepthImageFrame.PlayerIndexBitmaskWidth);
-                //if (state.depth[i] > 1500)
-                //    state.depth[i] = 1500;
+                if (state.depth[i] > 1500)
+                    state.depth[i] = 1500;
             }
         }
 

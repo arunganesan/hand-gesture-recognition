@@ -40,6 +40,7 @@ namespace FeatureExtractionLib
             F3000,
             Demo1000,
             Demo3Trees1000Features,
+            Demo3Trees1000FeaturesWithWall,
         };
         public enum CPUorGPUFormat
         {
@@ -253,8 +254,20 @@ namespace FeatureExtractionLib
                     num_classes_ = 3;
                     break;
 
-                    
-               
+                case ModeFormat.Demo3Trees1000FeaturesWithWall:
+                    numOfOffsetPairs = 1000;
+                    uMin = 500;
+                    uMax = 40 * 2000;
+                    sampledNumberPerClass = 1000;
+                    UpperBound = 10000;
+                    kinect_mode_ = KinectModeFormat.Near;
+                    traningFilename = "Demo1000";
+                    RandomGenerationMode = RandomGenerationModeFormat.Circular;
+                    //RFModelFilePath = directory + "\\FeatureVectorF1000.400.rf.model";
+                    //RFModelFilePath = directory + "\\RF.1000.100.3.model";
+                    RF_model_file_path_ = directory + "\\RF.demo.1000.943.3.model";
+                    num_classes_ = 3;
+                    break;
             }
         }
 

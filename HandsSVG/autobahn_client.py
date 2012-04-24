@@ -15,8 +15,8 @@ class EchoClientProtocol(WebSocketClientProtocol):
 
    def onOpen(self):
       print "Open"
-      self.scaleX = 1920.0/640.0;
-      self.scaleY = 1080.0/480.0;
+      self.scaleX = 1280.0/640.0;
+      self.scaleY = 1024.0/480.0;
       self.prev_depth = -1;
       self.gesture_state = "OpenHand"
       sys.stdout.flush()
@@ -43,12 +43,13 @@ class EchoClientProtocol(WebSocketClientProtocol):
       
       depth_delta = depth - self.prev_depth
       
-      if (depth_delta < -15): 
-         print "Wheel up"
-         wheel(4)
-      elif (depth_delta > 15): 
-        print "Wheel down"
-        wheel(-4) 
+      if self.gesture_state == "OpenHand":
+        if (depth_delta < -15): 
+          print "Wheel up"
+          wheel(4)
+        elif (depth_delta > 15): 
+          print "Wheel down"
+          wheel(-4) 
       
       self.prev_depth = depth
 
