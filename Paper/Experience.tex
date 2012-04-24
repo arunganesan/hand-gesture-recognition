@@ -8,5 +8,7 @@ In building the system from scratch, we have learned several lessons in building
 
 \textbf{Test Accuracy Is Not Enough.} We have found that using test accuracy is not a good evaluation of the actual system. Sometimes the system performs very well in the test data set, but poorly in practice. The reason behind this is that the environment we evaluate is changing all the time: camera position, backgrounds, people's clothes, and etc. Therefore, we decide to choose some important parameters based on our experience in the actual environment instead of mere test accuracy. 
 
+\textbf{Bundle The Model With Feature Extraction.} In our system, we separated feature extraction with the model. This turned out to be error-prone. It would happen sometimes that the trained model has the wrong feature extraction (e.g., the offset pairs are not correct), and things could get even worse when the real-time prediction system mistakenly uses the wrong feature extraction method. Our immediate solution is to be extremely careful to this. However, if we were to build the system again we would have  bundled the model with feature extraction to avoid human errors.
+
 \subsection{Limitations}
 Our current system is not without limitations. First, the real-time prediction component cannot achieve a frame rate at 30Hz but at about 10Hz.
