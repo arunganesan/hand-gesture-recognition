@@ -1,5 +1,9 @@
 \section{Experience}
 
-* Tree layout does not matter in GPU
+In building the system, we have learned several lessons in building a practical machine learning system.
 
-* Late-optimization Strategy. Quick programming. Then Profiling and them optimize the slowest part.  
+\textbf{Late-optimization.} Although our system is very time-sensitive, we found that it is not necessary to do optimization on one component while other components are not ready. We found that the best is to  develop quickly and do profiling to discover then bottleneck and optimize it. This saves us a lot of time in making unnecessary optimization.   
+
+\textbf{Using Pipeline Rather Than Simple Events.} In the testing of our system, we have incurred many concurrency bugs due to the event-driven programming framework. We solve this by not using lock but adding the processing unit to a pipeline, thus leaving us free concurrency bugs.  
+
+\textbf{Test Accuracy Is Not Enough.} We have found that using test accuracy is not a good evaluation of the actual system. Sometimes the system performs very well in the test data set, but poorly in practice. The reason behind this is that the environment we evaluate is changing all the time: camera position, backgrounds, people's clothes, and etc. Therefore, we decide to choose some important parameters based on our experience in the actual environment instead of mere test accuracy. 
