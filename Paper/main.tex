@@ -3,7 +3,11 @@
 \usepackage{graphicx, amsfonts, amsmath, amsthm, wrapfig, color}
 \usepackage{hyperref}
 \usepackage[parfill]{parskip}
+\usepackage{algorithm}
+%\usepackage{algorithmic}
+\usepackage{algpseudocode}
 \usepackage{fullpage}
+ 
 
 \newcommand{\includeimage}[2] {\fbox{ \includegraphics[width=#1]{#2}}}
 \newcommand{\todo}[1]{{\textcolor{red}{[[TODO: #1]]}}}
@@ -35,7 +39,10 @@ University of Michigan, Ann Arbor
 \thispagestyle{empty}
 
 \begin{abstract}
-Hello World
+Hand gesture recognition can be used many applications such as interactive data analysis or American Sign language detection. Current systems are either expensive, unable to run in real time, or require the user wear devices such as custom gloves. We propose an inexpensive solution for predicting hand gestures in real time that uses Microsoft's Kinect camera. Our system involves training a random forest classifier with a color glove, and then predicting at a pixel level a naked hand. Our system predicts all pixels in the frame at 25 fps, and is resilient to environment differences in prediction \todo{really...?}. 
+
+We extensively studied the random forest classifier and discovered interesting properties including that the number of trees in the forest makes negligible difference in the prediction accuracy, and random forest classifier significantly outperforms a linear SVM.
+
 \end{abstract}
 
 \input{introduction}
@@ -57,11 +64,10 @@ Hello World
 
 \input{Experience}
 
-\subsection{Limitations}
-Our current system is not without limitations. First, the real-time prediction component cannot achieve a frame rate at 30Hz but at about 10Hz.
 
 \input{Relatedwork}
-\section{Conclusion}
+
+\input{Conclusion}
 
 \bibliographystyle{unsrt}
 \begin{thebibliography}{9}
@@ -85,6 +91,8 @@ Our current system is not without limitations. First, the real-time prediction c
 \bibitem{hoffman2010} M. Hoffman, P. Varcholik, and J. LaViola. Breaking the status quo: improving 3D gesture recognition with spatially convenient input devices. IEEE VR, 2010.
 
 \bibitem{alglib} V. Bystritsky. ALGLIB. 14 Aug 1999. Web. \url{http://www.alglib.net}.
+
+\bibitem{googleearth} Google Inc. (2009). Google Earth (Version 6.2) [Software]. Available from \url{http://www.google.com/earth/index.html}.
 
 \end{thebibliography}
 

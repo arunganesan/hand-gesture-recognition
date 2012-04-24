@@ -1,0 +1,36 @@
+\section{Pooling}
+
+After training on the labeled data sets and making per-pixel prediction, our system would take the per-pixel's predicted class as input and propose the final location and type of the gesture. We have considered several candidates. First we considered to use mean shift, a similar approach used in \todo{MSR}. However we found that the complexity of mean shift is very high: $O(N^2)$, where N is the number of pixels (in our case $N= 307200$). Then we consider to use clustering, i.e., unsupervised learning. The methodology is as follows: we treat non-background pixels (after per-pixel classification) all equally (without any labels) and then run clustering on them. Then we would use the largest cluster as a proposal of the hand and use the majority of the predicted label as the type of the gesture. The location of the gesture is found by the 2D median of the largest cluster to prevent outliers. In the choice of clustering algorithms, we consider bother K-means and density-based clustering.
+
+\textbf{K-means.} K-means is probably the most commonly used clustering algorithm. A parameter K, the number of clusters, has to be specified beforehand. K-means is fast, with a complexity of $O(2N_{\text{non-background}})$, where $N_{\text{non-background}}$ is the number of non-background pixels. We found that however there is a significant weakness in the application of K-means to our system: (1) K-means assume each cluster has an equal size of points; and (2) K-means is not robust to outliers. As a result, K-means is very likely to divide a hand as two clusters. Therefore we abandon the use of K-means in our system.
+
+\textbf{Density-based clustering.} Density-based cluster is more suitable for graphics application as it tries to cluster points that has a density exceeding pre-determine threshold. We customize the density-based clustering as in Algorithm \todo{DBScan algorithm}. The complexity is O($N_{\text{non-background} }\epsilon^2$), where $\epsilon$ is the radius of the interested pixels that is used in Algorithm 
+\todo{DBScan algorithm}.
+
+\begin{algorithm}
+%\vskip -0.1in
+ \caption{Prediction Algorithm In Random Forest}
+ \label{alg: RF}
+\begin{algorithmic}
+
+\STATE Input: a depth image and a pixel \textbf{x} to be predicted
+\STATE Initialize predict\textunderscore list
+   \FOR{each tree $i$ in the random forest}
+     \STATE node $\leftarrow$ root of tree i
+   	 \WHILE{node is not a leaf}
+	   \STATE feature\textunderscore index $\leftarrow$ node.feature
+       \STATE $(\textbf{u}, \textbf{v})$ $\leftarrow$ get\textunderscore offset\textunderscore pair( pixel \textbf{x}, feature\textunderscore index )
+	   \STATE depth = get\textunderscore depth\textunderscore difference$(\textbf{u}, \textbf{v})$
+	   \IF{ depth $>$ node.threshold } 	
+	      \STATE node $\leftarrow$ node's right children	
+	   \ELSE
+	      \STATE node $\leftarrow$ node's left children
+       \ENDIF
+    \ENDWHILE
+    \STATE predict\textunderscore list[i] $\leftarrow$ node's label
+  \ENDFOR
+\RETURN predict\textunderscore list's majority label
+\end{algorithmic}
+\end{algorithm}
+
+
