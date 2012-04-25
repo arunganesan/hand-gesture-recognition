@@ -1,16 +1,19 @@
 \section{Feature Extraction and Per-pixel Classification}
 \label{sec: classification}
-
+\cutsection
 In this section, we describe the main classification algorithm used in the system. At each frame the system predicts each pixel as belonging to a gesture (e.g., open hand, close hand or background). The prediction result on every pixel are fed into a pooling algorithm to propose the final gesture location and type. The driving reason for us to choose per-pixel classification is that it allows massive parallelism using GPU. The prediction algorithm is identical for every pixel therefore we can leverage the Single Instruction Multiple Data architecture of the GPU.
 
+\cutsection
 \subsection{Feature Extractions}
 \label{sec: feacture_extraction}
+\cutsection
 For each pixel \textbf{x}, we extract a set of features. Each feature corresponds to the depth difference between two  offset points, $\{\bf{u}, \bf{v} \}$,  from \textbf{x} and normalized by its depth. This is shown in equation~\ref{eqn:feature} where $d(x)$ is the depth at point $x$ and $\theta$ refers to the pair of offsets $u, v$.
 
 \begin{align}
 \label{eqn:feature}
 f_{\theta}(x) = d\left(\textbf{x} + \frac{\textbf{u}}{d(\textbf{x})}\right) - d\left(\textbf{x} + \frac{\textbf{v}}{d(\textbf{x})}\right)
 \end{align}
+
 
 \begin{figure}
 	\includegraphics[width=0.23\textwidth]{fig/OpenHandNearOffset.jpg}
@@ -19,8 +22,10 @@ f_{\theta}(x) = d\left(\textbf{x} + \frac{\textbf{u}}{d(\textbf{x})}\right) - d\
 	\caption{Offset pairs for a given pixel. In the left figure, the reference pixel is the center of the palm. In the right figure, the reference pixel is the center of the palm of the person that stands. }
 	\label{fig:offset}
 \end{figure}
+\cutsection
 
 This feature extraction method is also used in \cite{shotton2011}. The offsets $\theta=\{\bf{u}, \bf{v} \}$ are generated randomly. In our design, we randomly sample the offsets from a bounded circular area. $\textbf{u}$ and $\textbf{v}$ are obtained as
+
 \begin{align}
 \label{enq: offest}
  (r \cos \beta, r \sin \beta),
@@ -35,13 +40,16 @@ where $r$ and $\beta$ are uniform random variables:
 
 As we can see from Figure \ref{fig:offset}, the offset pairs are located within the neighborhood of the palm and are proportional to the depth.
 
+\cutsection
 \subsection{The Classifier: SVM or Random Forest?}
+\cutsection
 
 In the training samples each pixel is labeled (we address how to generate massive labeled sample in Section \ref{sec: generating_training}) and we have to use supervised learning methods. Two methods come into our decision of choice: linear SVM and random forest. We use the following notation in our explanation -- the number of training samples: $l$, the number of features: $n$, the number of classes (types of gestures): $c$. Our main criteria for choosing the best algorithm are (1) prediction time and (2) accuracy.
 
 \textbf{Linear SVM.} In linear SVM, a model that has $c$ classes and a weight vector of length $n$ is trained. The prediction is based on the dot product between the trained weight vectors and the feature vector. Therefore, the run-time complexity for predicting each pixel is $O(n\times c)$.
 
 \textbf{Random Forest.} Random forest is built on an ensemble of decision trees that are trained on  bootstrap\footnote{Bootstrap means uniform   sampling with replacement} samples of the training sets. The decision tree in the random forest is a binary tree. Each node in the decision tree has one feature and a threshold to determine which branch to go to by comparing the feature value to the threshold. In the leafs of the tree are labels. The final prediction is made by the majority rule of the all decision trees in the forest. More details about the training and statistical analysis can be seen in \cite{lepetit2005}. The depth of the decision tree is approximately as $O(\log l)$. Therefore $O(\log l)$ queries of features are made in a single decision tree when predicting. The run-time complexity for making prediction in random forest is then $O(\log l \times n_{\text{tree}})$. In fact, we can prune each decision tree to limit its depth. This refinement, described in section~\ref{sec:refinement} reduces the complexity to $O(d_{\text{tree}}\times n_{\text{tree}})$, for a fixed depth $d_{\text{tree}}$. Finally, we present the random forest prediction algorithm in Algorithm \ref{alg: RF}.
+
 
 \begin{algorithm}
 %\vskip -0.1in
@@ -76,7 +84,9 @@ In the training samples each pixel is labeled (we address how to generate massiv
 \textbf{Training.} Training in linear SVM is very fast as it has a run-time complexity of $O(n\times l)$ and there exists a technique to scale the training to distributed systems \cite{michael}. Training in random forest, however, does not have an optimization-based foundation. We use brute force to determine the right feature and right threshold for each node in the decision forest. In determining the right threshold, we use grid search. In the training of random forest, it is highly recommended to put the training data in the main memory.
 
 
+\cutsection
 \subsubsection{GPU For Real-time Prediction}
+\cutsection
 There are $307,200$ $(640\times 480)$ pixels in a frame. Each pixel will undertake $O(d_{\text{tree}}\times n_{\text{tree}})$ operations for prediction. We first tried to implement the random forest prediction using CPU. It takes about 1 minute to process a frame! GPU presented an attractive alternative as it supports massive parallelism. As can be seen in Figure~\ref{fig: GPUvsCPU}, GPU is more suitable for high-parallelism and high-latency jobs, while CPU is better fit for low-parallelism and low-latency jobs.
 
 \begin{figure}

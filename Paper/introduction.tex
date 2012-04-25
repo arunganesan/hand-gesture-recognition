@@ -1,9 +1,12 @@
 \section{Introduction}
 \label{sec: intro}
+\cutsection
 
 Natural user interfaces (NUI) are a new way for humans to interact with machines. Among numerous NUIs which include multi-touch, eye tracking and motion detection, hand gesture recognition is one promising candidate. In this paper, we design and evaluate a novel hand gesture recognition system to demonstrate that we are close to an actual production-level system. The reader should note that that we do not claim hand gesture recognition is THE future of interfaces. In fact there are some limitations for using hand gestures such as fatigue over long term usage (in the movie Minority Report, Tom Cruise has to take breaks due to fatigue). We focus on the engineering challenges in building such a system and leave usability studies to future research.
 
+\cutsection
 \subsection{Design Goals}
+\cutsection
 Our system is designed to maximize user experience. Moreover, our system differs from existing systems in the following ways.
 
 \textbf{Just hands.} Many existing system such as \cite{mistry, wang2009} require users to wear gloves or markers to be capture by the camera. We feel this limits the usability of the application and aim to keep the prediction of the system entirely marker free.
@@ -16,7 +19,9 @@ Our system is designed to maximize user experience. Moreover, our system differs
 
 \textbf{Arbitrary gestures.} Our system should be able to easily incorporate new types of gestures. With sufficient training, our system should support many complex gestures such as those seen in the American Sign Language.
 
+\cutsection
 \subsection{Main Ideas}
+\cutsection
 Our system would not be possible without the use of Microsoft Kinect for PC, which we were probably among the first to obtain when it was released in February 2012. Kinect is a multi-purpose sensor including RGB camera, depth camera and audio sensor. The Kinect SDK offers skeletal recognition however lacks the granularity for individual fingers. The SDK also provides raw pixels for the RGB image and depth image at a maximum frame rate 30Hz. We use the depth image for gesture recognition and both RGB and depth image for generating training samples. The depth image is the key factor that distinguishes our system from most existing systems that use only the RGB camera. The advantage of the depth image is that it offers an additional dimension, i.e. depth of each pixel that is not present in the RGB image. An illustrating example is when an object and its background have a similar color but the depth of the two are drastically different.
 
 Our system adopts a data-driven approach: machine learning as opposed to hand-crafted rule-based systems. The adoption of machine learning transfers the human intelligent efforts from designing rules/algorithms to designing informative features. By extracting the features from labeled data, machine learning algorithms allows computers to learn the rules/algorithms automatically. The key advantages of using machine learning in our system    
@@ -24,7 +29,9 @@ are (1) it is easy to incorporate developer-defined gestures: developers just ne
 
 In a high-level overview, the system is separated into two parts: training and real-time prediction. Only the real-time prediction component is seen by the end users. In the training component, we use color gloves to generate many labeled data of the depth image. Each pixel in the depth image is labeled as a belonging to a gesture or to the background. A random forest classifier is trained to achieve both real-time performance and high accuracy. In the real-time prediction component, the GPU is used to predict the class of each pixel in the depth image and the prediction output is pooled to propose the final position and type of a gesture. Notice that we do not use any temporal or kinetics information as the current simple design suffices for the hand gesture tracking.
 
+\cutsection
 \subsection{Contributions}
+\cutsection
 We summarize our contributions as follows:
 
 \textbf{A system for real-time hand gesture recognition.} We design and implement a complete real-time hand gesture recognition system based on machine learning. The system broadcasts the location and gesture of the hand through a web socket server and can be used by other applications.
@@ -37,5 +44,7 @@ We summarize our contributions as follows:
 
 Our work is made public at: \url{https://github.com/arunganesan/hand-gesture-recognition}.
 
+\cutsection
 \subsection{Outline}
+\cutsection
 The rest of this paper is organized as follows. In section~\ref{sec: system} we present an overview of the system architecture. Three large components of the system are described in their own sections. Section~\ref{sec: feacture_extraction} discusses our choice of random forest over SVM for classification, and the features used in our algorithm. Section~\ref{sec: generating_training} explains the collection of training samples, and section~\ref{sec: pooling} discusses the pooling of the predicted pixels. Section~\ref{sec: implementation} discusses some of the details of our implementation. Section~\ref{sec: experiments} presents our experimental findings. Section~\ref{sec: experience} reflects on our experiences in building the system and working on this project. Section~\ref{sec: related_work} presents related work and section~\ref{sec: conclusion} concludes. 

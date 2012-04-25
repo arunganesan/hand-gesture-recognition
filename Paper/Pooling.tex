@@ -1,5 +1,6 @@
 \section{Pooling}
 \label{sec: pooling}
+\cutsection
 
 After training on the labeled data sets and making per-pixel prediction, our system takes the per-pixel's predicted class as input and proposes the final location and type of the gesture. We use clustering to achieve this goal, i.e., unsupervised learning. The methodology is as follows: we treat non-background pixels (after per-pixel classification) all equally (without any labels) and then run a clustering algorithm on them. Then we use the largest cluster as a proposal of the hand and use the majority of the predicted label as the type of the gesture. The location of the gesture is found by the 2D median of the largest cluster to add resistance to outliers. We considered several candidate clustering algorithms. First we considered to use mean shift, a similar approach used in \cite{shotton2011}. However we found that the complexity of mean shift is very high: $O(N^2)$, where N is the number of pixels (in our case $N= 307200$). We then turned our attention to K-means and DBSCAN clustering.
 
@@ -57,5 +58,3 @@ After training on the labeled data sets and making per-pixel prediction, our sys
 
 \end{algorithmic}
 \end{algorithm}
-
-
