@@ -10,12 +10,12 @@
 \usepackage{float}
 \usepackage{fullpage}
  
-\renewcommand{\baselinestretch}{0.87}
+\renewcommand{\baselinestretch}{0.95}
 \newcommand{\includeimage}[2] {\fbox{ \includegraphics[width=#1]{#2}}}
 \newcommand{\todo}[1]{{\textcolor{red}{[[TODO: #1]]}}}
-\newcommand{\cutsection}{\vspace*{-0.20in}}%{{\vspace*{-0.03in}}}
-\newcommand{\cutsubsection}{\vspace*{-0.15in}}%{{\vspace*{-0.03in}}}
-\newcommand{\cutcaption}{\vspace*{-0.10in}}%{{\vspace*{-0.03in}}}
+\newcommand{\cutsection}{\vspace*{-0.05in}}%{{\vspace*{-0.03in}}}
+\newcommand{\cutsubsection}{\vspace*{-0.05in}}%{{\vspace*{-0.03in}}}
+\newcommand{\cutcaption}{\vspace*{-0.05in}}%{{\vspace*{-0.03in}}}
 \newcommand{\cutequation}{\vspace*{-0.05in}}%{{\vspace*{-0.03in}}}
 \begin{document}
 
@@ -73,7 +73,13 @@ data analysis or American Sign Language detection. Current systems are either ex
 \cutsection
 \input{Conclusion}
 \cutsection
+
+
+\clearpage
+
 \bibliographystyle{unsrt}
+
+
 \begin{thebibliography}{9}
 \cutsection
 \bibitem{shotton2011} J. Shotton, A. Fitzgibbon, M. Cook, T. Sharp, M. Finocchio, R. Moore, A. Kipman, A. Blake. Real-time human pose recognition in parts from single depth images. CVPR, 2011.

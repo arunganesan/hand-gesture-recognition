@@ -1,0 +1,104 @@
+\documentclass{article} % For LaTeX2e
+
+\usepackage{nips11submit_e,times}
+
+\usepackage{epsfig,endnotes}
+\usepackage{graphicx, amsfonts, amsmath, amsthm, wrapfig, color}
+\usepackage{hyperref}
+\usepackage[parfill]{parskip}
+\usepackage{algorithm}
+%\usepackage{algorithmic}
+\usepackage{algpseudocode}
+\usepackage{subfig}
+\usepackage{float}
+\usepackage{fullpage}
+ 
+
+\newcommand{\includeimage}[2] {\fbox{ \includegraphics[width=#1]{#2}}}
+\newcommand{\todo}[1]{{\textcolor{red}{[[TODO: #1]]}}}
+\title{A Real-time Hand Gesture Recognition System}
+
+
+\author{
+Arun Ganesan \\
+Department of Electrical Engineering Computer Science\\
+The University of Michigan\\
+Ann Arbor, MI 48109-2121 \\
+\texttt{caoxiezh@umich.edu} \\
+\And
+Caoxie (Michael) Zhang \\
+}
+
+% The \author macro works with any number of authors. There are two commands
+% used to separate the names and addresses of multiple authors: \And and \AND.
+%
+% Using \And between authors leaves it to \LaTeX{} to determine where to break
+% the lines. Using \AND forces a linebreak at that point. So, if \LaTeX{}
+% puts 3 of 4 authors names on the first line, and the last on the second
+% line, try using \AND instead of \And before the third author name.
+
+\newcommand{\fix}{\marginpar{FIX}}
+\newcommand{\new}{\marginpar{NEW}}
+
+%\nipsfinalcopy % Uncomment for camera-ready version
+
+\begin{document}
+
+
+\maketitle
+
+\begin{abstract}
+Hand gesture recognition can be used in many applications such as interactive 
+data analysis or American Sign Language detection. Current systems are either expensive, unable to run in real time, or require the user wear devices such as custom gloves. We propose an inexpensive solution for predicting hand gestures in real time that uses Microsoft's Kinect camera. Our system involves training a random forest classifier with a color glove, and then predicting at a pixel level a naked hand. Our system predicts all pixels at about 10 fps, and is resilient to environment differences in prediction. We also conduct extensive experiment studying the random forest classifier and reveal some interesting properties.
+\end{abstract}
+
+\input{introduction}
+
+\input{System}
+
+\input{Classification}
+
+\input{TrainingGeneration}
+
+\input{Pooling}
+
+\input{Implementation}
+
+\input{Experiments}
+
+\input{Experience}
+
+\input{Relatedwork}
+
+\input{Conclusion}
+
+\bibliographystyle{unsrt}
+\begin{thebibliography}{9}
+
+\bibitem{shotton2011} J. Shotton, A. Fitzgibbon, M. Cook, T. Sharp, M. Finocchio, R. Moore, A. Kipman, A. Blake. Real-time human pose recognition in parts from single depth images. CVPR, 2011.
+
+\bibitem{wang2009} R. Wang and J. Popovi\'c. Real-time hand-tracking with a color glove. In Proc. ACM SIGGRAPH, 2009.
+
+\bibitem{oikonomidis2011} I. Oikonomidis, N. Kyriazis, and A. Argyros. Efficient model-based 3D tracking of hand articulations using kinect. In BMVC, Aug 2011.
+
+\bibitem{lepetit2005} V. Lepetit, P. Lagger, and P. Fua. Randomized trees for real-time keypoint recognition. In Proc. CVPR, pages 2:775-781, 2005. 
+
+\bibitem{liblinear} R.-E. Fan, K.-W. Chang, C.-J. Hsieh, X.-R. Wang, and C.-J. Lin. LIBLINEAR: A library for large linear classification Journal of Machine Learning Research 9(2008), 1871-1874.
+
+\bibitem{keim2002} D.A. Keim. Information visualization and visual data mining. Visualization and Computer Graphics, IEEE Transactions. Vol 8, no.1, pp. 1-8, Jan 2002.
+
+\bibitem{stuerzlinger2010} W. Stuerzlinger, C Wingrave. The value of constraints for 3D user interfaces. Dagstuhl Seminar on VR, 2010.
+
+\bibitem{hoffman2010} M. Hoffman, P. Varcholik, and J. LaViola. Breaking the status quo: improving 3D gesture recognition with spatially convenient input devices. IEEE VR, 2010.
+
+\bibitem{alglib} V. Bystritsky. ALGLIB. 14 Aug 1999. Web. \url{http://www.alglib.net}.
+
+\bibitem{googleearth} Google Inc. (2009). Google Earth (Version 6.2) [Software]. Available from \url{http://www.google.com/earth/index.html}.
+
+\bibitem{mistry} Mistry, P., and Maes, P. (2009) SixthSense – A Wearable Gestural Interface. SIGGRAPH Asia ‘09, Emerging Technologies. Yokohama, Japan
+
+\bibitem{minority} MIT Minority report
+
+\end{thebibliography}
+
+\end{document}
