@@ -1,4 +1,6 @@
 \section{Introduction}
+\label{sec: intro}
+
 Natural user interfaces (NUI) are a new way for humans to interact with machines. Among numerous NUIs which include multi-touch, eye tracking and motion detection, hand gesture recognition is one promising candidate. In this paper, we design and evaluate a novel hand gesture recognition system to demonstrate that we are close to an actual production-level system. The reader should note that that we do not claim hand gesture recognition is THE future of interfaces. In fact there are some limitations for using hand gestures such as fatigue over long term usage (in the movie Minority Report, Tom Cruise has to take breaks due to fatigue). We focus on the engineering challenges in building such a system and leave usability studies to future research.
 
 \subsection{Design Goals}
@@ -29,8 +31,11 @@ We summarize our contributions as follows:
 
 \textbf{An inexpensive way to generate accurate labeled data.} We use color gloves to easily generate labeled data using the aligned RGB and depth images. In \cite{shotton2011}, the authors use sophisticated computer graphics to generate training samples. We found this expensive and through the use of color gloves, developers can generate their customized gesture without difficulty. Another advantage of our approach is that the system uses actual raw depth images as training samples. These naturally capture realistic noise such as shadows and hardware noise. Using computer generated graphics as done in \cite{shotton2011} it is very difficult to simulate these noisy effects. Note that the end users do not need to wear color gloves; they are only used in training.
 
-\textbf{An computational insight about random forest and support vector machine (SVM).} To the best of our knowledge, there seems to be no literature in comparing SVM and random forest from a computational perspective. We provide an in-depth complexity analysis of the two methods rather than merely reporting experimental accuracy as done in most machine learning literature. 
+\textbf{A computational insight about random forest and support vector machine (SVM).} To the best of our knowledge, there seems to be no literature in comparing SVM and random forest from a computational perspective. We provide an in-depth complexity analysis of the two methods rather than merely reporting experimental accuracy as done in most machine learning literature. 
 
 \textbf{Extensive experimental evaluations of the system.} We conduct extensive experiments evaluation of the effectiveness of the random forest classifier by systematically exploring a large space of parameters. Interesting results lead to a deeper understanding of random forest. 
 
 Our work is made public at: \url{https://github.com/arunganesan/hand-gesture-recognition}.
+
+\subsection{Outline}
+The rest of this paper is organized as follows. In section~\ref{sec: system} we present an overview of the system architecture. Three large components of the system are described in their own sections. Section~\ref{sec: feacture_extraction} discusses our choice of random forest over SVM for classification, and the features used in our algorithm. Section~\ref{sec: generating_training} explains the collection of training samples, and section~\ref{sec: pooling} discusses the pooling of the predicted pixels. Section~\ref{sec: implementation} discusses some of the details of our implementation. Section~\ref{sec: experiments} presents our experimental findings. Section~\ref{sec: experience} reflects on our experiences in building the system and working on this project. Section~\ref{sec: related_work} presents related work and section~\ref{sec: conclusion} concludes. 

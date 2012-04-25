@@ -1,4 +1,5 @@
 \section{System Overview}
+\label{sec: system}
 
 From the user point of view, our system is divided into two components: developers mode for training gestures and end-user mode for real-time prediction. In a high-level overview, developers using the developer mode supply the system with labeled data by wearing color gloves. Hence the developers hand the labeled image for the system to train. In the end-user mode, the users offer the raw image by showing up their hands, and the system will make predictions on every pixel using GPU and then pool every prediction to get an estimation of the gesture. Between the two modes, they share a component: feature extraction, which obtains the features for each pixel in the depth image. The implementation of feature extraction in the two modes are however different one is using CPU in an off-line fashion and the other is using GPU (end-user mode) in an on-demand fashion. 
 
@@ -16,7 +17,3 @@ From the user point of view, our system is divided into two components: develope
 
 \subsection{The Kinect Sensor}
 The Kinect sensor provides both raw depth image and color image at a maximum frame rate of 30Hz and with a resolution 640 times 480. Each pixel in the depth image represent the distance from the object to the camera. The error of the depth can be with several millimeters[TO VERIFY]. However, objects can have a shadow where some parts near the object do not have depth value at all.   
-
-\subsection{Outline}
-
-In the following, we go through feature extraction and per-pixel classification in Sec. X, generating training samples in Sec. Y, pooling in Sec. Z, implementation in Sec. YY, our experience in Sec.Zz, experiment in Sec. XX and conclude in sec. XX.
