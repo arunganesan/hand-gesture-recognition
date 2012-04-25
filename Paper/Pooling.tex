@@ -5,9 +5,10 @@ After training on the labeled data sets and making per-pixel prediction, our sys
 
 \textbf{K-means.} K-means is probably the most commonly used clustering algorithm. A parameter K, the number of clusters, has to be specified beforehand. K-means is fast, with a complexity of $O(2N_{\text{non-background}})$, where $N_{\text{non-background}}$ is the number of non-background pixels. We found that however there is a significant weakness in the application of K-means to our system: (1) K-means assumes each cluster has an equal size of points; (2) K-means is not robust to outliers; and (3) K-means requires a fixed number of clusters. As a result, we found that K-means often divides a hand into multiple clusters. Therefore we abandon the use of K-means in our system.
 
-\textbf{Density-based clustering.} Density-based cluster is more suitable for graphics application as it tries to cluster points that has a density exceeding pre-determine threshold. In addition, density based clustering doesn't assume a number of clusters ahead of time. We customize the density-based clustering as in Algorithm 2. The complexity is O($N_{\text{non-background} }\epsilon^2$), where $\epsilon$ is the radius of the interested pixels that is used in Algorithm 2.
+\textbf{Density-based clustering.} Density-based cluster is more suitable for graphics application as it tries to cluster points that has a density exceeding pre-determine threshold. In addition, density based clustering doesn't assume a number of clusters ahead of time. We customize the density-based clustering as in Algorithm~\ref{alg:dbscan} The complexity is O($N_{\text{non-background} }\epsilon^2$), where $\epsilon$ is the radius of the interested pixels that is used in Algorithm~\ref{alg:dbscan}.
 
 \begin{algorithm}[t]
+\label{alg:dbscan}
 %\vskip -0.1in
  \caption{Density-based clustering}
  
@@ -25,13 +26,7 @@ After training on the labeled data sets and making per-pixel prediction, our sys
                 \State pixel $t$ $\gets$ Seed.Dequeue()
                 \State neighbor\textunderscore list $\gets$ get\textunderscore neighbors($t$, $\epsilon$ )
                 \If{len(neighbor\textunderscore list) $>$ $\epsilon^2 \times$ density }
-                   \For{each pixel $q$ in neighbor\textunderscore list}
-          \If{ $q$ is not visited}                    
-                      \State Seed.Enqueue($q$)
-                      \State mark $q$ as visited
-                      \State add $q$ to the new cluster
-                    \EndIf
-                   \EndFor 
+                   explore\textunderscore neighbors(neighbor\textunderscore list)
                 \EndIf
             \EndWhile
          \EndIf
@@ -47,6 +42,17 @@ After training on the labeled data sets and making per-pixel prediction, our sys
  	\EndFor  	
  	\\
  	\Return list
+\EndFunction
+\\
+\Function{explore\textunderscore neighbors}{neighbor\textunderscore list}
+	\For{each pixel $q$ in neighbor\textunderscore list}
+    	\If{$q$ is not visited}                    
+        	\State Seed.Enqueue($q$)
+            \State mark $q$ as visited
+            \State add $q$ to the new cluster
+        \EndIf
+    \EndFor
+    \Return neighbor\textunderscore list
 \EndFunction
 
 \end{algorithmic}
