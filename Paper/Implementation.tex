@@ -25,6 +25,14 @@ Several improvements we found are very important for our systems.
 
 \subsection{Actual System}
 
-Our main application is written in C\# in Windows, training algorithm is written in C++, and GPU prediction is written in C. The actual system would show three images: color image, depth image with per-pixel classification, pooled image with the largest cluster's position and type. Also the system would report the real-time performance for each stage. An illustrating example is shown in Fig \todo{Actual System Figure}.
+Our main application is written in C\# in Windows, training algorithm is written in C++, and GPU prediction is written in C. The actual system would show three images: color image, depth image with per-pixel classification, pooled image with the largest cluster's position and type. Also the system would report the real-time performance for each stage. An illustrating example is shown in Figure \ref{fig: system}.
+
+
+\begin{figure}
+\centering
+	\includegraphics[width=0.5\textwidth]{fig/System.jpg}
+	\caption{A snap shot of the actual system. Note the prediction is longer than it is used in a demo machine.}
+\label{fig: system}
+\end{figure}
 
 We built a demo application that maps two gestures onto mouse state. The location of the hand in the XY plane determined the XY location of the mouse; moving the hand to and from the camera moved the mouse wheel up and down; and closing and opening the hand pressed down and released the left mouse button respectively. This simple mapping enabled us to navigate many applications. We successfully demonstrated this mapping on the Google Earth application \cite{googleearth} by panning and zooming the map.
