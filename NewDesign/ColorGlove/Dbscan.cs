@@ -231,10 +231,13 @@ namespace ColorGlove {
                             Debug.Assert(predict_label_[resultP] > 0);
                             if (pool_[resultP] == UNCLASSIFIED || pool_[resultP] == NOISE)
                             {
-                                if (pool_[resultP] == UNCLASSIFIED) 
+                                if (pool_[resultP] == UNCLASSIFIED)
+                                {
                                     seeds.Enqueue(resultP);
+                                    cur_cluster.Add(resultP);
+                                }
                                 pool_[resultP] = CLASSIFIED;
-                                cur_cluster.Add(resultP);
+                                
                             }
                         }
                     }
