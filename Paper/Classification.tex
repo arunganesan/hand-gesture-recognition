@@ -27,7 +27,9 @@ This feature extraction method is also used in \cite{shotton2011}. The offsets $
 \end{align}
 where $r$ and $\beta$ are uniform random variables:
 \begin{align}
- r &= U[R_{\text{min}}, R_{\text{min}}] \\
+ r &= U[R_{\text{min}}, R_{\text{min}}]
+ \label{eqn: radius} 
+ \\
  \beta &= U[0, 2\pi]
 \end{align}
 
@@ -39,7 +41,7 @@ In the training samples each pixel is labeled (we address how to generate massiv
 
 \textbf{Linear SVM.} In linear SVM, a model that has $c$ classes and a weight vector of length $n$ is trained. The prediction is based on the dot product between the trained weight vectors and the feature vector. Therefore, the run-time complexity for predicting each pixel is $O(n\times c)$.
 
-\textbf{Random Forest.} Random forest is built on an ensemble of decision trees that are trained on  bootstrap\footnote{Bootstrap means uniform   sampling with replacement} samples of the training sets. The decision tree in the random forest is a binary tree. Each node in the decision tree has one feature and a threshold to determine which branch to go to by comparing the feature value to the threshold. In the leafs of the tree are labels. The final prediction is made by the majority rule of the all decision trees in the forest. More details about the training and statistical analysis can be seen in \todo{Random Forest paper}. The depth of the decision tree is approximately as $O(\log l)$. Therefore $O(\log l)$ queries of features are made in a single decision tree when prediction. The run-time complexity for making prediction in random forest is then $O(\log l \times n_{\text{tree}})$. In fact, we can prune each decision tree to limit its depth. By pruning we mean once the node exceeds the maximum depth it becomes a leaf and the label would be the majority labels in the node's sub-tree. Pruning turns out to be crucial for us since it can guarantee the \textbf{worst-case} prediction time. Moreover pruning can make the decision tree almost balanced, ensuring the per-pixel prediction are done in almost constant time. Let us denote the maximum depth to be  $d_{\text{tree}}$, the run-time complexity can go down to $O(d_{\text{tree}}\times n_{\text{tree}})$. Finally, we present the random forest prediction algorithm in Algorithm \ref{alg: RF}.
+\textbf{Random Forest.} Random forest is built on an ensemble of decision trees that are trained on  bootstrap\footnote{Bootstrap means uniform   sampling with replacement} samples of the training sets. The decision tree in the random forest is a binary tree. Each node in the decision tree has one feature and a threshold to determine which branch to go to by comparing the feature value to the threshold. In the leafs of the tree are labels. The final prediction is made by the majority rule of the all decision trees in the forest. More details about the training and statistical analysis can be seen in \cite{lepetit2005}. The depth of the decision tree is approximately as $O(\log l)$. Therefore $O(\log l)$ queries of features are made in a single decision tree when predicting. The run-time complexity for making prediction in random forest is then $O(\log l \times n_{\text{tree}})$. In fact, we can prune each decision tree to limit its depth. This refinement, described in section~\ref{sec:refinement} reduces the complexity to $O(d_{\text{tree}}\times n_{\text{tree}})$, for a fixed depth $d_{\text{tree}}$. Finally, we present the random forest prediction algorithm in Algorithm \ref{alg: RF}.
 
 \begin{algorithm}
 %\vskip -0.1in
@@ -69,16 +71,13 @@ In the training samples each pixel is labeled (we address how to generate massiv
 \end{algorithmic}
 \end{algorithm}
 
-\textbf{Comparison.} Let us do a simple calculation in which we use a realistic parameter setting. Suppose we have 2000 features, 3 classes, and using 3 trees with maximum depth of 20, the random forest is 100 times faster than linear SVM! Moreover, in our experimental evaluation, random forest has proven to be far superior than linear SVM in accuracy. Although linear SVM might use some advanced feature learning technique such as deep learning to achieve similar accuracy as to random forest, SVM is still too slow for us to adopt in the system. Inheriting from decision tree, random forest allows the system to extract features \textbf{on-demand}, which has been extremely crucial for real-time application as in the case of our system. The second author \todo{HOW ABOUT THE FIRST AUTHOR? He's never surprised} is really surprised by this analysis since he used to believe linear SVM is unbeatable in practice.
+\textbf{Comparison.} Let us do a simple calculation in which we use a realistic parameter setting. Suppose we have 2000 features, 3 classes, and using 3 trees with maximum depth of 20, the random forest is 100 times faster than linear SVM! Moreover, in our experimental evaluation, random forest has proven to be far superior than linear SVM in accuracy. Although linear SVM might use some advanced feature learning technique such as deep learning to achieve similar accuracy as to random forest, SVM is still too slow for us to adopt in the system. Inheriting from decision tree, random forest allows the system to extract features \textit{on-demand}, which has been extremely crucial for real-time application as in the case of our system. We are really surprised by this analysis since he used to believe linear SVM is unbeatable in practice.
 
-
-
-
-\textbf{Training.} Training in linear SVM can be very fast as it can has a run-time complexity of $O(n\times l)$ and there exists technique to scale the training to distributed system \todo{Cite Michael's paper}. Training in random forest, however, does not have an optimization-based foundation. We use brute force to determine the right feature and right threshold for each node in the decision forest. In determining the right threshold, we use grid search. In the training of random forest, it is highly recommended to put the training data in the main memory.
+\textbf{Training.} Training in linear SVM is very fast as it has a run-time complexity of $O(n\times l)$ and there exists a technique to scale the training to distributed systems \cite{michael}. Training in random forest, however, does not have an optimization-based foundation. We use brute force to determine the right feature and right threshold for each node in the decision forest. In determining the right threshold, we use grid search. In the training of random forest, it is highly recommended to put the training data in the main memory.
 
 
 \subsubsection{GPU For Real-time Prediction}
-There are $307,200$ $(640\times 480)$ pixels in a frame. Each pixel will undertake $O(d_{\text{tree}}\times n_{\text{tree}})$ operations for prediction. We first tried to implement the random forest prediction using CPU. It takes about 1 minute to process a frame! GPU has to be used since it allows massive parallelism. As can be seen in Figure~\ref{fig: GPUvsCPU}, GPU is more suitable for high-parallelism and high-latency jobs, while CPU is better fit for low-parallelism and low-latency jobs.
+There are $307,200$ $(640\times 480)$ pixels in a frame. Each pixel will undertake $O(d_{\text{tree}}\times n_{\text{tree}})$ operations for prediction. We first tried to implement the random forest prediction using CPU. It takes about 1 minute to process a frame! GPU presented an attractive alternative as it supports massive parallelism. As can be seen in Figure~\ref{fig: GPUvsCPU}, GPU is more suitable for high-parallelism and high-latency jobs, while CPU is better fit for low-parallelism and low-latency jobs.
 
 \begin{figure}
 	\includegraphics[width=0.45 \textwidth]{fig/GPUvsCPU.pdf}
@@ -86,4 +85,4 @@ There are $307,200$ $(640\times 480)$ pixels in a frame. Each pixel will underta
     \label{fig: GPUvsCPU}
 \end{figure}
 
-In our system, each pixel has fired a thread to make prediction using random forest. In a typical GPU, more than thousands of threads are running concurrently thanks to the special architecture of GPU. As a result, per-pixel classification can be done in about 40ms \todo{Exact number}.
+In our system, each pixel has fired a thread to make prediction using random forest. In a typical GPU, more than thousands of threads are running concurrently thanks to the special architecture of GPU. As a result, per-pixel classification can be done in about 40ms.

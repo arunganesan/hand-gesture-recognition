@@ -18,10 +18,13 @@ The training samples generated is big, usually more than 10 GB. We customize a r
 We use Amazon Elastic Computing Cloud (EC2) to offload our massive training workloads to cloud servers.  
 
 \subsection{Refinements}
+\label{sec:refinement}
 
 Several improvements we found are very important for our systems.
 
 \textbf{Adding a virtual wall.} Our system will be placed in a variety of environments and therefore the background will be drastically variable. We decide to add a virtual wall after 1.5m so every pixel farther than 1.5m is treated as 1.5m. We found this technique can deal with a lot of variability of the backgrounds and make prediction accurate. 
+
+\textbf{Pruning.} To prune a tree we fix a maximum depth to traverse down each tree. Once the node exceeds the maximum depth it becomes a leaf and the label would be the majority labels in the node's sub-tree. Pruning turns out to be crucial for us since it can guarantee the \textit{worst-case} prediction time. Moreover pruning can make the decision tree almost balanced, ensuring the per-pixel prediction is done in almost constant time. Let us denote the maximum depth to be $d_{\text{tree}}$, the run-time complexity can go down to $O(d_{\text{tree}}\times n_{\text{tree}})$.
 
 
 \subsection{Actual System}
