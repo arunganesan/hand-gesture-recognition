@@ -39,9 +39,9 @@ University of Michigan, Ann Arbor
 \thispagestyle{empty}
 
 \begin{abstract}
-Hand gesture recognition can be used many applications such as interactive data analysis or American Sign language detection. Current systems are either expensive, unable to run in real time, or require the user wear devices such as custom gloves. We propose an inexpensive solution for predicting hand gestures in real time that uses Microsoft's Kinect camera. Our system involves training a random forest classifier with a color glove, and then predicting at a pixel level a naked hand. Our system predicts all pixels in the frame at 25 fps, and is resilient to environment differences in prediction \todo{really...?}. 
+Hand gesture recognition can be used in many applications such as interactive 
+data analysis or American Sign Language detection. Current systems are either expensive, unable to run in real time, or require the user wear devices such as custom gloves. We propose an inexpensive solution for predicting hand gestures in real time that uses Microsoft's Kinect camera. Our system involves training a random forest classifier with a color glove, and then predicting at a pixel level a naked hand. Our system predicts all pixels in the frame at about 10 fps, and is resilient to environment differences in prediction. We also conduct extensive experiment studying the random forest classifier and reveal some interesting properties.
 
-We extensively studied the random forest classifier and discovered interesting properties including that the number of trees in the forest makes negligible difference in the prediction accuracy, and random forest classifier significantly outperforms a linear SVM.
 
 \end{abstract}
 
