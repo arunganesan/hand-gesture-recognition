@@ -27,7 +27,7 @@ After training on the labeled data sets and making per-pixel prediction, our sys
                 \State pixel $t$ $\gets$ Seed.Dequeue()
                 \State neighbor\textunderscore list $\gets$ get\textunderscore neighbors($t$, $\epsilon$ )
                 \If{len(neighbor\textunderscore list) $>$ $\epsilon^2 \times$ density }
-                   explore\textunderscore neighbors(neighbor\textunderscore list)
+                   \State explore\textunderscore neighbors(neighbor\textunderscore list)
                 \EndIf
             \EndWhile
          \EndIf

@@ -9,6 +9,7 @@ In this section, we describe the main classification algorithm used in the syste
 \cutsection
 For each pixel \textbf{x}, we extract a set of features. Each feature corresponds to the depth difference between two  offset points, $\{\bf{u}, \bf{v} \}$,  from \textbf{x} and normalized by its depth. This is shown in equation~\ref{eqn:feature} where $d(x)$ is the depth at point $x$ and $\theta$ refers to the pair of offsets $u, v$.
 
+\cutequation
 \begin{align}
 \label{eqn:feature}
 f_{\theta}(x) = d\left(\textbf{x} + \frac{\textbf{u}}{d(\textbf{x})}\right) - d\left(\textbf{x} + \frac{\textbf{v}}{d(\textbf{x})}\right)
@@ -18,7 +19,7 @@ f_{\theta}(x) = d\left(\textbf{x} + \frac{\textbf{u}}{d(\textbf{x})}\right) - d\
 \begin{figure}
 	\includegraphics[width=0.23\textwidth]{fig/OpenHandNearOffset.jpg}
 	\includegraphics[width=0.23\textwidth]{fig/OpenHandFarOffset.jpg}
-	
+	\cutcaption
 	\caption{Offset pairs for a given pixel. In the left figure, the reference pixel is the center of the palm. In the right figure, the reference pixel is the center of the palm of the person that stands. }
 	\label{fig:offset}
 \end{figure}
@@ -26,11 +27,13 @@ f_{\theta}(x) = d\left(\textbf{x} + \frac{\textbf{u}}{d(\textbf{x})}\right) - d\
 
 This feature extraction method is also used in \cite{shotton2011}. The offsets $\theta=\{\bf{u}, \bf{v} \}$ are generated randomly. In our design, we randomly sample the offsets from a bounded circular area. $\textbf{u}$ and $\textbf{v}$ are obtained as
 
+\cutequation
 \begin{align}
 \label{enq: offest}
  (r \cos \beta, r \sin \beta),
 \end{align}
 where $r$ and $\beta$ are uniform random variables:
+\cutequation
 \begin{align}
  r &= U[R_{\text{min}}, R_{\text{min}}]
  \label{eqn: radius} 
@@ -91,6 +94,7 @@ There are $307,200$ $(640\times 480)$ pixels in a frame. Each pixel will underta
 
 \begin{figure}
 	\includegraphics[width=0.45 \textwidth]{fig/GPUvsCPU.pdf}
+		\cutcaption
     \caption{A computational comparison between GPU and CPU. A simple experiment is conducted by varying the number of iterations in a for-loop. GPU would parallelize the for loop.}
     \label{fig: GPUvsCPU}
 \end{figure}

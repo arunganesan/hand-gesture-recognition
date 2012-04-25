@@ -10,12 +10,16 @@ We collected images of four different gestures shown in figure~\ref{fig:gestures
 \subsection{Varying Parameters} 
 \cutsubsection
 We varied three parameters in training the models, such the number of trees, the number of features, and the number of training samples. We set aside 50 images as the test set, on which we evaluate the trained model to obtain test accuracy. 
+\cutequation
 
 \textbf{Number of trees.} Figure~\ref{fig:varytrees} shows the results of varying the number of trees while fixing the remaining parameters. We observed that the number of trees makes no noticeable difference. In fact, even training the forest with one tree has the same accuracy as with multiple trees. This was also observed for different fixed values of the parameters. Adding multiple trees in the random forest is intended to protect against overfitting. However, our test and training sets were sampled from the same pool of images so we hypothesize one tree is sufficient to model all the variability in the test set. In the actual system, we used 3 trees to make the tradeoff between enough generality of the random forest and efficient performance. 
+\cutequation
 
 \textbf{Number of training samples.} Figure~\ref{fig:largetraining} shows the effect of varying the number of training samples. There is a clear trend of smaller test error as we increase the number of training samples. At 689 training samples, the error is only 1.32\%. Increasing the number of training samples had the biggest impact in reducing the error when compared to other factors. 
+\cutequation
 
 \textbf{Number of features.} Figure~\ref{fig:varyfeatures} shows the effect of varying the number features. Across most of our experiments we observed that using 2000 features outperforms 3000 features, which outperforms 1000 features. However, as seen in figure~\ref{fig:varyfeatures}, the difference in error is small. This suggests that if we sampled 1000, 2000, and 3000 features again, we may observe a different trend.
+\cutequation
 
 \textbf{Varying $R_{\text{max}}$}
 Finally, Figure~\ref{fig:varyradii} shows the results of varying $R_{\text{max}}$ in Eq~(\ref{eqn: radius}), the radius of the offset features. For smaller training sample sizes, setting the radius to 40000 mmpx gives the least error classifier. However, as we increase the number of training samples, both 40000 mmpx and 80000 mmpx give similarly accurate classifiers. This means that when we have fewer training samples, setting the radius to 40000 mmpx will allow us to train a more accurate classifier, but when we have enough training samples, the radius is not so important. We notice that making the radius too small or too large gives poor accuracy. By qualitatively checking the offset images as shown in Figure~\ref{fig:offset}, we hypothesize that to train a more accurate classifier, the offsets should cover most of the hand, and then some of the background. If the radius is too small, then the offsets will be right next to each other and feature vectors for different gestures may be too similar.
@@ -82,6 +86,7 @@ Number of features: 2000, and number of trees: 3.]{
 %%We fixed the number of features to 2000, and the number of trees to 3.}
 %  \label{fig:largetraining}
   \label{fig: expfig}
+  \cutcaption
 \caption{Experimental results. Testing error with respect to the number of training samples.}	 
 \end{figure*}
 

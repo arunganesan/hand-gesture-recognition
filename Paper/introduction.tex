@@ -8,14 +8,19 @@ Natural user interfaces (NUI) are a new way for humans to interact with machines
 \subsection{Design Goals}
 \cutsection
 Our system is designed to maximize user experience. Moreover, our system differs from existing systems in the following ways.
+\cutequation
 
 \textbf{Just hands.} Many existing system such as \cite{mistry, wang2009} require users to wear gloves or markers to be capture by the camera. We feel this limits the usability of the application and aim to keep the prediction of the system entirely marker free.
+\cutequation
   
 \textbf{Real-time.} Our system should run smoothly on average modern computers with a dedicated graphics card. The system should also recognize hand gesture at a high frame rate, nearing real-time speeds. Our desired frame rate 30Hz; we achieved a frame rate around 10Hz. In our design and implementation, one driving goal is to squeeze every milliseconds as possible. 
+\cutequation
 
 \textbf{No calibration.}  Once trained, our system should require no further calibration before working in a new environment. 
+\cutequation
 
 \textbf{Robust and accurate.} Our system should have an accurate estimation of where the user's hands are and what gestures they use with low false positive. Moreover, the system should be insensitive to various background, user's location, camera position and other noise. 
+\cutequation
 
 \textbf{Arbitrary gestures.} Our system should be able to easily incorporate new types of gestures. With sufficient training, our system should support many complex gestures such as those seen in the American Sign Language.
 
@@ -33,12 +38,16 @@ In a high-level overview, the system is separated into two parts: training and r
 \subsection{Contributions}
 \cutsection
 We summarize our contributions as follows:
+\cutequation
 
 \textbf{A system for real-time hand gesture recognition.} We design and implement a complete real-time hand gesture recognition system based on machine learning. The system broadcasts the location and gesture of the hand through a web socket server and can be used by other applications.
+\cutequation
 
 \textbf{An inexpensive way to generate accurate labeled data.} We use color gloves to easily generate labeled data using the aligned RGB and depth images. In \cite{shotton2011}, the authors use sophisticated computer graphics to generate training samples. We found this expensive and through the use of color gloves, developers can generate their customized gesture without difficulty. Another advantage of our approach is that the system uses actual raw depth images as training samples. These naturally capture realistic noise such as shadows and hardware noise. Using computer generated graphics as done in \cite{shotton2011} it is very difficult to simulate these noisy effects. Note that the end users do not need to wear color gloves; they are only used in training.
+\cutequation 
 
 \textbf{A computational insight about random forest and support vector machine (SVM).} To the best of our knowledge, there seems to be no literature in comparing SVM and random forest from a computational perspective. We provide an in-depth complexity analysis of the two methods rather than merely reporting experimental accuracy as done in most machine learning literature. 
+\cutequation 
 
 \textbf{Extensive experimental evaluations of the system.} We conduct extensive experiments evaluation of the effectiveness of the random forest classifier by systematically exploring a large space of parameters. Interesting results lead to a deeper understanding of random forest. 
 

@@ -10,15 +10,17 @@
 \usepackage{float}
 \usepackage{fullpage}
  
-\renewcommand{\baselinestretch}{0.90}
+\renewcommand{\baselinestretch}{0.87}
 \newcommand{\includeimage}[2] {\fbox{ \includegraphics[width=#1]{#2}}}
 \newcommand{\todo}[1]{{\textcolor{red}{[[TODO: #1]]}}}
 \newcommand{\cutsection}{\vspace*{-0.20in}}%{{\vspace*{-0.03in}}}
-\newcommand{\cutsubsection}{\vspace*{-0.10in}}%{{\vspace*{-0.03in}}}
+\newcommand{\cutsubsection}{\vspace*{-0.15in}}%{{\vspace*{-0.03in}}}
+\newcommand{\cutcaption}{\vspace*{-0.10in}}%{{\vspace*{-0.03in}}}
+\newcommand{\cutequation}{\vspace*{-0.05in}}%{{\vspace*{-0.03in}}}
 \begin{document}
 
 %don't want date printed
-\date{}
+%\date{}
 
 %make title bold and 14 pt font (Latex default is non-bold, 16 pt)
 \title{\Large \bf A Real-time Hand Gesture Recognition System}
@@ -42,37 +44,38 @@ University of Michigan, Ann Arbor
 % Comment it out when you first submit the paper for review.
 \thispagestyle{empty}
 
-\vspace*{-0.2in}
+\vspace*{-0.3in}
 \begin{abstract}
+
 Hand gesture recognition can be used in many applications such as interactive 
 data analysis or American Sign Language detection. Current systems are either expensive, unable to run in real time, or require the user wear devices such as custom gloves. We propose an inexpensive solution for predicting hand gestures in real time that uses Microsoft's Kinect camera. Our system involves training a random forest classifier with a color glove, and then predicting at a pixel level a naked hand. Our system predicts all pixels at about 10 fps, and is resilient to environment differences in prediction. We also conduct extensive experiment studying the random forest classifier and reveal some interesting properties.
 \end{abstract}
 
-\vspace*{-0.3in}
+\cutsection
 \input{introduction}
 
-\vspace*{-0.3in}
+\cutsection
 \input{System}
-\vspace*{-0.3in}
+\cutsection
 \input{Classification}
-\vspace*{-0.3in}
+\cutsection
 \input{TrainingGeneration}
-\vspace*{-0.3in}
+\cutsection
 \input{Pooling}
-\vspace*{-0.3in}
+\cutsection
 \input{Implementation}
-\vspace*{-0.3in}
+\cutsection
 \input{Experiments}
-\vspace*{-0.3in}
+\cutsection
 \input{Experience}
-\vspace*{-0.3in}
+\cutsection
 \input{Relatedwork}
-\vspace*{-0.3in}
+\cutsection
 \input{Conclusion}
-\vspace*{-0.3in}
+\cutsection
 \bibliographystyle{unsrt}
 \begin{thebibliography}{9}
-
+\cutsection
 \bibitem{shotton2011} J. Shotton, A. Fitzgibbon, M. Cook, T. Sharp, M. Finocchio, R. Moore, A. Kipman, A. Blake. Real-time human pose recognition in parts from single depth images. CVPR, 2011.
 
 \bibitem{wang2009} R. Wang and J. Popovi\'c. Real-time hand-tracking with a color glove. In Proc. ACM SIGGRAPH, 2009.
