@@ -1,5 +1,5 @@
 \section{Feature Extraction and Per-pixel Classification}
-\label{sec: Classification}
+\label{sec: classification}
 
 In this section, we describe the main classification algorithm used in the system. At each frame, the system looks at the depth image, and predicts each pixel's type of gestures (e.g., open hand, close hand or background). The prediction result on every pixel will be fed into a pooling stage to propose the final gesture location and type. The driving reason for us to choose per-pixel classification is that it allows massive parallelism using GPU since each pixel is using the same predicting algorithm.
 
