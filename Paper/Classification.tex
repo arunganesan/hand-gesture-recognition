@@ -1,11 +1,11 @@
 \section{Feature Extraction and Per-pixel Classification}
 \label{sec: classification}
 
-In this section, we describe the main classification algorithm used in the system. At each frame, the system looks at the depth image, and predicts each pixel's type of gestures (e.g., open hand, close hand or background). The prediction result on every pixel will be fed into a pooling stage to propose the final gesture location and type. The driving reason for us to choose per-pixel classification is that it allows massive parallelism using GPU since each pixel is using the same predicting algorithm.
+In this section, we describe the main classification algorithm used in the system. At each frame the system predicts each pixel as belonging to a gesture (e.g., open hand, close hand or background). The prediction result on every pixel are fed into a pooling algorithm to propose the final gesture location and type. The driving reason for us to choose per-pixel classification is that it allows massive parallelism using GPU. The prediction algorithm is identical for every pixel therefore we can leverage the Single Instruction Multiple Data architecture of the GPU.
 
 \subsection{Feature Extractions}
 \label{sec: feacture_extraction}
-For each pixel \textbf{x}, we extract a group of features. Each group say $\theta=\{\bf{u}, \bf{v} \}$ corresponds to the depth difference between two points offset from \textbf{x} normalized by its depth:
+For each pixel \textbf{x}, we extract a set of features. Each feature corresponds to the depth difference between two  offset points, $\{\bf{u}, \bf{v} \}$,  from \textbf{x} and normalized by its depth. This is shown in equation~\ref{eqn:feature} where $d(x)$ is the depth at point $x$ and $\theta$ refers to the pair of offsets $u, v$.
 
 \begin{align}
 \label{eqn:feature}
@@ -20,8 +20,7 @@ f_{\theta}(x) = d\left(\textbf{x} + \frac{\textbf{u}}{d(\textbf{x})}\right) - d\
 	\label{fig:offset}
 \end{figure}
 
-This feature extraction method is also used in \cite{shotton2011}. The offsets $\theta=\{\bf{u}, \bf{v} \}$ are generated randomly. In our design, we make those offsets to be uniformly sampled from a bounded circular area.
-$\textbf{u}$ and $\textbf{v}$ are obtained as
+This feature extraction method is also used in \cite{shotton2011}. The offsets $\theta=\{\bf{u}, \bf{v} \}$ are generated randomly. In our design, we randomly sample the offsets from a bounded circular area. $\textbf{u}$ and $\textbf{v}$ are obtained as
 \begin{align}
 \label{enq: offest}
  (r \cos \beta, r \sin \beta),
@@ -32,16 +31,13 @@ where $r$ and $\beta$ are uniform random variables:
  \beta &= U[0, 2\pi]
 \end{align}
 
- As we can see from Figure \ref{fig:offset}, the offset pairs are located within the neighborhood of the palm and is adaptive to the depth.
-\todo{DO WE NEED MORE EXPLANATION?}
+As we can see from Figure \ref{fig:offset}, the offset pairs are located within the neighborhood of the palm and are proportional to the depth.
 
 \subsection{The Classifier: SVM or Random Forest?}
 
-In the training samples each pixel is labeled (we would deal with how to generate massive labeled sample in Section \ref{sec: generating_training}   and we have to use a supervised learning methods. Two methods come into our decision of choice: linear SVM and random forest. Let us make the notation as follows: the number of training samples: $l$, the number of features: $n$, the number of classes (types of gestures): $c$. Our main criteria for choosing the best algorithm are (1) prediction time and (2) accuracy.
+In the training samples each pixel is labeled (we address how to generate massive labeled sample in Section \ref{sec: generating_training}) and we have to use supervised learning methods. Two methods come into our decision of choice: linear SVM and random forest. We use the following notation in our explanation -- the number of training samples: $l$, the number of features: $n$, the number of classes (types of gestures): $c$. Our main criteria for choosing the best algorithm are (1) prediction time and (2) accuracy.
 
-\textbf{Linear SVM.} In linear SVM, a model that is $c$ number of weight vector length of $n$ is trained. In prediction, the prediction is based on the dot product between the trained weight vectors and the feature vector. Therefore,  the run-time complexity for predicting each pixel is $O(n\times c)$.
-
-
+\textbf{Linear SVM.} In linear SVM, a model that has $c$ classes and a weight vector of length $n$ is trained. The prediction is based on the dot product between the trained weight vectors and the feature vector. Therefore, the run-time complexity for predicting each pixel is $O(n\times c)$.
 
 \textbf{Random Forest.} Random forest is built on an ensemble of decision trees that are trained on  bootstrap\footnote{Bootstrap means uniform   sampling with replacement} samples of the training sets. The decision tree in the random forest is a binary tree. Each node in the decision tree has one feature and a threshold to determine which branch to go to by comparing the feature value to the threshold. In the leafs of the tree are labels. The final prediction is made by the majority rule of the all decision trees in the forest. More details about the training and statistical analysis can be seen in \todo{Random Forest paper}. The depth of the decision tree is approximately as $O(\log l)$. Therefore $O(\log l)$ queries of features are made in a single decision tree when prediction. The run-time complexity for making prediction in random forest is then $O(\log l \times n_{\text{tree}})$. In fact, we can prune each decision tree to limit its depth. By pruning we mean once the node exceeds the maximum depth it becomes a leaf and the label would be the majority labels in the node's sub-tree. Pruning turns out to be crucial for us since it can guarantee the \textbf{worst-case} prediction time. Moreover pruning can make the decision tree almost balanced, ensuring the per-pixel prediction are done in almost constant time. Let us denote the maximum depth to be  $d_{\text{tree}}$, the run-time complexity can go down to $O(d_{\text{tree}}\times n_{\text{tree}})$. Finally, we present the random forest prediction algorithm in Algorithm \ref{alg: RF}.
 
