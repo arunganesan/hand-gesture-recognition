@@ -10,9 +10,10 @@
 \usepackage{float}
 \usepackage{fullpage}
  
-
+\renewcommand{\baselinestretch}{0.90}
 \newcommand{\includeimage}[2] {\fbox{ \includegraphics[width=#1]{#2}}}
 \newcommand{\todo}[1]{{\textcolor{red}{[[TODO: #1]]}}}
+\newcommand{\cutsection}{\vspace*{-0.25in}}%{{\vspace*{-0.03in}}}
 \begin{document}
 
 %don't want date printed
@@ -40,31 +41,34 @@ University of Michigan, Ann Arbor
 % Comment it out when you first submit the paper for review.
 \thispagestyle{empty}
 
+\vspace*{-0.2in}
 \begin{abstract}
 Hand gesture recognition can be used in many applications such as interactive 
 data analysis or American Sign Language detection. Current systems are either expensive, unable to run in real time, or require the user wear devices such as custom gloves. We propose an inexpensive solution for predicting hand gestures in real time that uses Microsoft's Kinect camera. Our system involves training a random forest classifier with a color glove, and then predicting at a pixel level a naked hand. Our system predicts all pixels at about 10 fps, and is resilient to environment differences in prediction. We also conduct extensive experiment studying the random forest classifier and reveal some interesting properties.
 \end{abstract}
 
+\vspace*{-0.3in}
 \input{introduction}
 
+\vspace*{-0.3in}
 \input{System}
-
+\vspace*{-0.3in}
 \input{Classification}
-
+\vspace*{-0.3in}
 \input{TrainingGeneration}
-
+\vspace*{-0.3in}
 \input{Pooling}
-
+\vspace*{-0.3in}
 \input{Implementation}
-
+\vspace*{-0.3in}
 \input{Experiments}
-
+\vspace*{-0.3in}
 \input{Experience}
-
+\vspace*{-0.3in}
 \input{Relatedwork}
-
+\vspace*{-0.3in}
 \input{Conclusion}
-
+\vspace*{-0.3in}
 \bibliographystyle{unsrt}
 \begin{thebibliography}{9}
 
@@ -89,6 +93,8 @@ data analysis or American Sign Language detection. Current systems are either ex
 \bibitem{googleearth} Google Inc. (2009). Google Earth (Version 6.2) [Software]. Available from \url{http://www.google.com/earth/index.html}.
 
 \bibitem{mistry} Mistry, P., and Maes, P. (2009) SixthSense – A Wearable Gestural Interface. SIGGRAPH Asia ‘09, Emerging Technologies. Yokohama, Japan
+
+\bibitem{michael} Caoxie Zhang, Honglak Lee, and Kang G. Shin.  Efficient Distributed Linear Classification Algorithms via the Alternating Direction Method of Multipliers. AISTAT 2012.
 
 \bibitem{minority} MIT Minority report
 
