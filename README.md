@@ -11,9 +11,6 @@ Using Kinect for hand gesture recognition. Key ideas: (1) per-pixel classificati
 
 #[Random Thoughts]
 
-# Michael's plan:
-    Going to look using GPU in Kinect, since it will be inevitable to use. 
-
 [Experiment result]: https://github.com/arunganesan/hand-gesture-recognition/wiki/Experimental-Results
 
 [Wiki]: https://github.com/arunganesan/hand-gesture-recognition/wiki
